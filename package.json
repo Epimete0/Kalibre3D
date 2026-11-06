@@ -15,7 +15,8 @@
     "test:rls": "tsx scripts/run-rls-tests.ts",
     "test:s1": "tsx scripts/run-s1-tests.ts",
     "test:s3": "tsx scripts/run-s3-tests.ts",
-    "test:transactions": "tsx scripts/run-transaction-tests.ts"
+    "test:transactions": "tsx scripts/run-transaction-tests.ts",
+    "quality:gate": "tsx scripts/quality-gate.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

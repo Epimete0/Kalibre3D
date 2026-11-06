@@ -6,6 +6,23 @@
 
 ---
 
+## Fase 0 cerrada — Quality gate (tarea 0.7), 2026-11-06
+
+- **`npm run quality:gate` → PASSED** (`scripts/quality-gate.ts`, adaptado del de Kurova sin sus excepciones de migraciones ni sus suites de dominio):
+  - Unitarias 209/209 (32 archivos), lint, `next build`.
+  - `prisma:migrate` + `prisma migrate status` ("Database schema is up to date", 1 migración).
+  - `test:rls` 12/12, `test:s1` 3/3, `test:s3` 1/1, `test:transactions` 25/25.
+- **Revisión de seguridad de la Fase 0:**
+  - Ninguna tabla del núcleo es accesible por `anon`, y `authenticated` solo accede según membresía y rol (RLS probado).
+  - Las funciones de `app_private` no son invocables por la API.
+  - `_prisma_migrations` está cerrada.
+  - Las Server Actions no importan Prisma y los servicios abren con su contexto (prueba de fronteras).
+  - La app no usa `SUPABASE_SECRET_KEY` ni `service_role`.
+  - `signup-profile` solo actúa sobre el `userId` que devuelve Supabase Auth en el servidor.
+  - Riesgo abierto conocido: `proxy.ts` deja pasar las solicitudes si faltan las variables públicas de Supabase (mitigado por `requireAuthContext` en cada página privada).
+- **Observación:** el desarrollo local y las pruebas comparten hoy la instancia `saas3d-test`. Las suites reales reinician el schema `public`, así que **cada quality gate borra los datos de desarrollo** (la cuenta QA de Auth sobrevive, pero su taller no). Pendiente: crear la instancia `saas3d-local` (54441/54442) para desarrollo.
+- **Fase 0 completa.** Siguiente: Fase 1 (clientes, pedidos y dinero), con su plan detallado antes de implementar (sección 18.2).
+
 ## Fase 0 — Rutas de acceso, shell, perfil y legal (tarea 0.6), 2026-11-06
 
 - **Rutas (copiadas de Kurova, solo lectura, y adaptadas):**
@@ -92,7 +109,11 @@ Funciona como SaaS multi-taller: cada persona tiene su cuenta, un taller activo 
 
 ### Implementado
 
-- Nada todavía.
+- **Fase 0 (2026-11-06):**
+  - Núcleo multi-tenant (`Profile`, `Center`, `CenterMember`, `InvitationCode` y `OnboardingDismissal`, con RLS y `app_private`).
+  - Registro, inicio de sesión, recuperación de contraseña, unirse por invitación y crear taller (`/taller/nuevo`).
+  - Inicio provisional, Mi taller (`/profile`), Equipo (`/team`, oculto en la navegación), términos y privacidad (pendientes de revisión), portada provisional.
+  - `npm run quality:gate` en verde.
 
 ### MVP planificado (Fases 0 a 3)
 
@@ -161,18 +182,18 @@ docs/                    especificaciones, planes y runbooks
 
 | Módulo | Rutas | Estado |
 |---|---|---|
-| Landing | `/` | Planificado (Fase 0): propuesta de valor y acceso |
-| Acceso | `/login`, `/registro`, `/join`, `/forgot-password`, `/reset-password`, `/auth/callback` | Planificado (Fase 0), heredado de Kurova |
-| Legal | `/terminos`, `/privacidad` | Planificado (Fase 0), heredado y reescrito para este producto |
-| Perfil / Mi taller | `/profile` | Planificado (Fase 0): cuenta, contraseña y crear o configurar el taller |
-| Inicio | `/dashboard` | Fase 0: estado sin taller. Fase 3: panel del mes |
+| Landing | `/` | Implementado (provisional): propuesta de valor y acceso |
+| Acceso | `/login`, `/registro`, `/join`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/taller/nuevo` | Implementado (Fase 0), heredado de Kurova |
+| Legal | `/terminos`, `/privacidad` | Implementado (Fase 0); textos pendientes de revisión |
+| Perfil / Mi taller | `/profile` | Implementado (Fase 0): cuenta, contraseña y datos del taller |
+| Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
 | Clientes | `/clients`, `/clients/new`, `/clients/[id]` | Planificado (Fase 1) |
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Planificado (Fase 1) |
 | Dinero | `/money` | Planificado (Fase 1) |
 | Ajustes del taller | `/settings` | Planificado (Fase 1): moneda, luz, comisión ML, embalaje, costo por kilo y purga |
 | Catálogo y cotizador | `/products`, `/products/new`, `/products/[id]`, `/quote` | Planificado (Fase 2) |
 | Filamento | `/spools`, `/spools/[id]` | Planificado (Fase 2) |
-| Equipo | `/team` | Heredado, **oculto en el MVP** |
+| Equipo | `/team` | Implementado, **oculto en la navegación del MVP** |
 
 Las rutas usan inglés técnico, como Kurova. Los textos visibles van en español.
 
