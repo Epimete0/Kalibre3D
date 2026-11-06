@@ -11,11 +11,15 @@
     "vercel-build": "npm run build",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "tsx scripts/run-local-prisma-migrate.ts"
+    "prisma:migrate": "tsx scripts/run-local-prisma-migrate.ts",
+    "test:rls": "tsx scripts/run-rls-tests.ts",
+    "test:s1": "tsx scripts/run-s1-tests.ts",
+    "test:s3": "tsx scripts/run-s3-tests.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "@supabase/supabase-js": "^2.119.0",
     "next": "16.3.3",
     "pg": "^8.23.1",
     "react": "19.2.4",

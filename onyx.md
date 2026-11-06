@@ -6,6 +6,22 @@
 
 ---
 
+## Fase 0 — Base, Prisma y núcleo multi-tenant (tareas 0.1 a 0.4), 2026-11-06
+
+- **Repositorio:** `git init` en `main`. `AGENTS.md` (contrato adaptado del de Kurova, sin graphify/ECC/opencode), `CLAUDE.md` (`@AGENTS.md`) y `.gitignore` (copia del de Kurova).
+- **Base (0.2):** Next.js `16.3.3`, React `19.2.4`, Zod 4, Tailwind 4, Vitest 4, con las mismas versiones y configuración que Kurova (`tsconfig`, `next.config`, `eslint`, `postcss`, `vitest`, `vercel.json`). `globals.css` usa la paleta de Kurova de forma **provisional** hasta definir la marca. Hay un layout y una portada provisionales ("Taller 3D").
+- **Prisma y entorno local (0.3):** Prisma `7.10.0` (`@prisma/adapter-pg`), con `prisma.ts`, `prisma-client-factory.ts`, `postgres-tls.ts`, `local-development.ts` (`SAAS3D_LOCAL_DEV`), `scripts/local-postgres.ts` y `run-local-prisma-migrate.ts` copiados de Kurova con sus pruebas. `supabase/config.toml` define la instancia de pruebas **`saas3d-test`** (API 54451, DB 54452, studio 54453, pooler 54459, shadow 54450, inspector 8185), separada de `kurova-local`.
+- **Migración `20261107000000_core_multitenant` (0.4), aplicada solo en `saas3d-test`:**
+  - Contenido: `Profile`, `Center`, `CenterMember`, `InvitationCode` y `OnboardingDismissal`; `app_private.is_center_member`/`has_center_role` (`SECURITY DEFINER`, sin `USAGE` del schema para la API); RLS y políticas idénticas al estado final de Kurova; permisos revocados y concedidos de forma explícita; `_prisma_migrations` con RLS y sin privilegios para la API; guarda diferida de último dueño, con el mensaje "El taller debe conservar al menos un dueño activo.".
+  - Origen: un volcado `pg_dump --schema-only` (solo lectura) de la base local de Kurova, más sus migraciones. Detalle en `docs/migrations/20261107000000_core_multitenant.md`.
+  - **Excluido:** `kurova_guard` (exclusivo de la copia local de Kurova), `nameChangedAt` y el límite de 30 días, `CenterMember.schedulable` (agenda) y los objetos de dominio de Kurova.
+  - **Más estricto que la copia local de Kurova:** sin `DELETE` en `InvitationCode` ni `OnboardingDismissal`, y sin acceso de la API a `_prisma_migrations`, tal como dictan las migraciones de Kurova. La copia local de Kurova tenía permisos más amplios. No se verificó producción de Kurova y no se tocó.
+- **Pruebas de integración reales (portadas y recortadas al núcleo):** `tests/rls.integration.test.ts` (12: aislamiento entre talleres, anon, Profile, roles, invitaciones, DELETE rechazado, onboarding, canje único bajo concurrencia, `_prisma_migrations`, archivado solo por OWNER, último dueño y RLS en todas las tablas), `tests/security-definer-private-schema.integration.test.ts` (S1, 3) y `tests/prisma-migrations-acl.integration.test.ts` (S3, 1; ahora recarga el caché de PostgREST antes de medir). Se eliminó del harness el mapa `c4b3` de tablas de Kurova.
+- **Resultados:** unitarias 59/59, `test:rls` 12/12, `test:s1` 3/3, `test:s3` 1/1, lint y tipos limpios, build OK (0.2).
+- **Ejecución con agy:** las copias exactas las hace Claude con `cp`; agy escribió el contrato, el `package.json`, el layout y la migración. La cuota de los modelos Claude y GPT de agy se agotó (vuelve en ~93 h, desde el 2026-11-06) y Gemini 4 Argon está en su límite. Las pruebas de la 0.4 las adaptó Claude en esta sesión.
+- **Regla permanente:** **KurovaV2 es de solo lectura** (app en producción con usuarios). Solo se lee y se copia desde ella, nunca se modifica.
+- **Pendiente:** 0.5 (autenticación y taller activo), 0.6 (rutas, shell y legal), 0.7 (quality gate). Completar el `.env` del proyecto Supabase en la nube (`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_DB_CA_CERT` y `NEXT_PUBLIC_*`) y sacar de ahí `SUPABASE_SECRET_KEY`. Nada se ha aplicado en la nube.
+
 ## Definición del producto y plan de construcción sobre el núcleo de Kurova, 2026-11-06
 
 - **Origen:** análisis del negocio Surko (impresión 3D en Talca, emblemas para vehículos) hecho con datos reales de Mercado Libre, Mercado Pago, Instagram, la web `surko.vercel.app` y Cults3D. Hallazgos: 92 ventas en ML desde el 19-mar-2026 (~$1,29 M bruto, ~$800 k neto estimado), devoluciones y cancelaciones que subieron del 11% al 21% desde julio, ingresos repartidos en 6 canales sin registro, y dinero personal mezclado con el del negocio. Conclusión: el problema no es la demanda sino la falta de un sistema. De ahí nace este SaaS.

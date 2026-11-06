@@ -1,5 +1,6 @@
 // saas3d — esquema Prisma (PostgreSQL de Supabase).
-// Los modelos del núcleo multi-tenant llegan en la tarea 0.4 (ver onyx.md 18.1).
+// Núcleo multi-tenant copiado de Kurova (tarea 0.4, ver onyx.md 18.1). Migración:
+// prisma/migrations-postgres/20261107000000_core_multitenant.
 
 generator client {
   provider = "prisma-client"
@@ -8,4 +9,76 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+/// El taller. Identificador técnico heredado de Kurova; en la interfaz se dice "Taller".
+model Center {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  timeZone  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members              CenterMember[]
+  invitationCodes      InvitationCode[]
+  onboardingDismissals OnboardingDismissal[]
+
+  @@index([active])
+}
+
+model Profile {
+  id          String   @id @db.Uuid
+  displayName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships          CenterMember[]
+  onboardingDismissals OnboardingDismissal[]
+}
+
+/// Membresía de una persona en un taller. Roles: OWNER, ADMIN, PROFESSIONAL ("Ayudante") y VIEWER.
+model CenterMember {
+  centerId  String   @db.Uuid
+  userId    String   @db.Uuid
+  role      String   @default("PROFESSIONAL")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  center  Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([centerId, userId])
+  @@index([userId, active])
+  @@index([centerId, active])
+}
+
+model InvitationCode {
+  id               String    @id @default(uuid()) @db.Uuid
+  codeHash         String    @unique
+  role             String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  redeemedAt       DateTime?
+  createdByUserId  String    @db.Uuid
+  redeemedByUserId String?   @db.Uuid
+  createdAt        DateTime  @default(now())
+
+  centerId String @db.Uuid
+  center   Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId, expiresAt])
+}
+
+model OnboardingDismissal {
+  userId      String   @db.Uuid
+  centerId    String   @db.Uuid
+  dismissedAt DateTime @default(now())
+
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center  Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, centerId])
+  @@index([centerId])
 }
