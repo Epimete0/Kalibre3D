@@ -216,7 +216,7 @@ Todas las tablas llevan `centerId UUID NOT NULL`. Las tablas padre exponen `UNIQ
 | `CenterSettings` | `centerId` (único), `currency` (configurable, D9; por defecto `CLP`), `electricityCostPerHour`, `mlCommissionPercent DECIMAL(5,2)` (19), `mlDefaultShippingCost` (0), `defaultPackagingCost` (0), `defaultCostPerKg` (15000), `defaultPurgeGrams` (0), `lowSpoolThresholdGrams` (150) |
 | `Product` (mínimo, D11) | `id`, `centerId`, `name`, `salePrice`, `mlPrice?`, `active`, `createdAt` (en la Fase 2 se suman gramos, minutos, colores, purga, stock y costos) |
 | `Customer` | `id`, `centerId`, `name`, `phone`, `instagram` (sin `@`), `notes`, `active`, `createdAt` |
-| `Order` | `id`, `centerId`, `number` (automático, D2), `operationId UUID` (`UNIQUE (centerId, operationId)`), `customerId?` (opcional, D7), `channel`, `isMercadoLibre` (D4), `status`, `version INT`, `dueDate DATE?`, `discount`, `total`, `mlOrderRef?`, `mlCommission`, `mlShippingCost`, `notes`, `createdByUserId`, `createdAt`, `deliveredAt?` |
+| `Order` | `id`, `centerId`, `number` (automático, D2), `operationId UUID` (`UNIQUE (centerId, operationId)`), `customerId?` (opcional, D7), `kind` (`QUICK_SALE`/`ORDER`, D12), `channel` (la casilla ML de D4 = canal `MERCADOLIBRE`), `status`, `version INT`, `dueDate DATE?`, `discount`, `total`, `mlOrderRef?`, `mlCommission`, `mlShippingCost`, `notes`, `createdByUserId`, `createdAt`, `deliveredAt?` |
 | `OrderItem` | `id`, `centerId`, `orderId`, `position`, `productId?` (lista de precios, D11), `description`, `qty`, `unitPrice`, `material?`, `grams?`, `colorsCount` |
 | `OrderEvent` | Historial **inmutable**: `id`, `centerId`, `orderId`, `version`, `fromStatus`, `toStatus`, `actorUserId`, `occurredAt` (patrón `BookingEvent` de Kurova) |
 | `MoneyTransaction` | `id`, `centerId`, `operationId` (único por taller), `type` (`INCOME`/`EXPENSE`), `category`, `amount > 0`, `date`, `method`, `orderId?`, `notes`, `recordedByUserId`, `createdAt` |
@@ -426,7 +426,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.0 Instancia de desarrollo `saas3d-local`.** Crear una segunda configuración de Supabase local (carpeta `supabase-local/`, `project_id = "saas3d-local"`, API 54441, DB 54442) para que el quality gate no borre los datos de desarrollo. `.env.local` pasa a apuntar a 54441/54442. Documentar el arranque en la sección 11. *Verificación:* la cuenta QA y su taller sobreviven a un `quality:gate`.
 
-- [ ] **1.1 Migración `2026111x_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
+- [ ] **1.1 Migración `20261108000000_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
   - Tablas `CenterSettings`, `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction` (sección 5), más `Order.number` (D2), `voidedAt`/`voidedByUserId`/`voidReason` (D5) y `Customer.active`.
   - Integridad: `UNIQUE (centerId, id)` en las tablas padre; claves compuestas `(centerId, customerId)`, `(centerId, orderId)` y `(centerId, userId) → CenterMember` para autores; `CHECK` de enums, montos (`>= 0`; `amount > 0`), `qty > 0` y `colorsCount >= 1`; `UNIQUE (centerId, operationId)` en `Order` y `MoneyTransaction`; `UNIQUE (centerId, number)`.
   - Triggers: inmutabilidad de `centerId` en todas; `OrderEvent` inmutable (sin `UPDATE`/`DELETE`); `MoneyTransaction` sin `DELETE` y solo con `UPDATE` permitido para anular una vez; `Order` sin `DELETE` si tiene eventos o movimientos.

@@ -82,3 +82,150 @@ model OnboardingDismissal {
   @@id([userId, centerId])
   @@index([centerId])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 1 — Ajustes, lista de precios, clientes, ventas/pedidos y dinero.
+// Todas las tablas son SERVER_ONLY (RLS sin políticas). Las claves foráneas compuestas
+// (centerId, …) y los triggers viven en la migración 20261108000000_phase1_orders_money.
+// Montos: enteros en la unidad mínima de la moneda del taller.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Ajustes del taller (uno por taller). Ver onyx.md D9/D10.
+model CenterSettings {
+  centerId               String   @id @db.Uuid
+  currency               String   @default("CLP")
+  electricityCostPerHour Int      @default(0)
+  mlCommissionPercent    Decimal  @default(19) @db.Decimal(5, 2)
+  mlDefaultShippingCost  Int      @default(0)
+  defaultPackagingCost   Int      @default(0)
+  defaultCostPerKg       Int      @default(15000)
+  defaultPurgeGrams      Int      @default(0)
+  lowSpoolThresholdGrams Int      @default(150)
+  createdAt              DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
+/// Lista de precios mínima (D11). La Fase 2 agrega gramos, costos y stock.
+model Product {
+  id              String      @id @default(uuid()) @db.Uuid
+  centerId        String      @db.Uuid
+  name            String
+  salePrice       Int
+  mlPrice         Int?
+  active          Boolean     @default(true)
+  createdByUserId String      @db.Uuid
+  createdAt       DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+  orderItems      OrderItem[]
+
+  @@unique([centerId, id])
+  @@index([centerId, active])
+}
+
+/// Cliente del taller (opcional en cada venta, D7).
+model Customer {
+  id              String   @id @default(uuid()) @db.Uuid
+  centerId        String   @db.Uuid
+  name            String
+  phone           String?
+  instagram       String?
+  notes           String?
+  active          Boolean  @default(true)
+  createdByUserId String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  orders          Order[]
+
+  @@unique([centerId, id])
+  @@index([centerId, active])
+}
+
+/// Venta rápida o pedido por encargo (D12). Número automático por taller (D2).
+model Order {
+  id              String             @id @default(uuid()) @db.Uuid
+  centerId        String             @db.Uuid
+  number          Int
+  operationId     String             @db.Uuid
+  kind            String
+  customerId      String?            @db.Uuid
+  channel         String
+  status          String
+  version         Int                @default(1)
+  dueDate         DateTime?          @db.Date
+  discount        Int                @default(0)
+  total           Int                @default(0)
+  mlOrderRef      String?
+  mlCommission    Int                @default(0)
+  mlShippingCost  Int                @default(0)
+  notes           String?
+  createdByUserId String             @db.Uuid
+  createdAt       DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  deliveredAt     DateTime?          @db.Timestamptz(6)
+  customer        Customer?          @relation(fields: [centerId, customerId], references: [centerId, id], onDelete: Restrict)
+  items           OrderItem[]
+  events          OrderEvent[]
+  transactions    MoneyTransaction[]
+
+  @@unique([centerId, id])
+  @@unique([centerId, number])
+  @@unique([centerId, operationId])
+  @@index([centerId, status])
+  @@index([centerId, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  centerId    String   @db.Uuid
+  orderId     String   @db.Uuid
+  position    Int
+  productId   String?  @db.Uuid
+  description String
+  qty         Int
+  unitPrice   Int
+  material    String?
+  grams       Int?
+  colorsCount Int      @default(1)
+  order       Order    @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Cascade)
+  product     Product? @relation(fields: [centerId, productId], references: [centerId, id], onDelete: Restrict)
+
+  @@unique([centerId, orderId, position])
+}
+
+/// Historial inmutable de estados del pedido.
+model OrderEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  centerId    String   @db.Uuid
+  orderId     String   @db.Uuid
+  version     Int
+  fromStatus  String?
+  toStatus    String
+  actorUserId String   @db.Uuid
+  occurredAt  DateTime @default(now()) @db.Timestamptz(6)
+  order       Order    @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Restrict)
+
+  @@unique([centerId, orderId, version])
+}
+
+/// Ingresos y gastos. No se borran: se anulan una sola vez (D5).
+model MoneyTransaction {
+  id               String    @id @default(uuid()) @db.Uuid
+  centerId         String    @db.Uuid
+  operationId      String    @db.Uuid
+  type             String
+  category         String
+  amount           Int
+  occurredOn       DateTime  @db.Date
+  method           String
+  orderId          String?   @db.Uuid
+  notes            String?
+  recordedByUserId String    @db.Uuid
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  voidedAt         DateTime? @db.Timestamptz(6)
+  voidedByUserId   String?   @db.Uuid
+  voidReason       String?
+  order            Order?    @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Restrict)
+
+  @@unique([centerId, operationId])
+  @@index([centerId, occurredOn])
+}
