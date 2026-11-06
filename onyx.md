@@ -6,6 +6,21 @@
 
 ---
 
+## Fase 1 — Base de desarrollo y migración de ventas y dinero (tareas 1.0 y 1.1), 2026-11-08
+
+- **1.0:** instancia de desarrollo `saas3d-local` (`supabase-local/`, 5444x) con `npm run dev:db` y `npm run dev:migrate` (`scripts/migrate-dev.ts`, solo loopback). `.env.local` apunta a ella. Verificado: un taller de `saas3d-local` sobrevive a las suites que reinician `saas3d-test`.
+- **1.1, migración `20261108000000_phase1_orders_money` (aprobada y aplicada solo en las dos instancias locales):**
+  - Tablas `CenterSettings`, `Product` (lista de precios mínima), `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction`. Todas `SERVER_ONLY` (RLS, 0 políticas, sin privilegios para la API).
+  - Claves compuestas same-center y `CHECK` de enums, montos, número > 0, campos ML solo en el canal `MERCADOLIBRE` y `deliveredAt` presente exactamente en `DELIVERED`/`RETURNED`.
+  - Únicos: `(centerId, number)`, `(centerId, operationId)` y nombre de producto por taller sin distinguir mayúsculas ni espacios.
+  - Triggers: `centerId` inmutable, `OrderEvent` inmutable, `MoneyTransaction` sin borrado y con una sola anulación (fecha, autor y motivo), y `Order` sin borrado si tiene historial o dinero.
+  - **Cambio respecto al modelo previo:** la casilla de Mercado Libre (D4) no es una columna `isMercadoLibre`: es el canal `MERCADOLIBRE`, para no tener dos datos que puedan contradecirse.
+  - Ensayo previo en una transacción revertida (7 tablas, 0 políticas y 0 acceso de la API).
+- **Error encontrado por las pruebas y corregido:** `MoneyTransaction_void_check` aceptaba anular sin motivo, porque `char_length(NULL) BETWEEN 1 AND 300` es NULL y PostgreSQL deja pasar un `CHECK` NULL. La prueba se observó en rojo y se corrigió con la migración **`20261108000100_fix_money_void_check`** (no se editó la ya aplicada). Se revisaron los demás `CHECK` de la migración: no tienen esta trampa.
+- **Pruebas reales nuevas:** `tests/phase1-integrity.integration.test.ts` (9, en `test:transactions`) y un caso en `rls.integration.test.ts` (las 7 tablas son inaccesibles por la API para anon, OWNER, ADMIN, PROFESSIONAL y VIEWER).
+- **Resultados:** `test:transactions` 34/34, `test:rls` 13/13, `test:s1` 3/3, `test:s3` 1/1.
+- **Nada aplicado en la nube.**
+
 ## Fase 0 cerrada — Quality gate (tarea 0.7), 2026-11-06
 
 - **`npm run quality:gate` → PASSED** (`scripts/quality-gate.ts`, adaptado del de Kurova sin sus excepciones de migraciones ni sus suites de dominio):
@@ -426,7 +441,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.0 Instancia de desarrollo `saas3d-local`.** Crear una segunda configuración de Supabase local (carpeta `supabase-local/`, `project_id = "saas3d-local"`, API 54441, DB 54442) para que el quality gate no borre los datos de desarrollo. `.env.local` pasa a apuntar a 54441/54442. Documentar el arranque en la sección 11. *Verificación:* la cuenta QA y su taller sobreviven a un `quality:gate`.
 
-- [ ] **1.1 Migración `20261108000000_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
+- [x] **1.1 Migración `20261108000000_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
   - Tablas `CenterSettings`, `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction` (sección 5), más `Order.number` (D2), `voidedAt`/`voidedByUserId`/`voidReason` (D5) y `Customer.active`.
   - Integridad: `UNIQUE (centerId, id)` en las tablas padre; claves compuestas `(centerId, customerId)`, `(centerId, orderId)` y `(centerId, userId) → CenterMember` para autores; `CHECK` de enums, montos (`>= 0`; `amount > 0`), `qty > 0` y `colorsCount >= 1`; `UNIQUE (centerId, operationId)` en `Order` y `MoneyTransaction`; `UNIQUE (centerId, number)`.
   - Triggers: inmutabilidad de `centerId` en todas; `OrderEvent` inmutable (sin `UPDATE`/`DELETE`); `MoneyTransaction` sin `DELETE` y solo con `UPDATE` permitido para anular una vez; `Order` sin `DELETE` si tiene eventos o movimientos.

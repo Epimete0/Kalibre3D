@@ -20,6 +20,8 @@ const db = run ? new Client({ connectionString: databaseUrl }) : null;
 const users: string[] = [];
 const ids = { centerA: randomUUID(), centerB: randomUUID() };
 const coreTables = ["Profile", "Center", "CenterMember", "InvitationCode", "OnboardingDismissal"] as const;
+/** Tablas de la Fase 1: SERVER_ONLY (RLS sin políticas y sin privilegios para la API). */
+const serverOnlyTables = ["CenterSettings", "Product", "Customer", "Order", "OrderItem", "OrderEvent", "MoneyTransaction"] as const;
 let ownerA: SupabaseClient, adminA: SupabaseClient, professionalA: SupabaseClient, viewerA: SupabaseClient, memberB: SupabaseClient, outsider: SupabaseClient, concurrentUser: SupabaseClient;
 let ownerAId = "", adminAId = "", professionalAId = "", viewerAId = "", memberBId = "", outsiderId = "";
 
@@ -218,10 +220,26 @@ describeRls("RLS real del núcleo multi-tenant", () => {
     await db!.query("UPDATE \"CenterMember\" SET active = false WHERE \"centerId\" = $1", [ids.centerB]);
   });
 
+  it("las tablas de la Fase 1 son solo del servidor: ningún rol las lee ni las escribe por la API", async () => {
+    await db!.query("INSERT INTO \"Customer\" (\"centerId\",name,\"createdByUserId\") VALUES ($1,'Cliente A',$2)", [ids.centerA, ownerAId]);
+    const anonymous = createClient(url, publishableKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    for (const table of serverOnlyTables) {
+      for (const client of [anonymous, ownerA, adminA, professionalA, viewerA]) {
+        const read = await client.from(table).select("*").limit(1);
+        expect(read.data, table).toBeNull();
+        expect(read.error, table).not.toBeNull();
+        const write = await client.from(table).insert({ centerId: ids.centerA });
+        expect(write.error, table).not.toBeNull();
+      }
+    }
+    const policies = await db!.query("SELECT count(*)::int AS count FROM pg_policies WHERE schemaname = 'public' AND tablename = ANY($1::text[])", [[...serverOnlyTables]]);
+    expect(policies.rows[0].count).toBe(0);
+  });
+
   it("deja RLS activo y sin políticas en _prisma_migrations, y activo en todo el núcleo", async () => {
     const flags = await db!.query("SELECT c.relname AS table_name, c.relrowsecurity AS rls FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r'");
     expect(flags.rows.every((row) => row.rls)).toBe(true);
-    expect(flags.rows.map((row) => row.table_name).sort()).toEqual([...coreTables, "_prisma_migrations"].sort());
+    expect(flags.rows.map((row) => row.table_name).sort()).toEqual([...coreTables, ...serverOnlyTables, "_prisma_migrations"].sort());
     const policies = await db!.query("SELECT count(*)::int AS count FROM pg_policies WHERE schemaname = 'public' AND tablename = '_prisma_migrations'");
     expect(policies.rows[0].count).toBe(0);
   });
