@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1 y 1.2 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.3 Ajustes del taller y 1.3b Lista de precios.** Último commit: `e932b1a` en `main`.
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2 y 1.3 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.3b Lista de precios.**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,18 +20,32 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts` y `tests/center-settings.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.3/1.3b (ya construido):**
-- Tablas aplicadas en local: `CenterSettings`, `Product` (salePrice, mlPrice?), `Customer`, `Order`, `OrderItem`, `OrderEvent`, `MoneyTransaction` (`prisma/schema.prisma` y migraciones `20261108000000` + `20261108000100`).
-- Reglas puras listas para usar: `costing.ts`, `order-status.ts`, `order-totals.ts` (`unitPriceFor` para D4), `money-summary.ts`, `money-format.ts` (`CURRENCIES`, `toMinorUnits`, `formatMoney`), `order-presentation.ts` y `money-presentation.ts`.
-- Patrones a imitar: servicios `src/lib/account-service.ts` y `member-service.ts`; acciones `src/app/(private)/profile/actions.ts` (`actionFailure`); UI `src/components/ui.tsx` y `src/app/(private)/profile/AccountForms.tsx`.
+**Qué hay para la 1.3b (ya construido):**
+- Tablas aplicadas en local: `Product` (name, salePrice, mlPrice, active, createdByUserId) en `prisma/schema.prisma` y migraciones `20261108000000` + `20261108000100`.
+- Reglas puras listas para usar: `costing.ts` (`suggestPrice`, `mercadoLibreNet`), `order-totals.ts` (`unitPriceFor` para D4).
+- Ajustes del taller ya operativos en `/settings` (`CenterSettings`).
 
-**Tarea 1.3 (hacer):** `src/lib/center-settings-service.ts` (`getCenterSettings` crea los valores por defecto con `upsert` filtrando por `centerId`; `updateCenterSettings` con `requireCatalogContext`, Zod, y **rechaza cambiar `currency` si existe algún `MoneyTransaction` del taller**). Trasladar la zona horaria de `/profile` a `/settings` (`account-service.updateCenterSettings` hoy guarda nombre y zona: dejar solo el nombre en Mi taller). Página `src/app/(private)/settings/page.tsx` + `actions.ts` + formulario. Pruebas unitarias de validación y una real (en `tests/`, registrada en `vitest.transactions.config.ts`) de "un registro por taller" y "moneda bloqueada con movimientos".
-
-**Tarea 1.3b (hacer):** `src/lib/product-service.ts` (crear, editar, desactivar y reactivar; `requireCatalogContext`; traducir el índice único de nombre con `unique-violation.ts` a "Ya existe una pieza con ese nombre.") y `product-queries.ts` (búsqueda, filtro por `centerId`). Página `/products` simple. Agregar `/settings` y `/products` a la navegación solo para OWNER/ADMIN (`src/components/Sidebar.tsx` y `MobileNav.tsx`). Agregar ambos servicios a `coreServices` en `auth-boundaries.test.ts`.
+**Tarea 1.3b (hacer):** `src/lib/product-service.ts` (crear, editar, desactivar y reactivar; `requireCatalogContext`; traducir el índice único de nombre con `unique-violation.ts` a "Ya existe una pieza con ese nombre.") y `product-queries.ts` (búsqueda, filtro por `centerId`). Página `/products` simple. Agregar `/products` a la navegación solo para OWNER/ADMIN (`src/components/Sidebar.tsx` y `MobileNav.tsx`). Agregar `product-service.ts` a `coreServices` en `auth-boundaries.test.ts`.
 
 **Pendientes del usuario:** completar `.env` de la nube (`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_DB_CA_CERT`, `NEXT_PUBLIC_*`) y sacar `SUPABASE_SECRET_KEY`; revisar Términos y Privacidad; nombre comercial (hoy "Taller 3D", paleta provisional de Kurova); revisión visual a 390 px.
+
+---
+
+## Fase 1 — Ajustes del taller (tarea 1.3), 2026-11-08
+
+- **Ajustes y zona horaria (`src/lib/center-settings-service.ts` y `/settings`):**
+  - `getCenterSettings`: recupera o crea con `upsert` los valores por defecto del taller (`CLP`, `19%` ML, etc.), la zona horaria del `Center` y determina `currencyLocked` si existe alguna transacción en `MoneyTransaction`.
+  - `updateCenterSettings`: valida con Zod (`currency`, `timeZone`, montos enteros ≥ 0, comisión entre 0 y 100%), requiere `OWNER`/`ADMIN` (`requireCatalogContext`) y **bloquea el cambio de moneda si ya existen movimientos de dinero en el taller (D9)**. Actualiza `CenterSettings` y `Center.timeZone` en una sola transacción atómica.
+  - Zona horaria trasladada: en `/profile` (`account-service.ts`) se conserva únicamente el nombre del taller. La zona horaria se administra centralizadamente en `/settings` (D8/D10).
+  - Interfaz: pantalla `/settings` protegida para `OWNER`/`ADMIN`, formulario `SettingsForm.tsx` con moneda deshabilitada si está bloqueada, selectores organizados y Server Action en `src/app/(private)/settings/actions.ts` (`saveCenterSettingsAction` sin importar Prisma).
+  - Navegación: acceso a Ajustes en `Sidebar.tsx` y `MobileNav.tsx` visible para `OWNER`/`ADMIN`.
+  - Servicio registrado en `coreServices` de `auth-boundaries.test.ts`.
+- **Pruebas:**
+  - Unitarias en `center-settings-service.test.ts` (9/9).
+  - Integración real contra PostgreSQL en `tests/center-settings.integration.test.ts` (2/2): un único registro por taller (`centerId` PK) y bloqueo físico de cambio de moneda ante movimientos de dinero.
+- **Resultados:** Unitarias 239/239, RLS 13/13, S1 3/3, S3 1/1, transacciones 36/36. `quality:gate` PASSED.
 
 ---
 
@@ -246,7 +260,7 @@ docs/                    especificaciones, planes y runbooks
 | Clientes | `/clients`, `/clients/new`, `/clients/[id]` | Planificado (Fase 1) |
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Planificado (Fase 1) |
 | Dinero | `/money` | Planificado (Fase 1) |
-| Ajustes del taller | `/settings` | Planificado (Fase 1): moneda, luz, comisión ML, embalaje, costo por kilo y purga |
+| Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
 | Catálogo y cotizador | `/products`, `/products/new`, `/products/[id]`, `/quote` | Planificado (Fase 2) |
 | Filamento | `/spools`, `/spools/[id]` | Planificado (Fase 2) |
 | Equipo | `/team` | Implementado, **oculto en la navegación del MVP** |
@@ -496,7 +510,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
   - `money-summary.ts`: resumen del mes (ingresos, gastos, ganancia, por canal y por categoría), excluyendo lo anulado.
   - `order-presentation.ts` y `money-presentation.ts`: etiquetas en español de canales, estados, categorías y métodos.
 
-- [ ] **1.3 Ajustes del taller.** `center-settings-service.ts` (`getCenterSettings` crea los valores por defecto; `updateCenterSettings` solo `OWNER`/`ADMIN`, rechaza cambiar la moneda si ya hay movimientos de dinero) y `/settings` con moneda, zona horaria (trasladada desde Mi taller), comisión y envío ML, luz, embalaje, costo por kilo y purga. *Pruebas:* unitarias de validación; reales de "un registro por taller" y "la moneda se bloquea con movimientos".
+- [x] **1.3 Ajustes del taller.** `center-settings-service.ts` (`getCenterSettings` crea los valores por defecto; `updateCenterSettings` solo `OWNER`/`ADMIN`, rechaza cambiar la moneda si ya hay movimientos de dinero) y `/settings` con moneda, zona horaria (trasladada desde Mi taller), comisión y envío ML, luz, embalaje, costo por kilo y purga. *Pruebas:* unitarias de validación; reales de "un registro por taller" y "la moneda se bloquea con movimientos".
 
 - [ ] **1.3b Lista de precios (D11).** `product-service.ts` y `product-queries.ts`: crear, editar, desactivar y buscar piezas con precio normal y precio ML. Pantalla `/products` simple (nombre, precio y precio ML, alta en una línea). *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 

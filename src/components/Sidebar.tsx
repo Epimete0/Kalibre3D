@@ -13,6 +13,7 @@ const icons = {
   cube: <><path d="m3 7.5 9-4.5 9 4.5-9 4.5-9-4.5Z" /><path d="M3 7.5v9L12 21l9-4.5v-9M12 12v9" /></>,
   chart: <><path d="M4 19V5M4 19h16" /><path d="m7 15 4-4 3 2 5-6" /></>,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.3l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>,
+  workshop: <><circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /></>,
 };
 
 function NavigationIcon({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,27 @@ function PlainLink({ item, active, compact = false }: { item: NavItem; active: b
 export function Sidebar({ account }: { account: AccountSummary | null }) {
   const pathname = usePathname();
   const isActive = (href: string) => href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  const isManager = account?.role === "OWNER" || account?.role === "ADMIN";
 
-  return <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex"><div className="mb-[clamp(12px,2.6vh,24px)] px-0.5"><Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"><span className="font-display text-[27px] leading-none tracking-[-0.04em] text-ink">Taller 3D<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" /></span><span className="mt-1 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span></Link></div><nav aria-label="Navegación principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto"><FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} active={isActive("/dashboard")} /><div className="pt-3"><PlainLink item={{ href: "/profile", label: "Mi taller", icon: icons.settings }} active={isActive("/profile")} /></div></nav></aside>;
+  return (
+    <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
+      <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
+        <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+          <span className="font-display text-[27px] leading-none tracking-[-0.04em] text-ink">
+            Taller 3D<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" />
+          </span>
+          <span className="mt-1 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span>
+        </Link>
+      </div>
+      <nav aria-label="Navegación principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+        <FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} active={isActive("/dashboard")} />
+        <div className="pt-3 space-y-1">
+          {isManager ? (
+            <PlainLink item={{ href: "/settings", label: "Ajustes", icon: icons.settings }} active={isActive("/settings")} />
+          ) : null}
+          <PlainLink item={{ href: "/profile", label: "Mi taller", icon: icons.workshop }} active={isActive("/profile")} />
+        </div>
+      </nav>
+    </aside>
+  );
 }

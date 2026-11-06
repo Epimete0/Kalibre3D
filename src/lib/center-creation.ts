@@ -46,7 +46,7 @@ export async function createCenterWithDb(db: PrismaClient, userId: string, input
       await tx.center.create({ data: { id: input.centerId, name: input.name, timeZone: input.timeZone } });
       await tx.centerMember.create({ data: { centerId: input.centerId, userId, role: "OWNER" } });
       return { centerId: input.centerId, created: true };
-    });
+    }, { timeout: 15_000 });
   } catch (error) {
     // Dos personas con el mismo identificador: la segunda choca con la clave primaria y no se le dice por qué.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new DomainError(GENERIC_CENTER_ERROR);

@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useMemo, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { Field, inputClass } from "@/components/ui";
 import { changeEmailAction, changePasswordAction, saveCenterAction, saveDisplayNameAction, switchCenterAction } from "./actions";
 
@@ -76,25 +76,19 @@ export function PasswordForm() {
   );
 }
 
-/** Nombre y zona horaria del taller. */
-export function CenterForm({ name, timeZone, nameLockedUntil }: { name: string; timeZone: string; nameLockedUntil: string | null }) {
+/** Nombre del taller. */
+export function CenterForm({ name, nameLockedUntil }: { name: string; nameLockedUntil: string | null }) {
   const [state, run, pending] = useActionState(saveCenterAction, {});
   const [centerName, setCenterName] = useState(name);
-  const [zone, setZone] = useState(timeZone);
-  const zones = useMemo(() => { try { return Intl.supportedValuesOf("timeZone"); } catch { return [] as string[]; } }, []);
-  const changed = (!nameLockedUntil && centerName.trim() !== name) || zone !== timeZone;
+  const changed = !nameLockedUntil && centerName.trim() !== name;
   return (
-    <form className="grid min-w-0 grid-cols-1 gap-3" onSubmit={(event) => { event.preventDefault(); const data = new FormData(); data.set("name", nameLockedUntil ? name : centerName); data.set("timeZone", zone); startTransition(() => run(data)); }}>
+    <form className="grid min-w-0 grid-cols-1 gap-3" onSubmit={(event) => { event.preventDefault(); const data = new FormData(); data.set("name", nameLockedUntil ? name : centerName); startTransition(() => run(data)); }}>
       <Field label="Nombre del taller" htmlFor="center-name" hint={nameLockedUntil ? `El nombre ya se cambió hace poco. Podrás cambiarlo de nuevo desde el ${nameLockedUntil}.` : undefined}>
         <input id="center-name" data-testid="center-name-input" value={centerName} onChange={(event) => setCenterName(event.target.value)} maxLength={100} autoComplete="organization" disabled={Boolean(nameLockedUntil)} aria-describedby={nameLockedUntil ? "center-name-locked" : undefined} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-70`} />
         {nameLockedUntil ? <span id="center-name-locked" data-testid="center-name-locked" className="sr-only">Cambio de nombre disponible desde el {nameLockedUntil}.</span> : null}
       </Field>
-      <Field label="Zona horaria" htmlFor="center-zone" hint="Define el día y la hora con que se registran tus pedidos y movimientos.">
-        <input id="center-zone" list="center-zones" value={zone} onChange={(event) => setZone(event.target.value)} autoComplete="off" className={inputClass} />
-        <datalist id="center-zones">{zones.map((entry) => <option key={entry} value={entry} />)}</datalist>
-      </Field>
       <Feedback state={state} testId="center" />
-      <div className="flex justify-end"><button type="submit" disabled={pending || !changed} className={primary}>{pending ? "Guardando…" : "Guardar taller"}</button></div>
+      <div className="flex justify-end"><button type="submit" disabled={pending || !changed} className={primary}>{pending ? "Guardando…" : "Guardar nombre del taller"}</button></div>
     </form>
   );
 }

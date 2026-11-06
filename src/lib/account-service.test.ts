@@ -24,17 +24,15 @@ describe("cuenta y taller", () => {
     await expect(updateDisplayName(form({ displayName: "x".repeat(81) }))).rejects.toThrow(/demasiado largo/);
     expect(prisma.profile.upsert).not.toHaveBeenCalled();
   });
-  it("nombre y zona horaria del taller se guardan juntos, solo en el taller de la sesión y activo", async () => {
-    await updateCenterSettings(form({ name: " Estudio Luz ", timeZone: "America/Bogota" }));
-    expect(prisma.center.updateMany).toHaveBeenCalledWith({ where: { id: "center-a", active: true }, data: { name: "Estudio Luz", timeZone: "America/Bogota" } });
+  it("el nombre del taller se guarda para el taller activo de la sesión", async () => {
+    await updateCenterSettings(form({ name: " Estudio Luz " }));
+    expect(prisma.center.updateMany).toHaveBeenCalledWith({ where: { id: "center-a", active: true }, data: { name: "Estudio Luz" } });
   });
-  it("si algo no es válido no se guarda nada (ni el nombre)", async () => {
-    await expect(updateCenterSettings(form({ name: "", timeZone: "America/Bogota" }))).rejects.toThrow("Escribe el nombre del taller.");
-    await expect(updateCenterSettings(form({ name: "Bien", timeZone: "Marte/Fobos" }))).rejects.toThrow("La zona horaria del taller no es válida.");
-    await expect(updateCenterSettings(form({ name: "Bien" }))).rejects.toThrow("La zona horaria del taller no es válida.");
+  it("rechaza nombre de taller vacío o fallo al actualizar", async () => {
+    await expect(updateCenterSettings(form({ name: "" }))).rejects.toThrow("Escribe el nombre del taller.");
     expect(prisma.center.updateMany).not.toHaveBeenCalled();
     prisma.center.updateMany.mockResolvedValue({ count: 0 });
-    await expect(updateCenterSettings(form({ name: "Otro", timeZone: "America/Bogota" }))).rejects.toThrow(/No fue posible/);
+    await expect(updateCenterSettings(form({ name: "Otro" }))).rejects.toThrow(/No fue posible/);
   });
   it("la contraseña pide 8 caracteres, tope y confirmación", () => {
     expect(parsePasswordChange(form({ password: "clave-segura", confirm: "clave-segura" }))).toBe("clave-segura");

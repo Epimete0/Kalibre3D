@@ -45,7 +45,18 @@ export default async function ProfilePage() {
   const centerCard = (
     <Card id="mi-taller" className="min-w-0 scroll-mt-24 p-5 lg:col-span-7">
       <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-display text-xl text-ink">Mi taller</h2><Badge tone="accent">Tu rol: {ROLE_LABEL[active.role as TeamRole]}</Badge></div>
-      {canManage ? <div className="mt-3"><CenterForm name={activeCenter?.name ?? ""} timeZone={active.timeZone ?? ""} nameLockedUntil={null} /></div> : (
+      {canManage ? (
+        <div className="mt-3">
+          <CenterForm name={activeCenter?.name ?? ""} nameLockedUntil={null} />
+          <p className="mt-3 text-xs text-faint">
+            La moneda, la zona horaria y los parámetros de costos se configuran en{" "}
+            <Link href="/settings" className="font-semibold text-primary hover:underline">
+              Ajustes del taller
+            </Link>
+            .
+          </p>
+        </div>
+      ) : (
         <dl className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
           <div><dt className="text-faint">Taller</dt><dd data-testid="center-readonly-name" className="text-ink [overflow-wrap:anywhere]">{activeCenter?.name}</dd></div>
           <div><dt className="text-faint">Zona horaria</dt><dd className="text-ink">{active.timeZone ?? "Sin definir"}</dd></div>

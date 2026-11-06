@@ -18,7 +18,13 @@ async function listFiles(dir: string): Promise<string[]> {
 }
 
 /** Servicios del núcleo: toda función exportada abre con un contexto de sesión o autorización (o lo recibe inyectado en pruebas). */
-const coreServices = ["src/lib/account-service.ts", "src/lib/center-service.ts", "src/lib/invitation-admin-service.ts", "src/lib/member-service.ts"];
+const coreServices = [
+  "src/lib/account-service.ts",
+  "src/lib/center-service.ts",
+  "src/lib/center-settings-service.ts",
+  "src/lib/invitation-admin-service.ts",
+  "src/lib/member-service.ts",
+];
 
 describe("fronteras de autorización del núcleo", () => {
   it("solo el inicio y el perfil toleran una sesión sin taller (getSessionMembershipState)", async () => {

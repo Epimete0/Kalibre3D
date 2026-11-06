@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
 import { requireCatalogContext, requireSessionUser } from "@/lib/auth";
-import { validateIanaTimeZone } from "@/lib/center-time-zone";
 import { parseCenterId } from "@/lib/active-center";
 import { prisma } from "@/lib/prisma";
 
@@ -23,21 +22,19 @@ export async function updateDisplayName(formData: FormData) {
 }
 
 /**
- * Nombre y zona horaria del taller activo, en una sola escritura: si algo no es válido no se guarda nada.
- * Solo OWNER y ADMIN. saas3d no porta el límite de 30 días para renombrar de Kurova.
+ * Nombre del taller activo. Solo OWNER y ADMIN.
+ * (La zona horaria y demás parámetros se administran en /settings, ver onyx.md D8/D10).
  */
-export async function updateCenterSettings(formData: FormData) {
+export async function updateCenterName(formData: FormData) {
   const { centerId } = await requireCatalogContext();
   const name = centerNameSchema.safeParse(formData.get("name"));
   if (!name.success) throw new DomainError(name.error.issues[0]?.message ?? "El nombre no es válido.");
-  const submitted = formData.get("timeZone");
-  if (typeof submitted !== "string") throw new DomainError("La zona horaria del taller no es válida.");
-  let timeZone: string;
-  try { timeZone = validateIanaTimeZone(submitted.trim()); } catch { throw new DomainError("La zona horaria del taller no es válida."); }
-  const result = await prisma.center.updateMany({ where: { id: centerId, active: true }, data: { name: name.data, timeZone } });
+  const result = await prisma.center.updateMany({ where: { id: centerId, active: true }, data: { name: name.data } });
   if (result.count !== 1) throw new DomainError("No fue posible actualizar los datos del taller. Intenta nuevamente.");
-  return { name: name.data, timeZone };
+  return { name: name.data };
 }
+
+export const updateCenterSettings = updateCenterName;
 
 export const PASSWORD_MIN = 8;
 
