@@ -6,6 +6,18 @@
 
 ---
 
+## Fase 1 — Reglas puras (tarea 1.2), 2026-11-08
+
+- **Módulos puros en `src/lib`, sin base de datos, con TDD (las pruebas se vieron en rojo antes de implementar):**
+  - `costing.ts`: costo de pieza, purga multicolor, precio sugerido por margen, comisión ML sugerida y neto ML.
+  - `order-status.ts`: estados, canales y tipos, transiciones y estados cerrados.
+  - `order-totals.ts`: subtotal, total con descuento, monto esperado (neto en ML), saldo sin anulados, **precio ML de la lista (D4)** y atraso en la zona del taller.
+  - `money-summary.ts`: resumen mensual por canal y categoría sin anulados, hoy y mes en la zona del taller, rango del mes y navegación entre meses.
+  - `money-format.ts`: monedas de D9, decimales ISO (CLP/PYG 0, el resto 2), formato `Intl` y conversión de lo escrito a unidad mínima.
+  - `order-presentation.ts` y `money-presentation.ts`: etiquetas en español; categorías manuales separadas de las que nacen de una venta.
+- **Pruebas:** `costing.test.ts` (incluye el caso real .990 → .483), `order-status.test.ts`, `order-totals.test.ts` (incluye atraso con la frontera del día en Santiago), `money-summary.test.ts`, `money-format.test.ts` y `presentation.test.ts`. Esta última verifica que cada valor tenga su etiqueta y que los valores de TypeScript coincidan **literalmente** con los `CHECK` de la migración.
+- **Resultados:** unitarias 230/230 (38 archivos), lint y tipos limpios.
+
 ## Fase 1 — Base de desarrollo y migración de ventas y dinero (tareas 1.0 y 1.1), 2026-11-08
 
 - **1.0:** instancia de desarrollo `saas3d-local` (`supabase-local/`, 5444x) con `npm run dev:db` y `npm run dev:migrate` (`scripts/migrate-dev.ts`, solo loopback). `.env.local` apunta a ella. Verificado: un taller de `saas3d-local` sobrevive a las suites que reinician `saas3d-test`.
@@ -448,7 +460,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
   - Seguridad: RLS activado, **0 políticas** y `REVOKE ALL` a `PUBLIC`/`anon`/`authenticated` en las 6 tablas (`SERVER_ONLY`).
   - *Pruebas reales nuevas* (`tests/phase1-integrity.integration.test.ts`, en `test:transactions`): la base rechaza mezclar talleres (cliente o pedido de otro taller), modificar eventos, borrar movimientos, anular dos veces y cambiar `centerId`. En `rls.integration.test.ts`: las 6 tablas son inaccesibles por la API para todos los roles.
 
-- [ ] **1.2 Reglas puras (TDD, sin base de datos)** en `src/lib`:
+- [x] **1.2 Reglas puras (TDD, sin base de datos)** en `src/lib`:
   - `costing.ts`: `computePieceCost`, `suggestPrice`, `mercadoLibreNet` (caso obligatorio: $8.990 con 19% y $799 deja $6.483).
   - `order-status.ts`: transiciones de la sección 6; `canTransition` y `nextStatuses`.
   - `order-totals.ts`: total, monto esperado (directo o neto ML), saldo e "isOverdue" en la zona del taller.
