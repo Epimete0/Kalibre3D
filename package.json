@@ -8,10 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "tsx scripts/run-local-prisma-migrate.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
     "next": "16.3.3",
+    "pg": "^8.23.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.3"
@@ -27,6 +33,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "jsdom": "^26.1.0",
+    "prisma": "7.10.0",
+    "supabase": "^2.122.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5",

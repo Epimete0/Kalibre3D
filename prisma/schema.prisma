@@ -1,0 +1,11 @@
+// saas3d — esquema Prisma (PostgreSQL de Supabase).
+// Los modelos del núcleo multi-tenant llegan en la tarea 0.4 (ver onyx.md 18.1).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
