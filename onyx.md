@@ -315,6 +315,8 @@ Se aplica la matriz de tres niveles de Kurova (18.3 §4):
 
 ## 11. Datos Demo y Comandos
 
+- **Dos instancias locales (desde la tarea 1.0):** `saas3d-test` (`supabase/`, puertos 5445x) para pruebas y quality gate, y `saas3d-local` (`supabase-local/`, puertos 5444x) para desarrollo. Arranque del desarrollo: `npm run dev:db` y `npm run dev:migrate`; después `npx next dev --webpack -p 3100`. `.env.local` apunta a `saas3d-local`. Las suites reales reinician solo `saas3d-test` (verificado: un taller creado en `saas3d-local` sobrevive a `test:rls`).
+
 - `npm run local:demo` creará el usuario `qa-local@saas3d.local`, el taller "Taller QA" (`America/Santiago`) y datos deterministas: clientes, pedidos en todos los estados (incluido uno de ML de $8.990 con neto $6.483), pagos, una devolución y gastos. Se escribe en la Fase 1.
 - Comandos previstos: `dev`, `build`, `lint`, `test`, `quality:gate`, `test:rls`, `test:s1`, `test:s3`, `test:transactions`, `prisma:generate`, `prisma:migrate` y `local:demo`.
 
@@ -422,7 +424,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 #### Tareas
 
-- [ ] **1.0 Instancia de desarrollo `saas3d-local`.** Crear una segunda configuración de Supabase local (carpeta `supabase-local/`, `project_id = "saas3d-local"`, API 54441, DB 54442) para que el quality gate no borre los datos de desarrollo. `.env.local` pasa a apuntar a 54441/54442. Documentar el arranque en la sección 11. *Verificación:* la cuenta QA y su taller sobreviven a un `quality:gate`.
+- [x] **1.0 Instancia de desarrollo `saas3d-local`.** Crear una segunda configuración de Supabase local (carpeta `supabase-local/`, `project_id = "saas3d-local"`, API 54441, DB 54442) para que el quality gate no borre los datos de desarrollo. `.env.local` pasa a apuntar a 54441/54442. Documentar el arranque en la sección 11. *Verificación:* la cuenta QA y su taller sobreviven a un `quality:gate`.
 
 - [ ] **1.1 Migración `2026111x_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
   - Tablas `CenterSettings`, `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction` (sección 5), más `Order.number` (D2), `voidedAt`/`voidedByUserId`/`voidReason` (D5) y `Customer.active`.

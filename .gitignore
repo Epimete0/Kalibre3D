@@ -57,3 +57,5 @@ production-backups/
 
 # production backups (datos reales: nunca al repositorio)
 /backup/
+supabase-local/supabase/.temp/
+supabase/.temp/

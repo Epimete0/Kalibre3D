@@ -16,7 +16,9 @@
     "test:s1": "tsx scripts/run-s1-tests.ts",
     "test:s3": "tsx scripts/run-s3-tests.ts",
     "test:transactions": "tsx scripts/run-transaction-tests.ts",
-    "quality:gate": "tsx scripts/quality-gate.ts"
+    "quality:gate": "tsx scripts/quality-gate.ts",
+    "dev:migrate": "tsx scripts/migrate-dev.ts",
+    "dev:db": "supabase start --workdir supabase-local -x studio,imgproxy,storage-api,realtime,inbucket,logflare,vector,postgres-meta,edge-runtime,mailpit,supavisor"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
