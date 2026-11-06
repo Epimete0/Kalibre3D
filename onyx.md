@@ -388,24 +388,79 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 **Objetivo:** un proyecto vacío que permite registrarse, crear un taller, entrar y salir, con RLS y el quality gate en verde. Todavía sin módulos del taller.
 
-- [ ] **0.1 Repositorio y contrato.** `git init`. Crear `AGENTS.md` adaptado del de Kurova (producto, orden de autoridad onyx.md → AGENTS.md, forma de trabajo obligatoria, arquitectura) y `CLAUDE.md` con `@AGENTS.md`. `.gitignore` con `.env*`, `backup/`, `node_modules/` y `src/generated/`. Commit inicial con onyx.md.
-- [ ] **0.2 Base del proyecto.** Copiar de KurovaV2 y adaptar: `package.json` (nombre `saas3d`, mismas versiones; scripts solo de las suites que existan), `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`, `vercel.json`, `.env.example`, `src/app/layout.tsx` y `globals.css`. `npm install`. Verificar: `npm run lint`, `npm test` y `npm run build`.
-- [ ] **0.3 Prisma y Supabase local.** Copiar `prisma.config.ts`, `src/lib/{prisma,prisma-client-factory,postgres-tls,local-development}.ts` (con `SAAS3D_LOCAL_DEV`), `scripts/{local-postgres,run-local-prisma-migrate}.ts` y sus pruebas. Crear las instancias `saas3d-local` (54441/54442) y `saas3d-test` (54451/54452). Verificar: `npx supabase start` en ambas y que `prisma:migrate` rechace hosts que no sean loopback.
-- [ ] **0.4 Migración fundacional.** `prisma/schema.prisma` con `Profile`, `Center`, `CenterMember`, `InvitationCode` y `OnboardingDismissal`. Migración `20261107000000_core_multitenant` consolidada desde las 10 migraciones de Kurova de la sección 10. Copiar y recortar al núcleo: `tests/postgres-test-harness.ts`, `rls.integration.test.ts`, `security-definer-private-schema.integration.test.ts`, `prisma-migrations-acl.integration.test.ts` y `center-creation.integration.test.ts`, con sus runners `scripts/run-{rls,s1,s3}-tests.ts`. **Requiere aprobación antes de aplicar** (RLS y datos). Verificar: `test:rls`, `test:s1` y `test:s3` en verde.
-- [ ] **0.5 Autenticación y taller activo.** Copiar de `src/lib`: `supabase/{client,server}.ts`, `auth.ts`, `active-center.ts` (cookie `saas3d-center-id`), `auth-errors.ts`, `auth-settings.ts`, `action-errors.ts`, `action-failure.ts`, `safe-redirect.ts`, `transaction-conflict-retry.ts`, `unique-violation.ts`, `validation-errors.ts`, `persisted-entity-id.ts`, `form-draft.ts`, `site-url.ts`, `legal.ts`, `account-service.ts`, `center-service.ts`, `center-creation*.ts`, `center-name-rules.ts`, `center-time-zone*.ts`, `invitation-service*.ts`, `center-archive-service*.ts`, `member-service.ts` y `team-rules.ts`, con todas sus pruebas. Más `proxy.ts` en la raíz. Quitar todo lo que dependa de agenda, inventario o servicios de Kurova. Verificar: `npm test` (incluye `auth-boundaries.test.ts` y `auth-c4c1.test.ts`).
-- [ ] **0.6 Rutas de acceso, shell y legal.** Copiar `src/app/{login,registro,join,forgot-password,reset-password,auth/callback,terminos,privacidad}`, `error.tsx`, `global-error.tsx`, `not-found.tsx`, `robots.ts`, `sitemap.ts`, `(private)/layout.tsx`, `(private)/dashboard` (solo el estado sin taller y un inicio provisional), `(private)/profile` y `(private)/team` (oculto en la navegación). Copiar de `src/components`: `AppShell`, `Sidebar`, `PrivateHeader`, `AccountMenu`, `MobileMoreMenu`, la navegación móvil, `AuthForm`, `AuthLayout`, `PasswordForms`, `JoinInvitationForm`, `PublicShell`, `LegalPage`, `Dialog`, `FormButtons`, `FormDraft`, `AsyncActionButton`, `NoPermission`, `ThemeBootstrap`, `ThemeToggle` y `ui.tsx`. Reescribir textos: Taller, Ayudante, marca provisional. Landing provisional. Verificar en el navegador: registro → crear taller → inicio → salir, a 390 px y en computador.
-- [ ] **0.7 Quality gate y cierre.** Copiar `scripts/quality-gate.ts` recortado a las suites existentes y ejecutar `npm run quality:gate` → PASSED. Revisión de seguridad. Entrada fechada en este documento y commit.
+- [x] **0.1 Repositorio y contrato.** `git init`. Crear `AGENTS.md` adaptado del de Kurova (producto, orden de autoridad onyx.md → AGENTS.md, forma de trabajo obligatoria, arquitectura) y `CLAUDE.md` con `@AGENTS.md`. `.gitignore` con `.env*`, `backup/`, `node_modules/` y `src/generated/`. Commit inicial con onyx.md.
+- [x] **0.2 Base del proyecto.** Copiar de KurovaV2 y adaptar: `package.json` (nombre `saas3d`, mismas versiones; scripts solo de las suites que existan), `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`, `vercel.json`, `.env.example`, `src/app/layout.tsx` y `globals.css`. `npm install`. Verificar: `npm run lint`, `npm test` y `npm run build`.
+- [x] **0.3 Prisma y Supabase local.** Copiar `prisma.config.ts`, `src/lib/{prisma,prisma-client-factory,postgres-tls,local-development}.ts` (con `SAAS3D_LOCAL_DEV`), `scripts/{local-postgres,run-local-prisma-migrate}.ts` y sus pruebas. Crear las instancias `saas3d-local` (54441/54442) y `saas3d-test` (54451/54452). Verificar: `npx supabase start` en ambas y que `prisma:migrate` rechace hosts que no sean loopback.
+- [x] **0.4 Migración fundacional.** `prisma/schema.prisma` con `Profile`, `Center`, `CenterMember`, `InvitationCode` y `OnboardingDismissal`. Migración `20261107000000_core_multitenant` consolidada desde las 10 migraciones de Kurova de la sección 10. Copiar y recortar al núcleo: `tests/postgres-test-harness.ts`, `rls.integration.test.ts`, `security-definer-private-schema.integration.test.ts`, `prisma-migrations-acl.integration.test.ts` y `center-creation.integration.test.ts`, con sus runners `scripts/run-{rls,s1,s3}-tests.ts`. **Requiere aprobación antes de aplicar** (RLS y datos). Verificar: `test:rls`, `test:s1` y `test:s3` en verde.
+- [x] **0.5 Autenticación y taller activo.** Copiar de `src/lib`: `supabase/{client,server}.ts`, `auth.ts`, `active-center.ts` (cookie `saas3d-center-id`), `auth-errors.ts`, `auth-settings.ts`, `action-errors.ts`, `action-failure.ts`, `safe-redirect.ts`, `transaction-conflict-retry.ts`, `unique-violation.ts`, `validation-errors.ts`, `persisted-entity-id.ts`, `form-draft.ts`, `site-url.ts`, `legal.ts`, `account-service.ts`, `center-service.ts`, `center-creation*.ts`, `center-name-rules.ts`, `center-time-zone*.ts`, `invitation-service*.ts`, `center-archive-service*.ts`, `member-service.ts` y `team-rules.ts`, con todas sus pruebas. Más `proxy.ts` en la raíz. Quitar todo lo que dependa de agenda, inventario o servicios de Kurova. Verificar: `npm test` (incluye `auth-boundaries.test.ts` y `auth-c4c1.test.ts`).
+- [x] **0.6 Rutas de acceso, shell y legal.** Copiar `src/app/{login,registro,join,forgot-password,reset-password,auth/callback,terminos,privacidad}`, `error.tsx`, `global-error.tsx`, `not-found.tsx`, `robots.ts`, `sitemap.ts`, `(private)/layout.tsx`, `(private)/dashboard` (solo el estado sin taller y un inicio provisional), `(private)/profile` y `(private)/team` (oculto en la navegación). Copiar de `src/components`: `AppShell`, `Sidebar`, `PrivateHeader`, `AccountMenu`, `MobileMoreMenu`, la navegación móvil, `AuthForm`, `AuthLayout`, `PasswordForms`, `JoinInvitationForm`, `PublicShell`, `LegalPage`, `Dialog`, `FormButtons`, `FormDraft`, `AsyncActionButton`, `NoPermission`, `ThemeBootstrap`, `ThemeToggle` y `ui.tsx`. Reescribir textos: Taller, Ayudante, marca provisional. Landing provisional. Verificar en el navegador: registro → crear taller → inicio → salir, a 390 px y en computador.
+- [x] **0.7 Quality gate y cierre.** Copiar `scripts/quality-gate.ts` recortado a las suites existentes y ejecutar `npm run quality:gate` → PASSED. Revisión de seguridad. Entrada fechada en este documento y commit.
 
-### 18.2 Fase 1 — Clientes, pedidos y dinero
+### 18.2 Fase 1 — Clientes, pedidos y dinero (plan detallado, 2026-11-06)
 
-Se detalla en un plan propio cuando cierre la Fase 0, siguiendo la forma de trabajo. Contenido acordado:
+**Objetivo:** que Surko registre en menos de 30 segundos desde el celular cada pedido (WhatsApp, Instagram, en persona o Mercado Libre), su cobro y cada gasto, y vea cuánto ganó en el mes.
 
-1. **Migración** `CenterSettings`, `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction` (sección 5), con claves same-center, `CHECK`, trigger de inmutabilidad de `centerId`, `OrderEvent` inmutable, RLS `SERVER_ONLY` y su paquete de integración. **Requiere aprobación.**
-2. **Reglas puras con pruebas:** `costing.ts` (con el caso de $6.483), `order-status.ts` (transiciones), `order-totals.ts` (total, monto esperado y saldo), `money-summary.ts` (resumen mensual por canal y categoría, en la zona horaria del taller) y sus `*-presentation.ts`.
-3. **Servicios con guardas:** `customer-service.ts`, `order-service.ts` (crear idempotente, cambiar estado con versión, `FOR UPDATE` y evento, registrar pago y devolución atómica), `money-service.ts`, `center-settings-service.ts` y sus `*-queries.ts`.
-4. **Pantallas:** `/clients`, `/orders` (filtros y atrasados), `/orders/new` (cliente nuevo al vuelo, piezas, colores, campos de ML con comisión sugerida y resumen en vivo), `/orders/[id]` (estado, pagos, neto ML, saldo y devolución), `/money` (mes, resumen y movimientos) y `/settings`.
-5. **Datos demo** (`local:demo`) e integración real: same-center, concurrencia de estados, idempotencia y atomicidad de devoluciones.
-6. **Quality gate**, revisión de seguridad, navegador a 390 px y en computador, y una entrada en onyx.md.
+**Base:** la Fase 0 cerrada (núcleo, guardas y quality gate). Se siguen los patrones de Kurova: `operationId` para idempotencia (como `new-purchase-operation`), `FOR UPDATE` con versión (como `Booking`), eventos inmutables (como `BookingEvent`), tablas `SERVER_ONLY` y claves compuestas `(centerId, id)`.
+
+#### Decisiones de diseño (se aprueban con este plan)
+
+| # | Decisión | Propuesta |
+|---|---|---|
+| D1 | **Permisos por rol** | Clientes y pedidos (crear, editar y avanzar estado): `OWNER`, `ADMIN` y `PROFESSIONAL` (`requireOperationalContext`). Cobros, devoluciones, dinero y ajustes: solo `OWNER`/`ADMIN` (`requireCatalogContext`). `VIEWER` solo consulta pedidos y clientes, sin montos de dinero. |
+| D2 | **Número de pedido** | Correlativo por taller (`Pedido #1`, `#2`…) para mencionarlo por WhatsApp. Se asigna en la transacción bloqueando la fila del `Center` (patrón 18.3 §6.4 de Kurova), con `UNIQUE (centerId, number)`. |
+| D3 | **Total del pedido** | Lo calcula el servicio (no la UI), dentro de la transacción: `max(0, Σ qty × unitPrice − discount)`. La base exige `total >= 0` y `discount >= 0`. Las piezas solo se editan mientras el pedido está en `QUOTED` o `CONFIRMED`. |
+| D4 | **Mercado Libre** | El pedido guarda `mlCommission` (sugerida con `mlCommissionPercent` y editable) y `mlShippingCost`. El cobro de ML se registra como `INCOME` por el **neto** con método `MERCADOLIBRE`. |
+| D5 | **Movimientos de dinero** | No se borran: se **anulan** (`voidedAt`, `voidedByUserId`, `voidReason`). Lo anulado no cuenta en saldos ni resúmenes. Aplica a cobros y gastos. |
+| D6 | **Devolución** | Una sola transacción: el pedido pasa a `RETURNED` (con versión), se registra un `EXPENSE` `REFUNDS` por el monto devuelto y un `OrderEvent`. Solo desde `DELIVERED`. |
+| D7 | **Clientes** | Baja lógica (`active = false`); nunca se borran si tienen pedidos. El cliente se puede crear "al vuelo" desde el pedido (solo nombre, y opcionalmente WhatsApp e Instagram). Teléfono sin formato fijo; Instagram sin `@`. |
+| D8 | **Mes y fechas** | El mes del resumen y "atrasado" se calculan en la zona horaria del taller (`@js-temporal/polyfill`, como Kurova). `dueDate` es una fecha sin hora. |
+| D9 | **Moneda** | CLP en enteros en todo el MVP. `CenterSettings.currency` existe pero solo acepta `CLP` hasta que haga falta otra. |
+| D10 | **Ajustes del taller** | Página `/settings` aparte de Mi taller (`/profile`): luz por hora, comisión ML, embalaje por defecto, costo por kilo y purga. Se crea con valores por defecto al primer uso. |
+
+#### Tareas
+
+- [ ] **1.0 Instancia de desarrollo `saas3d-local`.** Crear una segunda configuración de Supabase local (carpeta `supabase-local/`, `project_id = "saas3d-local"`, API 54441, DB 54442) para que el quality gate no borre los datos de desarrollo. `.env.local` pasa a apuntar a 54441/54442. Documentar el arranque en la sección 11. *Verificación:* la cuenta QA y su taller sobreviven a un `quality:gate`.
+
+- [ ] **1.1 Migración `2026111x_phase1_orders_money`** (**requiere aprobación antes de aplicar**):
+  - Tablas `CenterSettings`, `Customer`, `Order`, `OrderItem`, `OrderEvent` y `MoneyTransaction` (sección 5), más `Order.number` (D2), `voidedAt`/`voidedByUserId`/`voidReason` (D5) y `Customer.active`.
+  - Integridad: `UNIQUE (centerId, id)` en las tablas padre; claves compuestas `(centerId, customerId)`, `(centerId, orderId)` y `(centerId, userId) → CenterMember` para autores; `CHECK` de enums, montos (`>= 0`; `amount > 0`), `qty > 0` y `colorsCount >= 1`; `UNIQUE (centerId, operationId)` en `Order` y `MoneyTransaction`; `UNIQUE (centerId, number)`.
+  - Triggers: inmutabilidad de `centerId` en todas; `OrderEvent` inmutable (sin `UPDATE`/`DELETE`); `MoneyTransaction` sin `DELETE` y solo con `UPDATE` permitido para anular una vez; `Order` sin `DELETE` si tiene eventos o movimientos.
+  - Seguridad: RLS activado, **0 políticas** y `REVOKE ALL` a `PUBLIC`/`anon`/`authenticated` en las 6 tablas (`SERVER_ONLY`).
+  - *Pruebas reales nuevas* (`tests/phase1-integrity.integration.test.ts`, en `test:transactions`): la base rechaza mezclar talleres (cliente o pedido de otro taller), modificar eventos, borrar movimientos, anular dos veces y cambiar `centerId`. En `rls.integration.test.ts`: las 6 tablas son inaccesibles por la API para todos los roles.
+
+- [ ] **1.2 Reglas puras (TDD, sin base de datos)** en `src/lib`:
+  - `costing.ts`: `computePieceCost`, `suggestPrice`, `mercadoLibreNet` (caso obligatorio: $8.990 con 19% y $799 deja $6.483).
+  - `order-status.ts`: transiciones de la sección 6; `canTransition` y `nextStatuses`.
+  - `order-totals.ts`: total, monto esperado (directo o neto ML), saldo e "isOverdue" en la zona del taller.
+  - `money-summary.ts`: resumen del mes (ingresos, gastos, ganancia, por canal y por categoría), excluyendo lo anulado.
+  - `order-presentation.ts` y `money-presentation.ts`: etiquetas en español de canales, estados, categorías y métodos.
+
+- [ ] **1.3 Ajustes del taller.** `center-settings-service.ts` (`getCenterSettings` crea los valores por defecto; `updateCenterSettings` solo `OWNER`/`ADMIN`) y `/settings` con su Server Action. *Pruebas:* unitarias de validación y una real de "solo un registro por taller".
+
+- [ ] **1.4 Clientes.** `customer-service.ts` (crear, editar, desactivar y reactivar) y `customer-queries.ts` (listado con búsqueda sin acentos y paginación, ficha con pedidos y saldo). Pantallas `/clients`, `/clients/new` (alta rápida) y `/clients/[id]`. *Pruebas:* unitarias, fronteras de autorización y una real de aislamiento entre talleres.
+
+- [ ] **1.5 Crear pedidos.** `order-operation.ts` (`resolveNewOrderOperation`, como `new-purchase-operation`) y `order-service.createOrder`: valida con Zod, crea el cliente al vuelo si corresponde, bloquea el `Center`, asigna el número, calcula el total, sugiere la comisión ML y registra el evento `CREATED`. Pantalla `/orders/new`: cliente existente o nuevo, canal, piezas (descripción, cantidad, precio, colores y material), descuento, fecha de entrega, campos ML y resumen en vivo (total, neto ML); con borrador local (`FormDraft`) y cerrojo contra doble envío. *Pruebas reales:* el mismo `operationId` dos veces crea un solo pedido; dos pedidos simultáneos reciben números distintos y consecutivos.
+
+- [ ] **1.6 Listado, ficha y estados.** `order-queries.ts` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `order-service.changeOrderStatus(orderId, expectedVersion, to)`: `FOR UPDATE`, compara la versión, valida la transición, incrementa la versión, fija `deliveredAt` y escribe `OrderEvent`. Pantallas `/orders` (lista en tarjetas en celular y tabla en computador) y `/orders/[id]` (piezas, totales, neto ML, cobros, saldo, historial de estados y botones de avance). *Pruebas reales (concurrencia, AGENTS.md):* dos cambios con la misma versión → gana uno y queda exactamente un evento. Se describe la intercalación y se observa el fallo antes de corregir.
+
+- [ ] **1.7 Cobros y devoluciones.** `order-service.registerPayment` (idempotente por `operationId`; sugiere el saldo o el neto ML), `voidMoneyTransaction` (D5) y `returnOrder` (D6). *Pruebas reales:* pago repetido no se duplica; la devolución es atómica (si falla el gasto, el pedido no cambia de estado); anular dos veces se rechaza.
+
+- [ ] **1.8 Dinero.** `money-service.ts` (ingresos sueltos como `DIGITAL_SALE`/`OTHER_INCOME` y gastos por categoría; solo `OWNER`/`ADMIN`) y `money-queries.ts` (mes en la zona del taller). Pantalla `/money`: selector de mes, ingresos, gastos y ganancia, por canal y por categoría, lista de movimientos con anulación y alta rápida de gasto o ingreso. *Pruebas:* unitarias del resumen (incluye anulados) y una real de que el mes respeta `America/Santiago` en los bordes del día.
+
+- [ ] **1.9 Navegación, inicio y datos demo.**
+  - Menú: **Inicio, Pedidos, Clientes y Dinero**, con Ajustes y Mi taller en "Más" en el celular. Dinero solo para `OWNER`/`ADMIN`.
+  - Inicio provisional con "Nuevo pedido", "Registrar gasto", pedidos atrasados y por entregar.
+  - `npm run local:demo` (solo en `saas3d-local`, con la guarda local): crea "Taller QA" con clientes y pedidos en todos los estados, uno de ML de $8.990 con neto $6.483, cobros, una devolución, gastos de filamento y una venta de archivo de Cults.
+
+- [ ] **1.10 Cierre.** `npm run quality:gate` en verde, revisión de seguridad (permisos por rol en servicios y páginas, sin dinero para `PROFESSIONAL`/`VIEWER`), revisión en el navegador a 390 px y en computador con el panel visible, y entrada fechada en onyx.md.
+
+#### Orden y puntos de aprobación
+
+1.0 → **1.1 (aprobación de la migración)** → 1.2 → 1.3 → 1.4 → 1.5 → 1.6 → 1.7 → 1.8 → 1.9 → 1.10. Cada tarea termina con sus pruebas en verde y su propio commit. Las tareas de 1.5 a 1.7 tocan concurrencia y siguen el procedimiento de AGENTS.md (describir la intercalación, prueba real, observar el fallo, corregir y volver a probar).
+
+#### Fuera de esta fase
+
+Catálogo de piezas, cotizador, bobinas y stock (Fase 2); panel del mes (Fase 3); API de Mercado Libre, cobro de suscripción y pantalla de equipo visible.
 
 ### 18.3 Fases siguientes
 
