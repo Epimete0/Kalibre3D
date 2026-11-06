@@ -6,6 +6,35 @@
 
 ---
 
+## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
+
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1 y 1.2 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.3 Ajustes del taller y 1.3b Lista de precios.** Último commit: `e932b1a` en `main`.
+
+**Reglas que NO se negocian:**
+1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
+2. Seguir `AGENTS.md` (forma de trabajo de 12 pasos). Pedir aprobación antes de cambios de RLS, autenticación, datos o concurrencia. Toda función exportada de un servicio abre con `requireAuthContext`/`requireOperationalContext`/`requireCatalogContext`; las Server Actions no importan Prisma (lo verifica `src/lib/auth-boundaries.test.ts`).
+3. **Nada en la nube** sin aprobación explícita. `.env` (nube) no se toca; el desarrollo usa `.env.local` (local).
+4. Mensajes visibles en español (Taller, Dueño, Ayudante) y convención de mensajes de `AGENTS.md`. Montos enteros en unidad mínima (`src/lib/money-format.ts`).
+5. Al terminar cada tarea: pruebas en verde, commit propio, casilla marcada en 18.2 y entrada fechada aquí arriba (sección 17).
+
+**Cómo retomar:**
+- `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
+- App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+
+**Qué hay para la 1.3/1.3b (ya construido):**
+- Tablas aplicadas en local: `CenterSettings`, `Product` (salePrice, mlPrice?), `Customer`, `Order`, `OrderItem`, `OrderEvent`, `MoneyTransaction` (`prisma/schema.prisma` y migraciones `20261108000000` + `20261108000100`).
+- Reglas puras listas para usar: `costing.ts`, `order-status.ts`, `order-totals.ts` (`unitPriceFor` para D4), `money-summary.ts`, `money-format.ts` (`CURRENCIES`, `toMinorUnits`, `formatMoney`), `order-presentation.ts` y `money-presentation.ts`.
+- Patrones a imitar: servicios `src/lib/account-service.ts` y `member-service.ts`; acciones `src/app/(private)/profile/actions.ts` (`actionFailure`); UI `src/components/ui.tsx` y `src/app/(private)/profile/AccountForms.tsx`.
+
+**Tarea 1.3 (hacer):** `src/lib/center-settings-service.ts` (`getCenterSettings` crea los valores por defecto con `upsert` filtrando por `centerId`; `updateCenterSettings` con `requireCatalogContext`, Zod, y **rechaza cambiar `currency` si existe algún `MoneyTransaction` del taller**). Trasladar la zona horaria de `/profile` a `/settings` (`account-service.updateCenterSettings` hoy guarda nombre y zona: dejar solo el nombre en Mi taller). Página `src/app/(private)/settings/page.tsx` + `actions.ts` + formulario. Pruebas unitarias de validación y una real (en `tests/`, registrada en `vitest.transactions.config.ts`) de "un registro por taller" y "moneda bloqueada con movimientos".
+
+**Tarea 1.3b (hacer):** `src/lib/product-service.ts` (crear, editar, desactivar y reactivar; `requireCatalogContext`; traducir el índice único de nombre con `unique-violation.ts` a "Ya existe una pieza con ese nombre.") y `product-queries.ts` (búsqueda, filtro por `centerId`). Página `/products` simple. Agregar `/settings` y `/products` a la navegación solo para OWNER/ADMIN (`src/components/Sidebar.tsx` y `MobileNav.tsx`). Agregar ambos servicios a `coreServices` en `auth-boundaries.test.ts`.
+
+**Pendientes del usuario:** completar `.env` de la nube (`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_DB_CA_CERT`, `NEXT_PUBLIC_*`) y sacar `SUPABASE_SECRET_KEY`; revisar Términos y Privacidad; nombre comercial (hoy "Taller 3D", paleta provisional de Kurova); revisión visual a 390 px.
+
+---
+
 ## Fase 1 — Reglas puras (tarea 1.2), 2026-11-08
 
 - **Módulos puros en `src/lib`, sin base de datos, con TDD (las pruebas se vieron en rojo antes de implementar):**
