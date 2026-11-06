@@ -5,6 +5,7 @@
  */
 
 const MESSAGES: { index: RegExp; message: string }[] = [
+  { index: /^Product_.*name_key$/, message: "Ya existe una pieza con ese nombre." },
   // Subcategory antes que Category: «Subcategory_…» también contiene «category» al final del prefijo.
   { index: /^Subcategory_.*normalized_name_key$/, message: "Ya existe un tipo con ese nombre." },
   { index: /^Category_.*normalized_name_key$/, message: "Ya existe una categoría con ese nombre." },

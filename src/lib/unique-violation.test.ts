@@ -6,6 +6,7 @@ const real = (index: string) => ({ name: "PrismaClientKnownRequestError", code: 
 
 describe("uniqueViolationMessage", () => {
   it("traduce cada índice de nombre normalizado a su mensaje claro", () => {
+    expect(uniqueViolationMessage(real("Product_centerId_name_key"))).toBe("Ya existe una pieza con ese nombre.");
     expect(uniqueViolationMessage(real("Supplier_centerId_normalized_name_key"))).toBe("Ya existe un proveedor con ese nombre.");
     expect(uniqueViolationMessage(real("Category_centerId_normalized_name_key"))).toBe("Ya existe una categoría con ese nombre.");
     expect(uniqueViolationMessage(real("Subcategory_categoryId_normalized_name_key"))).toBe("Ya existe un tipo con ese nombre.");

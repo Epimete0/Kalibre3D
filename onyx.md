@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2 y 1.3 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.3b Lista de precios.**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3 y 1.3b hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.4 Clientes (opcionales, D7).**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,16 +20,35 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts` y `tests/center-settings.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`, `tests/center-settings.integration.test.ts` y `tests/products.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.3b (ya construido):**
-- Tablas aplicadas en local: `Product` (name, salePrice, mlPrice, active, createdByUserId) en `prisma/schema.prisma` y migraciones `20261108000000` + `20261108000100`.
-- Reglas puras listas para usar: `costing.ts` (`suggestPrice`, `mercadoLibreNet`), `order-totals.ts` (`unitPriceFor` para D4).
-- Ajustes del taller ya operativos en `/settings` (`CenterSettings`).
+**Qué hay para la 1.4 (Clientes, D7):**
+- Tablas aplicadas en local: `Customer` (name, phone, instagram, notes, active) con `UNIQUE (centerId, id)`.
+- Requisitos: `customer-service.ts` (crear, editar, desactivar y reactivar; `requireOperationalContext`; regla de eliminación: no se borra físicamente si tiene pedidos asociados, se desactiva; si nunca tuvo pedidos se permite borrado), `customer-queries.ts` (búsqueda sin acentos, lista, ficha con sus ventas y saldo).
+- Pantallas `/clients` y `/clients/[id]`.
 
-**Tarea 1.3b (hacer):** `src/lib/product-service.ts` (crear, editar, desactivar y reactivar; `requireCatalogContext`; traducir el índice único de nombre con `unique-violation.ts` a "Ya existe una pieza con ese nombre.") y `product-queries.ts` (búsqueda, filtro por `centerId`). Página `/products` simple. Agregar `/products` a la navegación solo para OWNER/ADMIN (`src/components/Sidebar.tsx` y `MobileNav.tsx`). Agregar `product-service.ts` a `coreServices` en `auth-boundaries.test.ts`.
+---
 
-**Pendientes del usuario:** completar `.env` de la nube (`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_DB_CA_CERT`, `NEXT_PUBLIC_*`) y sacar `SUPABASE_SECRET_KEY`; revisar Términos y Privacidad; nombre comercial (hoy "Taller 3D", paleta provisional de Kurova); revisión visual a 390 px.
+## Fase 1 — Lista de precios mínima (tarea 1.3b), 2026-11-08
+
+- **Servicio y consultas (`src/lib/product-service.ts` y `src/lib/product-queries.ts`):**
+  - `createProduct`: valida con Zod (`name`, `salePrice >= 0`, `mlPrice >= 0` opcional). Valida `requireCatalogContext` (`OWNER`/`ADMIN`). Traduce el índice único `Product_centerId_name_key` mediante `unique-violation.ts` a `"Ya existe una pieza con ese nombre."`.
+  - `updateProduct`: valida campos y actualiza pieza conservando aislamiento multi-taller.
+  - `setProductActive`: activa o desactiva la pieza (`active = true / false`).
+  - `deleteProduct`: defensas estrictas de trazabilidad del dominio y ciclo de vida. Si la pieza tiene ventas registradas (`orderItem.count > 0`), prohíbe el borrado físico (`DomainError("No se puede eliminar la pieza porque ya tiene pedidos registrados. Puedes desactivarla para ocultarla.")`). Si nunca fue utilizada en ningún pedido, permite el borrado físico (`deleteMany({ where: { centerId, id } })`).
+  - `listProducts`: lista piezas activas o todas con ordenamiento alfabético insensible a mayúsculas.
+  - `findProductById`: obtiene pieza asegurando filtro `centerId`.
+- **Interfaz (`/products`):**
+  - Pantalla `/products` (`page.tsx`) protegida para `OWNER` y `ADMIN` (`requireCatalogContext`).
+  - Formulario en línea para creación rápida con selector de moneda configurada en el taller.
+  - Tabla de piezas con edición rápida en línea, alternancia de estado activo/inactivo y botón para eliminar piezas que nunca fueron usadas.
+  - Server Actions en `src/app/(private)/products/actions.ts` sin importaciones de Prisma.
+  - Enlace agregado a la navegación en `Sidebar.tsx` y `MobileNav.tsx` visible para `OWNER`/`ADMIN`.
+  - Servicio registrado en `coreServices` de `auth-boundaries.test.ts`.
+- **Pruebas:**
+  - Unitarias en `product-service.test.ts` (11/11) y `product-queries.test.ts` (3/3).
+  - Integración real contra PostgreSQL en `tests/products.integration.test.ts` (2/2): aislamiento estricto de unicidad de nombres entre talleres y protección física contra eliminación de piezas con pedidos asociados.
+- **Resultados:** Unitarias 253/253, RLS 13/13, S1 3/3, S3 1/1, transacciones 38/38. `quality:gate` PASSED.
 
 ---
 
@@ -261,7 +280,7 @@ docs/                    especificaciones, planes y runbooks
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Planificado (Fase 1) |
 | Dinero | `/money` | Planificado (Fase 1) |
 | Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
-| Catálogo y cotizador | `/products`, `/products/new`, `/products/[id]`, `/quote` | Planificado (Fase 2) |
+| Catálogo y cotizador | `/products` (lista de precios mínima, Fase 1); `/products/new`, `/products/[id]`, `/quote` | Implementado `/products` (Fase 1); cotizador planificado (Fase 2) |
 | Filamento | `/spools`, `/spools/[id]` | Planificado (Fase 2) |
 | Equipo | `/team` | Implementado, **oculto en la navegación del MVP** |
 
@@ -512,7 +531,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.3 Ajustes del taller.** `center-settings-service.ts` (`getCenterSettings` crea los valores por defecto; `updateCenterSettings` solo `OWNER`/`ADMIN`, rechaza cambiar la moneda si ya hay movimientos de dinero) y `/settings` con moneda, zona horaria (trasladada desde Mi taller), comisión y envío ML, luz, embalaje, costo por kilo y purga. *Pruebas:* unitarias de validación; reales de "un registro por taller" y "la moneda se bloquea con movimientos".
 
-- [ ] **1.3b Lista de precios (D11).** `product-service.ts` y `product-queries.ts`: crear, editar, desactivar y buscar piezas con precio normal y precio ML. Pantalla `/products` simple (nombre, precio y precio ML, alta en una línea). *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
+- [x] **1.3b Lista de precios (D11).** `product-service.ts` y `product-queries.ts`: crear, editar, desactivar y buscar piezas con precio normal y precio ML. Pantalla `/products` simple (nombre, precio y precio ML, alta en una línea). *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 
 - [ ] **1.4 Clientes (opcionales, D7).** `customer-service.ts` (crear, editar, desactivar y reactivar) y `customer-queries.ts` (búsqueda sin acentos, ficha con sus ventas y saldo). Pantallas `/clients` y `/clients/[id]`; el alta normal ocurre al vuelo desde la venta. *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 

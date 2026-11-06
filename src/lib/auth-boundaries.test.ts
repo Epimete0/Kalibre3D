@@ -24,6 +24,7 @@ const coreServices = [
   "src/lib/center-settings-service.ts",
   "src/lib/invitation-admin-service.ts",
   "src/lib/member-service.ts",
+  "src/lib/product-service.ts",
 ];
 
 describe("fronteras de autorización del núcleo", () => {

@@ -13,6 +13,16 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
     ...(isManager
       ? [
           {
+            href: "/products",
+            label: "Piezas",
+            icon: (
+              <>
+                <path d="m3 7.5 9-4.5 9 4.5-9 4.5-9-4.5Z" />
+                <path d="M3 7.5v9L12 21l9-4.5v-9M12 12v9" />
+              </>
+            ),
+          },
+          {
             href: "/settings",
             label: "Ajustes",
             icon: (
@@ -41,7 +51,7 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
       <nav
         aria-label="Navegación principal"
         className={`fixed inset-x-0 bottom-0 z-20 grid ${
-          items.length === 3 ? "grid-cols-3" : "grid-cols-2"
+          items.length === 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2"
         } border-t border-line bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(67,17,38,0.1)] backdrop-blur-xl lg:hidden`}
       >
         {items.map((item) => {
