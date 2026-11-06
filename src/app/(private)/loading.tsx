@@ -1,0 +1,3 @@
+export default function PrivateLoading() {
+  return <main aria-label="Cargando" className="space-y-5"><div className="h-10 w-64 animate-pulse rounded-lg bg-raised" /><div className="h-5 w-96 max-w-full animate-pulse rounded bg-raised" /><div className="grid gap-4 md:grid-cols-3"><div className="h-28 animate-pulse rounded-[var(--radius-lg)] border border-line bg-surface" /><div className="h-28 animate-pulse rounded-[var(--radius-lg)] border border-line bg-surface" /><div className="h-28 animate-pulse rounded-[var(--radius-lg)] border border-line bg-surface" /></div><div className="h-64 animate-pulse rounded-[var(--radius-lg)] border border-line bg-surface" /></main>;
+}

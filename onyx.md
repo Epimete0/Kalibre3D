@@ -6,6 +6,28 @@
 
 ---
 
+## Fase 0 — Rutas de acceso, shell, perfil y legal (tarea 0.6), 2026-11-06
+
+- **Rutas (copiadas de Kurova, solo lectura, y adaptadas):**
+  - Públicas: `/` (portada provisional con "Crear mi cuenta" e "Iniciar sesión"), `/login`, `/registro`, `/join`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/terminos`, `/privacidad`, `robots.txt` y `sitemap.xml`, más las páginas de error y `not-found`.
+  - Privadas: `/taller/nuevo` (la ruta `/centro/nuevo` de Kurova pasa a llamarse **`/taller/nuevo`**), `/dashboard`, `/profile` y `/team`.
+- **Inicio (`/dashboard`):** estado sin taller ("Crear mi taller" / "Tengo un código de invitación") y bienvenida provisional ("Hola, {nombre} · Este es el inicio de {taller}"). El panel real es la Fase 3.
+- **Mi taller (`/profile`):** cuenta (correo, cambio de correo que falla cerrado, nombre y contraseña) y datos del taller (nombre, zona horaria y cambio de taller activo). Se quitaron los precios, los gastos operativos y el límite de nombre de Kurova. La comprobación de membresía al cambiar de taller pasó de la Server Action a `account-service.resolveSelectableCenter`.
+- **Equipo (`/team`):** existe pero **no aparece en la navegación** (MVP de un solo dueño). Se quitó "atiende citas" (`schedulable`) y el aviso de citas al desactivar.
+- **Registro:** las consultas Prisma de `login/actions.ts` se movieron a `src/lib/signup-profile.ts` (`isInvitationUsable`, `profileExists` y `ensureProfile`), para cumplir que las acciones no importen Prisma.
+- **Shell:** `AppShell`, `Sidebar` y `PrivateHeader` sin búsqueda ni alertas de stock. Navegación de la Fase 0: **Inicio** y **Mi taller** (menú lateral en computador y `MobileNav` inferior en celular). Se eliminaron `InventoryDisplay`, `CatalogControls`, `StockAlertsMenu`, `LandingMotion`, `MobileMoreMenu` y `InventoryMobileNav`. Se agregó `src/lib/theme.ts` (tema claro y oscuro).
+- **Marca provisional "Taller 3D"** en metadata, menú y textos. El prefijo técnico `kurova-` pasa a `saas3d-` (clases CSS y tema). Términos y Privacidad fueron reescritos para el taller 3D (Gemini 3.8 Flash vía agy, revisados en la estructura) y **requieren revisión de la persona responsable** antes de publicar (`NEXT_PUBLIC_LEGAL_REVIEWED`).
+- **Finales de línea:** todo `src/`, `tests/` y `scripts/` quedó con LF (los archivos copiados de Kurova venían con CRLF).
+- **Desarrollo local:**
+  - `.env.local` (ignorado por git) apunta a `saas3d-test` (loopback) con `SAAS3D_LOCAL_DEV=YES`, y además anula el `SUPABASE_URL` de la nube que está en `.env`. La guarda local rechaza (correctamente) cualquier dirección que no sea loopback.
+  - Cuenta QA local en `.env.qa.local` (ignorado).
+  - `next dev --webpack -p 3100` (puerto 3100 para no chocar con otros proyectos), con configuración en `.claude/launch.json`.
+- **Verificación en navegador (contra `saas3d-test`):** registro → `/taller/nuevo` → crear "Surko QA" → `/dashboard` ("Hola, Benja") → `/profile` ("Tu rol: Dueño") → `/team` (200, sin textos de Kurova). En la base: taller `America/Santiago`, rol `OWNER` activo y perfil creado.
+  - Con el panel del navegador oculto (ventana 0×0), React no revela el contenido cargado por partes porque `requestAnimationFrame` no corre. El contenido llega completo en el HTML: es una limitación del panel, no un error.
+  - **Falta la revisión visual** a 390 px y en computador con el panel visible.
+- **Resultados:** unitarias 209/209 (32 archivos), `test:rls` 12/12, `test:s1` 3/3, `test:s3` 1/1, `test:transactions` 25/25, lint y tipos limpios, `next build` OK (16 rutas y el proxy).
+- **Pendiente:** 0.7 (quality gate), revisión visual con el panel visible, revisión de los textos legales y marca definitiva (paleta provisional de Kurova).
+
 ## Fase 0 — Autenticación y taller activo (tarea 0.5), 2026-11-06
 
 - **Copiado de Kurova (solo lectura) a `src/lib`, con sus pruebas:** `supabase/{client,server}.ts`, `auth.ts` (`requireSessionUser`, `getSessionMembershipState`, `requireAuthContext`, `requireOperationalContext`, `requireCatalogContext`), `active-center.ts`, `auth-errors.ts`, `auth-settings.ts`, `action-errors.ts`, `action-failure.ts`, `safe-redirect.ts`, `transaction-conflict-retry.ts`, `unique-violation.ts`, `validation-errors.ts`, `persisted-entity-id.ts`, `form-draft.ts`, `site-url.ts`, `legal.ts`, `email-change.ts`, `account-service.ts`, `center-service.ts`, `center-creation.ts` y `center-creation-rules.ts`, `center-time-zone*.ts`, `invitation-service*.ts`, `invitation-admin-service.ts`, `center-archive-service*.ts`, `member-service.ts` y `team-rules.ts`. Además `src/proxy.ts`. Dependencias nuevas: `@supabase/ssr`, `@supabase/server`, `@supabase/supabase-js` y `@js-temporal/polyfill`.

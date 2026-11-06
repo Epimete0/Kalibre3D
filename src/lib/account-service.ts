@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
 import { requireCatalogContext, requireSessionUser } from "@/lib/auth";
 import { validateIanaTimeZone } from "@/lib/center-time-zone";
+import { parseCenterId } from "@/lib/active-center";
 import { prisma } from "@/lib/prisma";
 
 /** Datos de la cuenta de la persona y del taller activo. */
@@ -48,4 +49,13 @@ export function parsePasswordChange(formData: FormData): string {
   if (next.length > 72) throw new DomainError("La contraseña es demasiado larga (máximo 72 caracteres).");
   if (next !== confirm) throw new DomainError("Las contraseñas no coinciden.");
   return next;
+}
+
+/** Valida que la persona pueda usar ese taller como activo (membresía activa en un taller activo) y devuelve su id. */
+export async function resolveSelectableCenter(formData: FormData) {
+  const userId = await requireSessionUser();
+  const centerId = parseCenterId(formData.get("centerId"));
+  const membership = await prisma.centerMember.findFirst({ where: { centerId, userId, active: true, center: { active: true } }, select: { centerId: true } });
+  if (!membership) throw new DomainError("No puedes seleccionar ese taller.");
+  return membership.centerId;
 }

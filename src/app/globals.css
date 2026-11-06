@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  saas3d design system (paleta heredada de Kurova; provisional hasta definir la marca).
+  saas3d design system (paleta heredada de Taller 3D; provisional hasta definir la marca).
 
 */
 @theme {
@@ -354,7 +354,7 @@ html[data-theme="dark"] .theme-choice-dark {
   color: var(--color-primary);
 }
 
-/* Home V6: direct port of kurova-dashboard.html geometry. */
+/* Home V6: direct port of saas3d-dashboard.html geometry. */
 .dashboard-card {
   box-shadow:
     0 1px 2px rgb(90 40 55 / 4%),
@@ -443,19 +443,19 @@ a[href$="/edit"]:not([aria-label])::before {
   Ya traen su propia escala los que usan `active:scale` (se excluyen para no sumarla dos veces).
   Se listan las propiedades para no pisar los cambios de color al pasar el puntero.
 */
-.kurova-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]) {
+.saas3d-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]) {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
 }
 
-.kurova-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]):active {
+.saas3d-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]):active {
   transform: scale(0.97);
 }
 
 /*
   Ventanas (<dialog> nativo): entran con un fundido y una escala sutil desde 0,96 (nunca desde 0) y salen más rápido de lo que
-  entraron. Son modales, así que escalan desde el centro. `allow-discrete` mantiene la ventana en pantalla hasta que termina la salida.
+  entraron. Son modales, así que escalan desde el taller. `allow-discrete` mantiene la ventana en pantalla hasta que termina la salida.
 */
 dialog {
   opacity: 0;
@@ -501,7 +501,7 @@ dialog[open]::backdrop {
 
 /* Movimiento reducido: va al final para ganar a las reglas anteriores. Sin escala ni desplazamiento; los fundidos se quedan. */
 @media (prefers-reduced-motion: reduce) {
-  .kurova-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]):active { transform: none; }
+  .saas3d-private-shell :is(button, a[class*="rounded-full"]):not(:disabled, [aria-disabled="true"], [class*="active:scale"]):active { transform: none; }
   dialog, dialog[open] { transform: none; }
   .enter { transform: none; }
   @starting-style {
