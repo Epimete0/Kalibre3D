@@ -6,6 +6,26 @@
 
 ---
 
+## Fase 0 — Autenticación y taller activo (tarea 0.5), 2026-11-06
+
+- **Copiado de Kurova (solo lectura) a `src/lib`, con sus pruebas:** `supabase/{client,server}.ts`, `auth.ts` (`requireSessionUser`, `getSessionMembershipState`, `requireAuthContext`, `requireOperationalContext`, `requireCatalogContext`), `active-center.ts`, `auth-errors.ts`, `auth-settings.ts`, `action-errors.ts`, `action-failure.ts`, `safe-redirect.ts`, `transaction-conflict-retry.ts`, `unique-violation.ts`, `validation-errors.ts`, `persisted-entity-id.ts`, `form-draft.ts`, `site-url.ts`, `legal.ts`, `email-change.ts`, `account-service.ts`, `center-service.ts`, `center-creation.ts` y `center-creation-rules.ts`, `center-time-zone*.ts`, `invitation-service*.ts`, `invitation-admin-service.ts`, `center-archive-service*.ts`, `member-service.ts` y `team-rules.ts`. Además `src/proxy.ts`. Dependencias nuevas: `@supabase/ssr`, `@supabase/server`, `@supabase/supabase-js` y `@js-temporal/polyfill`.
+- **Adaptaciones:**
+  - Se quitaron `nameChangedAt`, el límite de 30 días y `center-name-rules`.
+  - Se quitó `schedulable` al crear el taller y al desactivar miembros, y el conteo de citas (`booking`) en `setMemberActive`, que ahora devuelve `{ userId, active }`.
+  - Identificadores técnicos: cookie `saas3d-center-id`, borradores `saas3d:draft:`, candado `saas3d:create-center:` y origen `saas3d.local` en `safe-redirect`.
+  - **Lenguaje del producto** en los mensajes y pruebas: centro → taller, propietaria → dueño, administradora → administrador, profesional → ayudante, lectora → lector.
+- **`auth-boundaries.test.ts` reescrito con reglas genéricas que recorren `src/`:**
+  - Solo `dashboard` y `profile` usan `getSessionMembershipState`.
+  - Ninguna `actions.ts` importa Prisma.
+  - Toda función exportada de los servicios del núcleo abre con su contexto.
+  - Crear un taller exige sesión y fija `OWNER` con candado.
+  - El cambio de correo falla cerrado.
+  - La aplicación no usa `SUPABASE_SECRET_KEY`, `SERVICE_ROLE_KEY` ni `service_role`.
+- **Integración real nueva (`npm run test:transactions`):** `tests/center-creation.integration.test.ts` y `tests/team.integration.test.ts` (sin agenda: "desactivar no borra nada y se puede reactivar").
+- **Resultados:** unitarias 196/196 (28 archivos), `test:transactions` 25/25, lint y tipos limpios. Las suites `test:rls`/`s1`/`s3` de la 0.4 no cambian.
+- **Observación heredada:** si faltan `NEXT_PUBLIC_SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `src/proxy.ts` deja pasar la solicitud, igual que Kurova. Las páginas privadas igualmente validan la sesión en el servidor con `requireAuthContext`. Revisar si conviene fallar cerrado.
+- **Pendiente:** 0.6 (rutas de acceso, shell, perfil, equipo oculto, legal y landing provisional) y 0.7 (quality gate).
+
 ## Fase 0 — Base, Prisma y núcleo multi-tenant (tareas 0.1 a 0.4), 2026-11-06
 
 - **Repositorio:** `git init` en `main`. `AGENTS.md` (contrato adaptado del de Kurova, sin graphify/ECC/opencode), `CLAUDE.md` (`@AGENTS.md`) y `.gitignore` (copia del de Kurova).
