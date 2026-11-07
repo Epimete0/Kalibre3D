@@ -6,6 +6,16 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Módulo de Clientes (`/clients` y `/clients/[id]`) (Tarea 1.4):**
+  - Directorio y gestión de clientes del taller con nombre, teléfono/WhatsApp, Instagram y notas internas.
+  - Búsqueda en vivo insensible a tildes, diacríticos y mayúsculas.
+  - Formulario de alta rápida en línea y modal de edición de datos.
+  - Accesos directos para contactar por WhatsApp y ver perfil de Instagram.
+  - Métricas de cliente: cantidad de pedidos, total comprado y saldo pendiente acumulado.
+  - Ficha de cliente con historial completo de pedidos, estado, canal y saldos.
+  - Regla de eliminación estricta: borrado físico permitido exclusivamente si el cliente no tiene pedidos registrados; de lo contrario, se desactiva para preservar la trazabilidad.
+  - Ocultamiento de montos y saldos para roles de solo lectura (`VIEWER`).
+  - Acceso directo a Clientes añadido en la barra lateral y menú móvil.
 - **Lista de precios mínima (`/products`) (Tarea 1.3b):**
   - Gestión de piezas del taller con precio de venta y precio de Mercado Libre opcional.
   - Creación rápida de piezas en línea con validación de nombre único por taller.

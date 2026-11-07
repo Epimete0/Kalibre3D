@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3 y 1.3b hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.4 Clientes (opcionales, D7).**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b y 1.4 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.5 Crear pedidos (D4, D7, D12).**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,12 +20,34 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`, `tests/center-settings.integration.test.ts` y `tests/products.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`, `tests/center-settings.integration.test.ts`, `tests/products.integration.test.ts` y `tests/customers.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.4 (Clientes, D7):**
-- Tablas aplicadas en local: `Customer` (name, phone, instagram, notes, active) con `UNIQUE (centerId, id)`.
-- Requisitos: `customer-service.ts` (crear, editar, desactivar y reactivar; `requireOperationalContext`; regla de eliminación: no se borra físicamente si tiene pedidos asociados, se desactiva; si nunca tuvo pedidos se permite borrado), `customer-queries.ts` (búsqueda sin acentos, lista, ficha con sus ventas y saldo).
-- Pantallas `/clients` y `/clients/[id]`.
+**Qué hay para la 1.5 (Crear pedidos):**
+- Tablas aplicadas en local: `Order`, `OrderItem`, `OrderEvent` con `UNIQUE (centerId, id)` y `UNIQUE (centerId, operationId)`.
+- Requisitos: `order-operation.ts` (`resolveNewOrderOperation`), `order-service.createOrder` (valida con Zod, cliente al vuelo opcional, asigna número bloqueando `Center`, calcula total, sugiere comisión ML y registra evento `CREATED`), pantalla `/orders/new`.
+
+---
+
+## Fase 1 — Clientes (tarea 1.4), 2026-11-08
+
+- **Servicio y consultas (`src/lib/customer-service.ts` y `src/lib/customer-queries.ts`):**
+  - `createCustomer`: valida con Zod (`name`, `phone`, `instagram`, `notes`), normaliza Instagram eliminando prefijos `@` y espacios, requiere `requireOperationalContext` (`OWNER`, `ADMIN`, `PROFESSIONAL`).
+  - `updateCustomer`: actualiza datos de clientes garantizando filtro por `centerId`. Requiere `requireOperationalContext`.
+  - `setCustomerActive`: activa o desactiva clientes manteniendo trazabilidad histórica.
+  - `deleteCustomer`: requiere `requireCatalogContext` (`OWNER`/`ADMIN`). Valida conteo de pedidos (`order.count > 0` prohíbe el borrado físico: `DomainError("No se puede eliminar el cliente porque ya tiene pedidos registrados. Puedes desactivarlo para ocultarlo.")`). Si no tiene pedidos registrados, permite eliminación física `deleteMany`.
+  - `normalizeSearchText`: función pura con descomposición Unicode NFD para eliminar tildes y diacríticos (`"García"` → `"garcia"`).
+  - `listCustomers`: búsqueda insensible a tildes y mayúsculas por nombre, teléfono o Instagram; filtro por estado activo; cálculo de cantidad de pedidos, total comprado y saldo pendiente acumulado usando `orderTotals` / `orderBalance`. Enmascara montos de dinero para rol `VIEWER` (D1).
+  - `getCustomerDetail`: ficha completa del cliente con lista de pedidos históricos, canal, estado, total, saldo y notas.
+- **Interfaz (`/clients` y `/clients/[id]`):**
+  - `/clients`: formulario desplegable para alta rápida de clientes, barra de búsqueda sin acentos en vivo, selector de activos/todos, tabla responsiva (tarjetas en móvil, tabla en escritorio) con enlaces directos a WhatsApp e Instagram, estado, saldo y acciones.
+  - `/clients/[id]`: encabezado con accesos directos de contacto, métricas de pedidos, total comprado y saldo pendiente, notas, modal para edición de datos, alternancia de estado y eliminación controlada (solo si tiene 0 ventas). Tabla de historial de pedidos con estado, canal, total y saldo.
+  - Server Actions en `src/app/(private)/clients/actions.ts` sin importaciones de Prisma.
+  - Navegación: enlace a Clientes añadido en `Sidebar.tsx` y `MobileNav.tsx` accesible para todos los roles del taller.
+  - Servicio registrado en `coreServices` de `auth-boundaries.test.ts`.
+- **Pruebas:**
+  - Unitarias en `customer-service.test.ts` (15/15) y `customer-queries.test.ts` (6/6).
+  - Integración real contra PostgreSQL en `tests/customers.integration.test.ts` (2/2): aislamiento multi-taller, búsqueda sin acentos en base de datos real y bloqueo físico de eliminación si existen pedidos asociados.
+- **Resultados:** Unitarias 274/274, RLS 13/13, S1 3/3, S3 1/1, transacciones 40/40. `quality:gate` PASSED.
 
 ---
 
@@ -276,7 +298,7 @@ docs/                    especificaciones, planes y runbooks
 | Legal | `/terminos`, `/privacidad` | Implementado (Fase 0); textos pendientes de revisión |
 | Perfil / Mi taller | `/profile` | Implementado (Fase 0): cuenta, contraseña y datos del taller |
 | Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
-| Clientes | `/clients`, `/clients/new`, `/clients/[id]` | Planificado (Fase 1) |
+| Clientes | `/clients`, `/clients/[id]` | Implementado (Fase 1): lista con búsqueda sin tildes, alta rápida y ficha con saldo |
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Planificado (Fase 1) |
 | Dinero | `/money` | Planificado (Fase 1) |
 | Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
@@ -533,7 +555,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.3b Lista de precios (D11).** `product-service.ts` y `product-queries.ts`: crear, editar, desactivar y buscar piezas con precio normal y precio ML. Pantalla `/products` simple (nombre, precio y precio ML, alta en una línea). *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 
-- [ ] **1.4 Clientes (opcionales, D7).** `customer-service.ts` (crear, editar, desactivar y reactivar) y `customer-queries.ts` (búsqueda sin acentos, ficha con sus ventas y saldo). Pantallas `/clients` y `/clients/[id]`; el alta normal ocurre al vuelo desde la venta. *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
+- [x] **1.4 Clientes (opcionales, D7).** `customer-service.ts` (crear, editar, desactivar y reactivar) y `customer-queries.ts` (búsqueda sin acentos, ficha con sus ventas y saldo). Pantallas `/clients` y `/clients/[id]`; el alta normal ocurre al vuelo desde la venta. *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 
 - [ ] **1.5 Crear pedidos.** **Incluye D4 (casilla Mercado Libre que cambia a precios ML y calcula comisión, envío y neto), D7 (sin cliente por defecto) y D12 (venta rápida que queda entregada y cobrada en un paso, o pedido por encargo).** `order-operation.ts` (`resolveNewOrderOperation`, como `new-purchase-operation`) y `order-service.createOrder`: valida con Zod, crea el cliente al vuelo si corresponde, bloquea el `Center`, asigna el número, calcula el total, sugiere la comisión ML y registra el evento `CREATED`. Pantalla `/orders/new`: cliente existente o nuevo, canal, piezas (descripción, cantidad, precio, colores y material), descuento, fecha de entrega, campos ML y resumen en vivo (total, neto ML); con borrador local (`FormDraft`) y cerrojo contra doble envío. *Pruebas reales:* el mismo `operationId` dos veces crea un solo pedido; dos pedidos simultáneos reciben números distintos y consecutivos.
 

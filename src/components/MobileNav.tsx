@@ -10,6 +10,16 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
 
   const items = [
     { href: "/dashboard", label: "Inicio", icon: <path d="M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5" /> },
+    {
+      href: "/clients",
+      label: "Clientes",
+      icon: (
+        <>
+          <circle cx="9" cy="8" r="3.5" />
+          <path d="M3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0-1-5.8M17 14a4 4 0 0 1 4 4v1" />
+        </>
+      ),
+    },
     ...(isManager
       ? [
           {

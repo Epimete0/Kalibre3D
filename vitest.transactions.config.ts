@@ -10,6 +10,7 @@ export default defineConfig({
       "tests/phase1-integrity.integration.test.ts",
       "tests/center-settings.integration.test.ts",
       "tests/products.integration.test.ts",
+      "tests/customers.integration.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 60_000,

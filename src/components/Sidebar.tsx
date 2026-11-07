@@ -46,6 +46,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
       <nav aria-label="Navegación principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
         <FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} active={isActive("/dashboard")} />
         <div className="pt-3 space-y-1">
+          <PlainLink item={{ href: "/clients", label: "Clientes", icon: icons.people }} active={isActive("/clients")} />
           {isManager ? (
             <PlainLink item={{ href: "/products", label: "Lista de piezas", icon: icons.cube }} active={isActive("/products")} />
           ) : null}

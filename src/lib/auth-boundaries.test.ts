@@ -22,6 +22,7 @@ const coreServices = [
   "src/lib/account-service.ts",
   "src/lib/center-service.ts",
   "src/lib/center-settings-service.ts",
+  "src/lib/customer-service.ts",
   "src/lib/invitation-admin-service.ts",
   "src/lib/member-service.ts",
   "src/lib/product-service.ts",
