@@ -15,6 +15,7 @@ export default defineConfig({
       "tests/orders-status.integration.test.ts",
       "tests/orders-payments-returns.integration.test.ts",
       "tests/money.integration.test.ts",
+      "tests/phase2-integrity.integration.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 60_000,

@@ -149,9 +149,9 @@ suite("Lista de precios (Product) en PostgreSQL", () => {
         "No se puede eliminar la pieza porque ya tiene pedidos registrados. Puedes desactivarla para ocultarla."
       );
 
-      // La clave foránea de PostgreSQL también la protege físicamente (RESTRICT)
+      // El trigger Product_delete_guard y la clave foránea de PostgreSQL la protegen físicamente
       await expect(db.query('DELETE FROM "Product" WHERE id=$1', [p2.id])).rejects.toMatchObject({
-        code: "23503",
+        code: "23514",
       });
 
       // Pero sí se puede desactivar para que no aparezca en nuevas ventas

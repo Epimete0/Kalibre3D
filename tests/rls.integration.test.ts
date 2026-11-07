@@ -20,8 +20,8 @@ const db = run ? new Client({ connectionString: databaseUrl }) : null;
 const users: string[] = [];
 const ids = { centerA: randomUUID(), centerB: randomUUID() };
 const coreTables = ["Profile", "Center", "CenterMember", "InvitationCode", "OnboardingDismissal"] as const;
-/** Tablas de la Fase 1: SERVER_ONLY (RLS sin políticas y sin privilegios para la API). */
-const serverOnlyTables = ["CenterSettings", "Product", "Customer", "Order", "OrderItem", "OrderEvent", "MoneyTransaction"] as const;
+/** Tablas de la Fase 1 y Fase 2: SERVER_ONLY (RLS sin políticas y sin privilegios para la API). */
+const serverOnlyTables = ["CenterSettings", "Product", "ProductMovement", "Spool", "SpoolMovement", "Customer", "Order", "OrderItem", "OrderEvent", "MoneyTransaction"] as const;
 let ownerA: SupabaseClient, adminA: SupabaseClient, professionalA: SupabaseClient, viewerA: SupabaseClient, memberB: SupabaseClient, outsider: SupabaseClient, concurrentUser: SupabaseClient;
 let ownerAId = "", adminAId = "", professionalAId = "", viewerAId = "", memberBId = "", outsiderId = "";
 

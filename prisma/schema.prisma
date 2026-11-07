@@ -105,21 +105,93 @@ model CenterSettings {
   updatedAt              DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 }
 
-/// Lista de precios mínima (D11). La Fase 2 agrega gramos, costos y stock.
+/// Pieza del catálogo y lista de precios (D11, D14, D15, D16).
 model Product {
-  id              String      @id @default(uuid()) @db.Uuid
-  centerId        String      @db.Uuid
+  id              String            @id @default(uuid()) @db.Uuid
+  centerId        String            @db.Uuid
   name            String
+  category        String?
+  material        String            @default("PETG")
+  grams           Int               @default(0)
+  printMinutes    Int               @default(0)
+  colorsCount     Int               @default(1)
+  purgeGrams      Int               @default(0)
   salePrice       Int
   mlPrice         Int?
-  active          Boolean     @default(true)
-  createdByUserId String      @db.Uuid
-  createdAt       DateTime    @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+  currentStock    Int               @default(0)
+  minStock        Int               @default(0)
+  active          Boolean           @default(true)
+  createdByUserId String            @db.Uuid
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
   orderItems      OrderItem[]
+  movements       ProductMovement[]
 
   @@unique([centerId, id])
   @@index([centerId, active])
+}
+
+/// Movimiento inmutable de stock de una pieza (D15).
+model ProductMovement {
+  id             String   @id @default(uuid()) @db.Uuid
+  centerId       String   @db.Uuid
+  operationId    String   @db.Uuid
+  productId      String   @db.Uuid
+  kind           String
+  delta          Int
+  resultingStock Int
+  orderId        String?  @db.Uuid
+  notes          String?
+  actorUserId    String   @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  product        Product  @relation(fields: [centerId, productId], references: [centerId, id], onDelete: Restrict)
+  order          Order?   @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Restrict)
+
+  @@unique([centerId, operationId])
+  @@index([centerId, productId, createdAt])
+}
+
+/// Bobina de filamento por material y color (D17, D18).
+model Spool {
+  id              String          @id @default(uuid()) @db.Uuid
+  centerId        String          @db.Uuid
+  material        String
+  color           String
+  brand           String?
+  totalGrams      Int
+  remainingGrams  Int
+  pricePaid       Int
+  purchasedOn     DateTime        @db.Date
+  notes           String?
+  active          Boolean         @default(true)
+  createdByUserId String          @db.Uuid
+  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  movements       SpoolMovement[]
+
+  @@unique([centerId, id])
+  @@index([centerId, active])
+  @@index([centerId, material, active])
+}
+
+/// Movimiento inmutable de gramos de una bobina (D17).
+model SpoolMovement {
+  id             String   @id @default(uuid()) @db.Uuid
+  centerId       String   @db.Uuid
+  operationId    String   @db.Uuid
+  spoolId        String   @db.Uuid
+  kind           String
+  deltaGrams     Int
+  resultingGrams Int
+  orderId        String?  @db.Uuid
+  notes          String?
+  actorUserId    String   @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  spool          Spool    @relation(fields: [centerId, spoolId], references: [centerId, id], onDelete: Restrict)
+  order          Order?   @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Restrict)
+
+  @@unique([centerId, operationId])
+  @@index([centerId, spoolId, createdAt])
 }
 
 /// Cliente del taller (opcional en cada venta, D7).
@@ -166,6 +238,8 @@ model Order {
   items           OrderItem[]
   events          OrderEvent[]
   transactions    MoneyTransaction[]
+  productMovements ProductMovement[]
+  spoolMovements   SpoolMovement[]
 
   @@unique([centerId, id])
   @@unique([centerId, number])
