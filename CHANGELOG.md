@@ -6,11 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
-- **Definición de Marca Comercial Oficial — Kalibre (`Kalibre3D`):**
+- **Definición de Marca Comercial Oficial (`Kalibre` / `Kalibre3D`) y Paquetes SQL de Producción (`scripts/production/`):**
   - Adopción de la marca **Kalibre** para el producto comercial.
   - Creación del repositorio oficial en GitHub (`https://github.com/Epimete0/Kalibre3D`).
   - Creación de `README.md` completo documentando la propuesta de valor, arquitectura, características principales y guía de desarrollo local.
   - Actualización de la marca visible en la aplicación: landing page, cabecera pública y pie de página (`PublicShell`), barra lateral (`Sidebar`), barra superior móvil (`PrivateHeader`), vistas de autenticación (`AuthLayout`, `AuthForm`), documentos legales (`/terminos`, `/privacidad`), pantallas de error y metadata de rutas.
+  - Generador y paquetes SQL de despliegue inicial en Supabase (`scripts/production/20261108-00-preflight-initial-schema.sql`, `20261108-01-dry-run-initial-schema.sql`, `20261108-02-apply-initial-schema.sql`, `20261108-03-verify-initial-schema.sql`), pruebas de integridad (`scripts/production/package-20261108.test.ts`) y runbook de despliegue (`docs/runbooks/2026-11-08-despliegue-supabase-vercel.md`).
 - **Fase 3: Panel Operativo y Financiero del Mes con Alertas (`/dashboard`, `src/lib/dashboard-queries.ts`) (Tareas 3.1 a 3.3):**
   - Banda superior de **Alertas del taller** con indicadores y accesos directos a **Pedidos atrasados**, **Bobinas por acabarse** (`remainingGrams <= lowSpoolThresholdGrams`) y **Piezas con stock bajo** (`currentStock <= minStock`).
   - Tarjetas táctiles de **Carga operativa por etapa** (`Cotizados`, `Confirmados`, `Imprimiendo`, `Listos`) enlazadas a `/orders?status=...`.

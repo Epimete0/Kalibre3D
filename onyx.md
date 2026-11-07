@@ -6,7 +6,7 @@
 
 ---
 
-## Definición de marca comercial: Kalibre (Kalibre3D) — 2026-11-08
+## Definición de marca comercial: Kalibre (Kalibre3D) y Paquetes SQL de Producción — 2026-11-08
 
 - **Investigación de nombres y verificación de colisiones:** Se verificaron múltiples opciones vía búsqueda web descartando colisiones reales en herramientas 3D (`Trama 3D`, `Estratos 3D`, `Brami3D`, `Infill: 3D Print Cost Calc`, etc.).
 - **Decisión de marca aprobada:** **Kalibre** (con K).
@@ -15,6 +15,10 @@
 - **Unificación de interfaz y metadata:** Se actualizó la interfaz visible (landing, sidebar, header móvil, vistas de autenticación, páginas de error, 404, títulos de metadatos y páginas de Términos y Privacidad) pasando de la provisional "Taller 3D" a **Kalibre**.
 - Se preserva `saas3d` como identificador técnico en base de datos, carpetas y configuración según el contrato de `AGENTS.md`.
 - Se creó `README.md` completo para el repositorio en GitHub `https://github.com/Epimete0/Kalibre3D`.
+- **Preparación de Supabase y Vercel (`scripts/production/` y `.env`):**
+  - Se normalizó `.env` (ignorado por Git) para el proyecto de Supabase `umgxxtpekcjknhclojzo`: mapeo a `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, eliminación de `SUPABASE_SECRET_KEY`, y plantillas de `DATABASE_URL` (`:6543?pgbouncer=true`), `DIRECT_URL` (`:5432?sslmode=verify-full`) y `SUPABASE_DB_CA_CERT`.
+  - Se creó el generador determinista `scripts/production/generate-20261108-initial-packages.mjs` y los 4 paquetes SQL para inicializar la base de Supabase en producción (`20261108-00-preflight-initial-schema.sql`, `20261108-01-dry-run-initial-schema.sql`, `20261108-02-apply-initial-schema.sql`, `20261108-03-verify-initial-schema.sql` y `20261108-manifest.json`), probados con `scripts/production/package-20261108.test.ts` (5/5) y ejecutados contra PostgreSQL real.
+  - Se documentó el procedimiento paso a paso en `docs/runbooks/2026-11-08-despliegue-supabase-vercel.md`.
 
 ---
 

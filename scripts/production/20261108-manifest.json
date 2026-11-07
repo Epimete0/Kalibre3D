@@ -1,0 +1,44 @@
+{
+  "generatedFor": [
+    "20261107000000_core_multitenant",
+    "20261108000000_phase1_orders_money",
+    "20261108000100_fix_money_void_check",
+    "20261109000000_phase2_catalog_spools_stock"
+  ],
+  "migrations": [
+    {
+      "name": "20261107000000_core_multitenant",
+      "sha256LF": "cf0d57f17c777acfa4eda9e21985d2093d498e6f0c3e577b239d3f5962cc949e"
+    },
+    {
+      "name": "20261108000000_phase1_orders_money",
+      "sha256LF": "19873a131d7b8d0795c98843f2d7db982dee133d91fe641da74d4508a02e26a0"
+    },
+    {
+      "name": "20261108000100_fix_money_void_check",
+      "sha256LF": "420b61ec3e95f3fa9d391797fd61609c4daecaef8a2ac0f66d49952250801dd2"
+    },
+    {
+      "name": "20261109000000_phase2_catalog_spools_stock",
+      "sha256LF": "01d2b96ed05323ac7dfa128333789df883badad54a58998ebc090f06f3d38214"
+    }
+  ],
+  "packages": [
+    {
+      "name": "20261108-00-preflight-initial-schema.sql",
+      "checksum": "e11bcb82ce1446723a944e3cab75ee84e0e09a83c52e5920e450ee4e12121ada"
+    },
+    {
+      "name": "20261108-01-dry-run-initial-schema.sql",
+      "checksum": "90465e65b7b761a6356550db0fcb293f9cac4f7e1a1d7c8cdff99c60c89c079b"
+    },
+    {
+      "name": "20261108-02-apply-initial-schema.sql",
+      "checksum": "54a3fb5f2b5e2460b5fc21e605048cbe8786fea36869bc35e5e2f7ba5897b8a2"
+    },
+    {
+      "name": "20261108-03-verify-initial-schema.sql",
+      "checksum": "7cce7fc255cdad009da2300be2d0f163005a929dd6e5d832c2eb374add2d4060"
+    }
+  ]
+}
