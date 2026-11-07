@@ -7,7 +7,13 @@ const {
   listOrders,
   listProducts,
   listSpools,
+  prisma,
 } = vi.hoisted(() => ({
+  prisma: {
+    order: { findFirst: vi.fn() },
+    spool: { findFirst: vi.fn() },
+    centerSettings: { findUnique: vi.fn() },
+  },
   requireAuthContext: vi.fn(),
   getCenterSettings: vi.fn(),
   getMonthlyMoneyView: vi.fn(),
@@ -28,12 +34,17 @@ vi.mock("@/lib/money-queries", () => ({ getMonthlyMoneyView }));
 vi.mock("@/lib/order-queries", () => ({ listOrders }));
 vi.mock("@/lib/product-queries", () => ({ listProducts }));
 vi.mock("@/lib/spool-queries", () => ({ listSpools }));
+vi.mock("@/lib/prisma", () => ({ prisma }));
 
 import { getDashboardOverview } from "./dashboard-queries";
 
 describe("dashboard-queries (Fase 3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prisma.order.findFirst.mockResolvedValue(null);
+    prisma.spool.findFirst.mockResolvedValue(null);
+    const createdAt = new Date("2026-11-07T10:00:00.000Z");
+    prisma.centerSettings.findUnique.mockResolvedValue({ createdAt, updatedAt: createdAt });
 
     getCenterSettings.mockResolvedValue({
       centerId: "center-1",
@@ -206,4 +217,38 @@ describe("dashboard-queries (Fase 3)", () => {
     expect(view.lowStockProducts).toEqual([]);
     expect(view.overdueOrders).toHaveLength(1);
   });
+  it("OWNER de un taller nuevo ve los primeros pasos, consultados solo en su taller", async () => {
+    requireAuthContext.mockResolvedValue({ userId: "u-owner", centerId: "center-1", role: "OWNER", timeZone: "America/Santiago" });
+    prisma.order.findFirst.mockResolvedValue({ id: "ord-1" });
+
+    const view = await getDashboardOverview();
+
+    expect(prisma.order.findFirst).toHaveBeenCalledWith({ where: { centerId: "center-1" }, select: { id: true } });
+    expect(prisma.spool.findFirst).toHaveBeenCalledWith({ where: { centerId: "center-1" }, select: { id: true } });
+    expect(view.gettingStarted?.completed).toBe(1);
+    expect(view.gettingStarted?.steps.map((step) => step.done)).toEqual([true, false, false]);
+  });
+
+  it("los primeros pasos desaparecen cuando están todos hechos", async () => {
+    requireAuthContext.mockResolvedValue({ userId: "u-owner", centerId: "center-1", role: "OWNER", timeZone: "America/Santiago" });
+    prisma.order.findFirst.mockResolvedValue({ id: "ord-1" });
+    prisma.spool.findFirst.mockResolvedValue({ id: "sp-1" });
+    prisma.centerSettings.findUnique.mockResolvedValue({
+      createdAt: new Date("2026-11-07T10:00:00.000Z"),
+      updatedAt: new Date("2026-11-07T11:00:00.000Z"),
+    });
+
+    expect((await getDashboardOverview()).gettingStarted).toBeNull();
+  });
+
+  it("Ayudante y Lector no ven ni consultan los primeros pasos", async () => {
+    for (const role of ["PROFESSIONAL", "VIEWER"] as const) {
+      vi.clearAllMocks();
+      requireAuthContext.mockResolvedValue({ userId: "u", centerId: "center-1", role, timeZone: "America/Santiago" });
+      const view = await getDashboardOverview();
+      expect(view.gettingStarted).toBeNull();
+      expect(prisma.order.findFirst).not.toHaveBeenCalled();
+    }
+  });
 });
+

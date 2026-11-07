@@ -23,7 +23,7 @@ Fecha: 7 de noviembre de 2026. Recorrido en celular (375 px) en local, con una c
 
 ## Propuestas para hacerla más simple (por orden de impacto)
 
-### 1. Primeros pasos guiados en el panel (alto impacto)
+### 1. Primeros pasos guiados en el panel (alto impacto) — ✅ implementado
 Un taller nuevo ve el panel lleno de ceros y no sabe por dónde empezar. Mientras falten datos, propongo mostrar arriba una lista de 3 pasos que se marcan solos:
 1. **Registra tu primera venta** → lleva a Nueva venta.
 2. **Configura tus costos** (luz por hora, comisión y envío de Mercado Libre) → lleva a Ajustes. Hoy la luz queda en $0 y el cotizador calcula de menos sin avisar.
@@ -31,7 +31,7 @@ Un taller nuevo ve el panel lleno de ceros y no sabe por dónde empezar. Mientra
 
 La lista desaparece cuando los tres pasos están hechos.
 
-### 2. Nueva venta más corta (alto impacto)
+### 2. Nueva venta más corta (alto impacto) — ✅ implementado
 Para una venta rápida, en el celular se ven en orden: tipo de registro, 6 canales, cliente, piezas, descuento, notas, cobro y total. Propuesta:
 - Mostrar primero **qué vendiste y en cuánto**, que es lo único obligatorio. Canal y cliente pueden ir después.
 - **Descuento y notas** quedan ocultos tras un enlace "Más opciones".

@@ -5,7 +5,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Añadido
+- **Primeros pasos en el panel:** un taller nuevo ve tres pasos (primera venta, costos y primera bobina) que se marcan solos y desaparecen al completarlos.
+- **Nueva venta más simple:** primero se anota qué vendiste y en cuánto; el canal queda recordado para la próxima venta; descuento y notas pasan a "Más opciones".
+
 ### Corregido
+- **Mercado Libre en Nueva venta:** la comisión sugerida se recalcula con el total aunque el canal se elija antes de escribir el precio.
 - **Primer ingreso:** el panel de un taller recién creado ya no muestra "No pudimos cargar esta sección" la primera vez.
 - **Nueva venta:** las piezas escritas a mano ya no se guardan como PLA si no se eligió material.
 - **Marca:** las pestañas de Pedidos, Clientes y Dinero dicen "Kalibre", y el cotizador ya no muestra el código interno "(QUOTED)".

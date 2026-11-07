@@ -3,6 +3,7 @@ import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
 import { getDashboardOverview } from "@/lib/dashboard-queries";
+import { GettingStartedCard } from "./GettingStartedCard";
 import { formatMoney } from "@/lib/money-format";
 import { CATEGORY_LABEL, type MoneyCategory } from "@/lib/money-presentation";
 import {
@@ -85,6 +86,7 @@ export default async function DashboardPage({
     statusCounts,
     lowSpools,
     lowStockProducts,
+    gettingStarted,
   } = overview;
 
   const hasAlerts =
@@ -138,6 +140,8 @@ export default async function DashboardPage({
           </div>
         )}
       </PageHeader>
+
+      {gettingStarted && <GettingStartedCard gettingStarted={gettingStarted} />}
 
       {/* Banda de alertas operativas: atrasados, poca bobina y stock bajo */}
       {hasAlerts && (

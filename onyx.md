@@ -6,6 +6,16 @@
 
 ---
 
+## Primeros pasos guiados en el panel y Nueva venta más corta — 2026-11-08
+
+- **Primeros pasos (`src/lib/getting-started.ts`, `dashboard/GettingStartedCard.tsx`):** el panel del Dueño/Administrador muestra una lista de 3 pasos que se marcan solos: registrar la primera venta (existe algún `Order`), configurar costos (`CenterSettings.updatedAt` posterior a `createdAt` por más de 1 s, es decir, alguien guardó los ajustes) y agregar la primera bobina (existe algún `Spool`). Muestra "N de 3", una barra de avance y un botón directo en cada paso pendiente; desaparece cuando están los tres. Las consultas (`getGettingStartedFacts` en `dashboard-queries.ts`) filtran por `centerId` y no se ejecutan para Ayudante ni Lector. Sin migraciones.
+- **Nueva venta (`orders/new/NewOrderForm.tsx`):** orden nuevo: tipo de registro compacto → **¿Qué vendiste?** (descripción, precio, cantidad) → **¿Por dónde te compraron?** (canales en chips) → fecha de entrega (solo encargos) → cliente → cobro → **"+ Más opciones"** (descuento y notas, ocultos hasta que se piden). Campos con etiquetas conectadas (`htmlFor`/`aria-label`), `role="radio"` en tipo y canal.
+- **Canal recordado (`src/lib/last-channel.ts`):** cookie de interfaz `kalibre-last-channel` (Path=/, 1 año, SameSite=Lax) que el servidor lee para que el formulario llegue con el último canal ya marcado. Solo preferencia visual: se valida contra `ORDER_CHANNELS` y no se usa para autorizar nada.
+- **Comisión de Mercado Libre en vivo:** antes se calculaba solo al elegir el canal (si se elegía Mercado Libre antes de escribir el precio quedaba en $0 y el neto salía mal). Ahora `effectiveMlCommission` la recalcula con el total mientras la persona no la escriba a mano.
+- **Verificación:** en local a 375 px, el panel pasa de "1 de 3" a "2 de 3" al guardar los ajustes; venta por Mercado Libre con el precio escrito después del canal → comisión $1.708, neto $7.282, y al volver a Nueva venta Mercado Libre aparece ya marcado. Pruebas nuevas: `getting-started.test.ts`, `last-channel.test.ts` y tres casos en `dashboard-queries.test.ts`. Quality gate PASSED (341 unitarias, 13 RLS, 3 S1, 1 S3, 56 transacciones).
+
+---
+
 ## Revisión de simplicidad y primer ingreso de talleres nuevos — 2026-11-08
 
 - **Panel caído en el primer ingreso de cada taller nuevo:** `getCenterSettings` creaba la fila por defecto con `upsert` de Prisma; el panel lo llama varias veces en paralelo (`getDashboardOverview` y `listSpools`), y en un taller sin `CenterSettings` las llamadas chocaban con `CenterSettings_pkey` (P2002) → "No pudimos cargar esta sección". Intercalación: A y B leen "no existe" → A inserta → B inserta y falla. Prueba real nueva en `tests/center-settings.integration.test.ts` (8 lecturas en paralelo): falló 7/8 antes de la corrección y pasa después. **Corrección:** `createMany({ skipDuplicates: true })` (`INSERT … ON CONFLICT DO NOTHING`, atómico) seguido de `findUniqueOrThrow`.

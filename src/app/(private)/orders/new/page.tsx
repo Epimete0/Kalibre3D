@@ -1,8 +1,10 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { requireOperationalContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listCustomers } from "@/lib/customer-queries";
+import { LAST_CHANNEL_COOKIE, parseLastChannel } from "@/lib/last-channel";
 import { resolveNewOrderOperation } from "@/lib/order-operation";
 import { listProducts } from "@/lib/product-queries";
 import { NewOrderForm } from "./NewOrderForm";
@@ -26,6 +28,8 @@ export default async function NewOrderPage(props: {
     redirect(`/orders`);
   }
 
+  const initialChannel = parseLastChannel((await cookies()).get(LAST_CHANNEL_COOKIE)?.value);
+
   const [products, customers, settings] = await Promise.all([
     listProducts({ includeInactive: false }),
     listCustomers({ includeInactive: false }),
@@ -36,7 +40,7 @@ export default async function NewOrderPage(props: {
     <div className="space-y-6">
       <PageHeader
         title="Nueva venta"
-        description="Registra una venta rápida en el acto o un pedido por encargo para fabricar."
+        description="Anota qué vendiste y en cuánto. Lo demás es opcional."
       />
 
       <NewOrderForm
@@ -48,6 +52,7 @@ export default async function NewOrderPage(props: {
           mlCommissionPercent: settings.mlCommissionPercent,
           mlDefaultShippingCost: settings.mlDefaultShippingCost,
         }}
+        initialChannel={initialChannel}
       />
     </div>
   );
