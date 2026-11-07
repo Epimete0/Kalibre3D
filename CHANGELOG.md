@@ -12,6 +12,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
   - Rediseño responsivo de las tarjetas de estado y KPIs mensuales en `/dashboard` para evitar desbordamientos en móviles y tablets (`390 px` a `1024 px`).
   - Adaptación completa del Cotizador 3D (`/quote`) a los tokens semánticos del tema claro y oscuro de Kalibre.
   - Corrección de grillas, filtros táctiles y barra inferior pegajosa en `/products`, `/spools` y `/orders/new` sin colisión con la barra de navegación móvil (`MobileNav`) ni la barra lateral (`Sidebar`).
+  - **Endurecimiento de Seguridad (`docs/security/2026-11-08-auditoria-y-consideraciones-seguridad.md`):** Eliminación del uso de `Origin` del cliente en enlaces de autenticación (`site-url.ts`), soporte de `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `proxy.ts` y `auth-settings.ts`, atributo `secure` en producción para la cookie `saas3d-center-id` y encabezados HTTP de seguridad en `next.config.ts`.
 - **Definición de Marca Comercial Oficial (`Kalibre` / `Kalibre3D`) y Paquetes SQL de Producción (`scripts/production/`):**
   - Adopción de la marca **Kalibre** para el producto comercial.
   - Creación del repositorio oficial en GitHub (`https://github.com/Epimete0/Kalibre3D`).

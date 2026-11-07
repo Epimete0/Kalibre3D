@@ -11,7 +11,11 @@ const { resolveActiveMembership, signInWithPassword, get, set, remove, redirect 
 
 vi.mock("next/headers", () => ({ cookies: vi.fn(async () => ({ get, set, delete: remove })), headers: vi.fn(async () => ({ get: vi.fn() })) }));
 vi.mock("next/navigation", () => ({ redirect }));
-vi.mock("@/lib/auth", () => ({ CENTER_COOKIE: "nexo-center-id", resolveActiveMembership }));
+vi.mock("@/lib/auth", () => ({
+  CENTER_COOKIE: "nexo-center-id",
+  CENTER_COOKIE_OPTIONS: { httpOnly: true, sameSite: "lax", path: "/", secure: false },
+  resolveActiveMembership,
+}));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn(async () => ({ auth: { signInWithPassword } })) }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 vi.mock("@/lib/auth-errors", () => ({ mapSupabaseLoginError: vi.fn(() => "Credenciales inválidas.") }));

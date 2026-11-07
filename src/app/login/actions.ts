@@ -1,17 +1,17 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { CENTER_COOKIE } from "@/lib/auth";
-import { resolveActiveMembership } from "@/lib/auth";
+import { CENTER_COOKIE, CENTER_COOKIE_OPTIONS, resolveActiveMembership } from "@/lib/auth";
 import { ensureProfile, isInvitationUsable, profileExists } from "@/lib/signup-profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeActionError } from "@/lib/action-errors";
 import { isExistingSupabaseAccountError, isSupabaseRateLimitError, mapSupabaseAuthError, mapSupabaseLoginError, mapSupabasePasswordError, mapSupabaseSignupError } from "@/lib/auth-errors";
 import { redeemInvitation } from "@/lib/invitation-service";
 import { ACCEPT_TERMS_ERROR, TERMS_VERSION, hasAcceptedTerms } from "@/lib/legal";
+import { siteUrl } from "@/lib/site-url";
 
 export type AuthFormState = { error?: string; message?: string };
 const credentials = z.object({ email: z.string().trim().email("Ingresa un correo válido."), password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres.") });
@@ -21,10 +21,8 @@ function parse(formData: FormData) {
   return credentials.safeParse({ email: formData.get("email"), password: formData.get("password") });
 }
 
-async function authRedirect(path: string) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? (await headers()).get("origin");
-  if (!siteUrl) throw new Error("Falta NEXT_PUBLIC_SITE_URL para configurar la autenticación");
-  return new URL(path, siteUrl).toString();
+function authRedirect(path: string) {
+  return new URL(path, siteUrl()).toString();
 }
 
 export async function loginAction(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -39,7 +37,7 @@ export async function loginAction(_state: AuthFormState, formData: FormData): Pr
     (await cookies()).delete(CENTER_COOKIE);
     redirect("/dashboard");
   }
-  (await cookies()).set(CENTER_COOKIE, membership.centerId, { httpOnly: true, sameSite: "lax", path: "/" });
+  (await cookies()).set(CENTER_COOKIE, membership.centerId, CENTER_COOKIE_OPTIONS);
   redirect("/dashboard");
 }
 
@@ -76,7 +74,7 @@ export async function signupAction(_state: AuthFormState, formData: FormData): P
     }
     return { error: "Tu cuenta fue creada, pero no pudimos completar la configuración. Inicia sesión y vuelve a intentarlo o contacta al administrador." };
   }
-   if (centerId) (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, sameSite: "lax", path: "/" });
+   if (centerId) (await cookies()).set(CENTER_COOKIE, centerId, CENTER_COOKIE_OPTIONS);
   if (!data.session) return { message: "Revisa tu correo para confirmar la cuenta y luego inicia sesión." };
   // Con invitación ya pertenece a un taller; sin ella el siguiente paso es crear el suyo.
   redirect(centerId ? "/dashboard" : "/taller/nuevo");

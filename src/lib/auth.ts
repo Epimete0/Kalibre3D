@@ -6,6 +6,12 @@ import { parseOptionalCenterId, selectActiveMembership, type ActiveMembership } 
 import { DomainError } from "./action-errors";
 
 export const CENTER_COOKIE = "saas3d-center-id";
+export const CENTER_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  secure: process.env.NODE_ENV === "production",
+};
 export const ROLES = ["OWNER", "ADMIN", "PROFESSIONAL", "VIEWER"] as const;
 export type Role = (typeof ROLES)[number];
 

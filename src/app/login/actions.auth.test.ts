@@ -13,7 +13,11 @@ vi.mock("next/headers", () => ({
   headers: vi.fn(async () => ({ get: vi.fn(() => "https://kurova.test") })),
 }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
-vi.mock("@/lib/auth", () => ({ CENTER_COOKIE: "saas3d-center-id", resolveActiveMembership: vi.fn() }));
+vi.mock("@/lib/auth", () => ({
+  CENTER_COOKIE: "saas3d-center-id",
+  CENTER_COOKIE_OPTIONS: { httpOnly: true, sameSite: "lax", path: "/", secure: false },
+  resolveActiveMembership: vi.fn(),
+}));
 vi.mock("@/lib/prisma", () => ({ prisma: { invitationCode: { findFirst }, profile: { findUnique, upsert } } }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn(async () => ({ auth: { signUp, resetPasswordForEmail } })) }));
 vi.mock("@/lib/auth-errors", () => ({

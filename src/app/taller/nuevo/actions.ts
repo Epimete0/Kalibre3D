@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actionFailure } from "@/lib/action-failure";
-import { CENTER_COOKIE } from "@/lib/auth";
+import { CENTER_COOKIE, CENTER_COOKIE_OPTIONS } from "@/lib/auth";
 import { createCenter } from "@/lib/center-creation";
 
 export type CreateCenterState = { error?: string };
@@ -14,7 +14,7 @@ export async function createCenterAction(_state: CreateCenterState, formData: Fo
   let centerId: string;
   try {
     centerId = (await createCenter(formData)).centerId;
-    (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, sameSite: "lax", path: "/" });
+    (await cookies()).set(CENTER_COOKIE, centerId, CENTER_COOKIE_OPTIONS);
   } catch (error) {
     return { error: actionFailure(error, "No fue posible crear el taller. Intenta nuevamente.").error };
   }

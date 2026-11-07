@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { CENTER_COOKIE, requireSessionUser } from "@/lib/auth";
+import { CENTER_COOKIE, CENTER_COOKIE_OPTIONS, requireSessionUser } from "@/lib/auth";
 import { safeActionError } from "@/lib/action-errors";
 import { redeemInvitation } from "@/lib/invitation-service";
 import { hashInvitationCode } from "@/lib/invitation-admin-service";
@@ -17,7 +17,7 @@ export async function redeemInvitationAction(_state: JoinState, formData: FormDa
   const codeHash = hashInvitationCode(code.data);
   try {
      const center = await redeemInvitation({ userId, codeHash });
-    (await cookies()).set(CENTER_COOKIE, center, { httpOnly: true, sameSite: "lax", path: "/" });
+    (await cookies()).set(CENTER_COOKIE, center, CENTER_COOKIE_OPTIONS);
   } catch (error) { return { error: safeActionError(error, "No fue posible canjear el código. Intenta nuevamente.") }; }
   return { message: "Te uniste al taller correctamente." };
 }

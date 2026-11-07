@@ -24,6 +24,12 @@
   - `/orders/new` (`NewOrderForm.tsx`): la barra inferior de cobro pasó a ser `sticky bottom-20 lg:bottom-4` dentro del formulario para no superponerse con `MobileNav` ni con `Sidebar`.
   - `src/components/ui.tsx` y `src/components/MobileNav.tsx`: se reemplazó el color heredado `#8a6d24` del `Badge` `accent` por `text-accent` y se limpiaron las sombras vino/rosa residuales.
 
+- **Auditoría de seguridad y remediación (`docs/security/2026-11-08-auditoria-y-consideraciones-seguridad.md`):**
+  - `[VULN-001]` Eliminación de lectura de `headers().get("origin")` en `src/app/login/actions.ts` y resolución estricta de `siteUrl()` (`src/lib/site-url.ts`) desde variables controladas por el servidor (`NEXT_PUBLIC_SITE_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL` o `localhost:3000` fuera de producción).
+  - `[VULN-002]` Soporte de `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `src/proxy.ts` y `src/lib/auth-settings.ts`.
+  - `[VULN-003]` Cookie `saas3d-center-id` centralizada con `CENTER_COOKIE_OPTIONS` (`secure: process.env.NODE_ENV === "production"`, `httpOnly: true`, `sameSite: "lax"`).
+  - `[DEF-001]` Encabezados globales de seguridad HTTP en `next.config.ts` (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+
 ---
 
 ## Definición de marca comercial: Kalibre (Kalibre3D) y Paquetes SQL de Producción — 2026-11-08

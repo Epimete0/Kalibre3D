@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actionFailure } from "@/lib/action-failure";
 import { parsePasswordChange, resolveSelectableCenter, updateCenterSettings, updateDisplayName } from "@/lib/account-service";
-import { CENTER_COOKIE, requireSessionUser } from "@/lib/auth";
+import { CENTER_COOKIE, CENTER_COOKIE_OPTIONS, requireSessionUser } from "@/lib/auth";
 import { DomainError } from "@/lib/action-errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { readAuthAutoconfirm } from "@/lib/auth-settings";
@@ -70,7 +70,7 @@ export async function saveCenterAction(_state: State, data: FormData): Promise<S
 export async function switchCenterAction(_state: State, data: FormData): Promise<State> {
   try {
     const centerId = await resolveSelectableCenter(data);
-    (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, sameSite: "lax", path: "/" });
+    (await cookies()).set(CENTER_COOKIE, centerId, CENTER_COOKIE_OPTIONS);
   } catch (error) {
     return actionFailure(error, "No fue posible cambiar el taller. Intenta nuevamente.");
   }
