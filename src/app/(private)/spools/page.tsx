@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/money-format";
 import { listSpools } from "@/lib/spool-queries";
 
 export const metadata = {
-  title: "Bobinas y Filamento · Taller 3D",
+  title: "Bobinas y Filamento · Kalibre",
 };
 
 type SearchParams = Promise<{

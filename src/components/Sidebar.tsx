@@ -45,7 +45,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
       <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
         <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
           <span className="font-display text-[27px] leading-none tracking-[-0.04em] text-ink">
-            Taller 3D<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" />
+            Kalibre<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" />
           </span>
           <span className="mt-1 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span>
         </Link>

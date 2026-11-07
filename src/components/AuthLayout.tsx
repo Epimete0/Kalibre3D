@@ -29,7 +29,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           href="/"
           className="reveal relative font-display text-2xl tracking-tight text-white"
         >
-          Taller 3D<span className="text-accent">.</span>
+          Kalibre<span className="text-accent">.</span>
         </Link>
 
         <div className="relative max-w-md">
@@ -86,7 +86,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             href="/"
             className="mb-8 inline-block font-display text-2xl tracking-tight text-ink lg:hidden"
           >
-            Taller 3D<span className="text-accent">.</span>
+            Kalibre<span className="text-accent">.</span>
           </Link>
           <div className="reveal" style={{ animationDelay: "120ms" }}>
             {children}

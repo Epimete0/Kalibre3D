@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { CreateCenterForm } from "./CreateCenterForm";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Crea tu taller — Taller 3D" };
+export const metadata = { title: "Crea tu taller — Kalibre" };
 
 export default async function NewCenterPage() {
   const userId = await requireSessionUser();

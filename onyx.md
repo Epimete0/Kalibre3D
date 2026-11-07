@@ -1,8 +1,20 @@
 # Onyx: Contexto Vivo del SaaS para makers 3D
 
-> Nombre comercial **pendiente**. Identificador técnico interno: `saas3d` (paquete, carpeta y proyectos de Supabase/Vercel). Igual que en Kurova con `nexo`, el identificador técnico no se cambia solo para unificar nombres cuando se decida la marca.
+> Nombre comercial oficial: **Kalibre** (repositorio: `Kalibre3D`). Identificador técnico interno: `saas3d` (paquete, carpeta y proyectos de Supabase/Vercel). Igual que en Kurova con `nexo`, el identificador técnico se conserva sin cambios.
 >
 > Este documento es la fuente principal de verdad del producto: qué se quiere hacer, cómo se construye, qué problemas aparecieron y qué se decidió. Arriba van las entradas fechadas de cada iteración (la más reciente primero). Abajo, las secciones estables numeradas. Ver la sección 17 para saber cómo actualizarlo.
+
+---
+
+## Definición de marca comercial: Kalibre (Kalibre3D) — 2026-11-08
+
+- **Investigación de nombres y verificación de colisiones:** Se verificaron múltiples opciones vía búsqueda web descartando colisiones reales en herramientas 3D (`Trama 3D`, `Estratos 3D`, `Brami3D`, `Infill: 3D Print Cost Calc`, etc.).
+- **Decisión de marca aprobada:** **Kalibre** (con K).
+  - Hace referencia a la herramienta de medición más representativa de los makers (calibre / pie de rey).
+  - La "K" diferencia la marca del software de libros electrónicos (*Calibre*) y le otorga un carácter SaaS moderno, técnico y ágil.
+- **Unificación de interfaz y metadata:** Se actualizó la interfaz visible (landing, sidebar, header móvil, vistas de autenticación, páginas de error, 404, títulos de metadatos y páginas de Términos y Privacidad) pasando de la provisional "Taller 3D" a **Kalibre**.
+- Se preserva `saas3d` como identificador técnico en base de datos, carpetas y configuración según el contrato de `AGENTS.md`.
+- Se creó `README.md` completo para el repositorio en GitHub `https://github.com/Epimete0/Kalibre3D`.
 
 ---
 

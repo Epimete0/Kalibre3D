@@ -7,7 +7,7 @@ export function LegalPage({ title, intro, children }: { title: string; intro: st
   return (
     <PublicShell>
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">Taller 3D</p>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">Kalibre</p>
         <h1 className="mt-2 text-balance font-display text-4xl leading-tight text-ink sm:text-5xl">{title}</h1>
         <p className="mt-3 text-sm text-faint">Versión del {TERMS_VERSION_LABEL}</p>
         {!LEGAL_REVIEWED ? <p role="note" data-testid="legal-draft" className="mt-5 rounded-lg border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-ink">Este texto es un borrador pendiente de revisión legal. Puede cambiar antes de la publicación del servicio.</p> : null}

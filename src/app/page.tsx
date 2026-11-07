@@ -7,7 +7,7 @@ export default function HomePage() {
     <PublicShell>
       <main className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center text-ink">
         <div className="max-w-md space-y-4">
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">Taller 3D</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">Kalibre</h1>
           <p className="text-base text-muted sm:text-lg">Pedidos, dinero, costos y filamento de tu taller de impresión 3D en un solo lugar.</p>
           <div className="flex flex-wrap justify-center gap-3 pt-2">
             <Link href="/registro" className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2">Crear mi cuenta</Link>

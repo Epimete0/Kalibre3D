@@ -46,7 +46,7 @@ export default async function DashboardPage({
     return (
       <>
         <PageHeader
-          title="Comienza en Taller 3D"
+          title="Comienza en Kalibre"
           description="Crea tu propio taller o únete al de tu equipo con un código de invitación."
         />
         <Card className="max-w-2xl p-6">

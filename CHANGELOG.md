@@ -6,6 +6,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Definición de Marca Comercial Oficial — Kalibre (`Kalibre3D`):**
+  - Adopción de la marca **Kalibre** para el producto comercial.
+  - Creación del repositorio oficial en GitHub (`https://github.com/Epimete0/Kalibre3D`).
+  - Creación de `README.md` completo documentando la propuesta de valor, arquitectura, características principales y guía de desarrollo local.
+  - Actualización de la marca visible en la aplicación: landing page, cabecera pública y pie de página (`PublicShell`), barra lateral (`Sidebar`), barra superior móvil (`PrivateHeader`), vistas de autenticación (`AuthLayout`, `AuthForm`), documentos legales (`/terminos`, `/privacidad`), pantallas de error y metadata de rutas.
 - **Fase 3: Panel Operativo y Financiero del Mes con Alertas (`/dashboard`, `src/lib/dashboard-queries.ts`) (Tareas 3.1 a 3.3):**
   - Banda superior de **Alertas del taller** con indicadores y accesos directos a **Pedidos atrasados**, **Bobinas por acabarse** (`remainingGrams <= lowSpoolThresholdGrams`) y **Piezas con stock bajo** (`currentStock <= minStock`).
   - Tarjetas táctiles de **Carga operativa por etapa** (`Cotizados`, `Confirmados`, `Imprimiendo`, `Listos`) enlazadas a `/orders?status=...`.

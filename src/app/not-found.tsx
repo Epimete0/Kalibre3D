@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicShell } from "@/components/PublicShell";
 
-export const metadata: Metadata = { title: "Página no encontrada — Taller 3D" };
+export const metadata: Metadata = { title: "Página no encontrada — Kalibre" };
 
 /** «No encontrado» para cualquier dirección que no existe fuera del área privada. En español y con una salida clara. */
 export default function NotFound() {

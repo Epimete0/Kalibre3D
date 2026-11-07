@@ -6,7 +6,7 @@ import { MATERIAL_LABEL, SPOOL_MOVEMENT_LABEL, type SpoolMovementKind } from "@/
 import { getSpoolDetail } from "@/lib/spool-queries";
 
 export const metadata = {
-  title: "Detalle de Bobina · Taller 3D",
+  title: "Detalle de Bobina · Kalibre",
 };
 
 type Params = Promise<{ id: string }>;
