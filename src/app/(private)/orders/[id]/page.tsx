@@ -5,12 +5,6 @@ import { requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { formatMoney } from "@/lib/money-format";
 import {
-  CATEGORY_LABEL,
-  METHOD_LABEL,
-  type MoneyCategory,
-  type PaymentMethod,
-} from "@/lib/money-presentation";
-import {
   CHANNEL_LABEL,
   KIND_LABEL,
   orderNumberLabel,
@@ -19,6 +13,7 @@ import {
 import { getOrderDetail } from "@/lib/order-queries";
 import type { OrderStatus } from "@/lib/order-status";
 import { OrderDetailStatusControls } from "./OrderDetailStatusControls";
+import { OrderMoneyControls } from "./OrderMoneyControls";
 
 export const metadata = {
   title: "Detalle de pedido | saas3d",
@@ -79,6 +74,7 @@ export default async function OrderDetailPage(props: {
   }
 
   const canManage = role === "OWNER" || role === "ADMIN" || role === "PROFESSIONAL";
+  const canManageMoney = role === "OWNER" || role === "ADMIN";
   const isViewer = role === "VIEWER";
   const currency = settings.currency;
 
@@ -229,71 +225,21 @@ export default async function OrderDetailPage(props: {
             )}
           </Card>
 
-          {/* Cobros y movimientos de dinero asociados */}
-          <Card className="p-4 sm:p-6 space-y-4">
-            <h2 className="text-base sm:text-lg font-bold text-ink">
-              Cobros y movimientos
-            </h2>
-
-            {order.transactions.length === 0 ? (
-              <p className="text-xs sm:text-sm text-muted">
-                Aún no se han registrado cobros para este pedido.
-              </p>
-            ) : (
-              <div className="divide-y divide-line/70">
-                {order.transactions.map((tx) => {
-                  const isVoided = tx.voidedAt !== null;
-                  const methodLabel =
-                    METHOD_LABEL[tx.method as PaymentMethod] ?? tx.method;
-                  const categoryLabel =
-                    CATEGORY_LABEL[tx.category as MoneyCategory] ?? tx.category;
-
-                  return (
-                    <div
-                      key={tx.id}
-                      className={`py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 ${
-                        isVoided ? "opacity-55" : ""
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`text-sm font-semibold ${
-                              isVoided ? "line-through text-muted" : "text-ink"
-                            }`}
-                          >
-                            {categoryLabel} · {methodLabel}
-                          </span>
-                          {isVoided && <Badge tone="danger">Anulado</Badge>}
-                        </div>
-                        <div className="mt-0.5 text-xs text-muted">
-                          Fecha: {tx.occurredOn}
-                          {tx.notes ? ` · ${tx.notes}` : ""}
-                          {isVoided && tx.voidReason
-                            ? ` · Motivo: ${tx.voidReason}`
-                            : ""}
-                        </div>
-                      </div>
-
-                      {!isViewer && tx.amount !== null && (
-                        <div
-                          className={`text-sm sm:text-base font-bold shrink-0 ${
-                            isVoided
-                              ? "line-through text-muted"
-                              : tx.type === "EXPENSE"
-                                ? "text-danger"
-                                : "text-ok"
-                          }`}
-                        >
-                          {tx.type === "EXPENSE" ? "−" : "+"}
-                          {formatMoney(tx.amount, currency)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          {/* Cobros, anulaciones y devoluciones de dinero (Tarea 1.7) */}
+          <Card className="p-4 sm:p-6">
+            <OrderMoneyControls
+              orderId={order.id}
+              channel={order.channel}
+              status={order.status}
+              version={order.version}
+              currency={currency}
+              expectedReceivable={order.expectedReceivable}
+              paidAmount={order.paidAmount}
+              balance={order.balance}
+              transactions={order.transactions}
+              canManageMoney={canManageMoney}
+              isViewer={isViewer}
+            />
           </Card>
 
           {/* Historial de estados (OrderEvent) */}

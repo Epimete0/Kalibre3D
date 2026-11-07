@@ -6,6 +6,10 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Cobros, anulaciones y devoluciones de ventas (`/orders/[id]`) (Tarea 1.7):**
+  - Registro de cobros adicionales o abonos con sugerencia automática del saldo pendiente o del monto neto de Mercado Libre e idempotencia por `operationId`.
+  - Anulación controlada de movimientos de dinero con motivo obligatorio (D5), preservando la trazabilidad histórica sin borrado físico.
+  - Flujo de devolución atómica (D6) desde ventas entregadas (`DELIVERED` → `RETURNED`), registrando en la misma transacción el cambio de estado, el evento de auditoría y el gasto de reembolso (`REFUNDS`).
 - **Listado, ficha de pedido y control de estados (`/orders` y `/orders/[id]`) (Tarea 1.6):**
   - Listado de pedidos y ventas con priorización automática de **pedidos atrasados primero** según la zona horaria del taller.
   - Filtros en vivo por estado (Todos, Pendientes, Cotizados, Confirmados, Imprimiendo, Listos, Entregados, Cancelados), por canal de venta y búsqueda insensible a tildes por `#número`, cliente o pieza.

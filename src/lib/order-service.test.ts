@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prisma, requireOperationalContext } = vi.hoisted(() => {
+const { prisma, requireOperationalContext, requireCatalogContext } = vi.hoisted(() => {
   const tx = {
     $executeRaw: vi.fn(),
     $queryRaw: vi.fn(),
@@ -19,7 +19,9 @@ const { prisma, requireOperationalContext } = vi.hoisted(() => {
       create: vi.fn(),
     },
     moneyTransaction: {
+      findUnique: vi.fn(),
       create: vi.fn(),
+      updateMany: vi.fn(),
     },
   };
 
@@ -34,13 +36,25 @@ const { prisma, requireOperationalContext } = vi.hoisted(() => {
       role: "OWNER",
       timeZone: "America/Santiago",
     }),
+    requireCatalogContext: vi.fn().mockResolvedValue({
+      userId: "user-1",
+      centerId: "center-1",
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    }),
   };
 });
 
 vi.mock("@/lib/prisma", () => ({ prisma }));
-vi.mock("@/lib/auth", () => ({ requireOperationalContext }));
+vi.mock("@/lib/auth", () => ({ requireOperationalContext, requireCatalogContext }));
 
-import { changeOrderStatus, createOrder } from "./order-service";
+import {
+  changeOrderStatus,
+  createOrder,
+  registerPayment,
+  returnOrder,
+  voidMoneyTransaction,
+} from "./order-service";
 
 const VALID_OP_ID = "22222222-2222-4222-8222-222222222222";
 
@@ -49,6 +63,10 @@ describe("order-service", () => {
     vi.clearAllMocks();
     prisma.$queryRaw.mockResolvedValue([{ max: 0 }]);
     prisma.order.findUnique.mockResolvedValue(null);
+    prisma.moneyTransaction.findUnique.mockResolvedValue(null);
+    prisma.moneyTransaction.create.mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ id: "tx-1", ...(args.data as object) })
+    );
     prisma.order.create.mockImplementation((args: { data: unknown }) =>
       Promise.resolve({ id: "order-1", number: 1, ...(args.data as object) })
     );
@@ -399,6 +417,186 @@ describe("order-service", () => {
           to: "CONFIRMED",
         })
       ).rejects.toThrow("El pedido no existe o no pertenece a este taller.");
+    });
+  });
+
+  describe("registerPayment", () => {
+    const ORDER_UUID = "11111111-1111-4111-8111-111111111111";
+
+    it("registra un cobro con requireCatalogContext y bloqueo del pedido", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: ORDER_UUID, status: "CONFIRMED" }]);
+
+      const result = await registerPayment({
+        orderId: ORDER_UUID,
+        operationId: VALID_OP_ID,
+        amount: 5000,
+        method: "TRANSFER",
+        notes: "Abono 50%",
+      });
+
+      expect(requireCatalogContext).toHaveBeenCalled();
+      expect(prisma.moneyTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-1",
+          operationId: VALID_OP_ID,
+          type: "INCOME",
+          category: "ORDER_PAYMENT",
+          amount: 5000,
+          method: "TRANSFER",
+          orderId: ORDER_UUID,
+          notes: "Abono 50%",
+        }),
+      });
+      expect(result).toEqual({ id: "tx-1", amount: 5000 });
+    });
+
+    it("es idempotente si el operationId ya fue registrado", async () => {
+      prisma.moneyTransaction.findUnique.mockResolvedValueOnce({
+        id: "tx-existing",
+        amount: 5000,
+      });
+
+      const result = await registerPayment({
+        orderId: ORDER_UUID,
+        operationId: VALID_OP_ID,
+        amount: 5000,
+        method: "TRANSFER",
+      });
+
+      expect(result).toEqual({ id: "tx-existing", amount: 5000 });
+      expect(prisma.moneyTransaction.create).not.toHaveBeenCalled();
+    });
+
+    it("rechaza cobros sobre un pedido cancelado", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: ORDER_UUID, status: "CANCELED" }]);
+
+      await expect(
+        registerPayment({
+          orderId: ORDER_UUID,
+          operationId: VALID_OP_ID,
+          amount: 5000,
+          method: "CASH",
+        })
+      ).rejects.toThrow("No se puede registrar un cobro en un pedido cancelado.");
+    });
+  });
+
+  describe("voidMoneyTransaction", () => {
+    const TX_UUID = "33333333-3333-4333-8333-333333333333";
+
+    it("anula un movimiento activo con motivo obligatorio (D5)", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: TX_UUID, voidedAt: null }]);
+
+      const result = await voidMoneyTransaction({
+        transactionId: TX_UUID,
+        reason: "Monto duplicado",
+      });
+
+      expect(requireCatalogContext).toHaveBeenCalled();
+      expect(prisma.moneyTransaction.updateMany).toHaveBeenCalledWith({
+        where: { centerId: "center-1", id: TX_UUID },
+        data: {
+          voidedAt: expect.any(Date),
+          voidedByUserId: "user-1",
+          voidReason: "Monto duplicado",
+        },
+      });
+      expect(result.id).toBe(TX_UUID);
+    });
+
+    it("rechaza anular un movimiento que ya estaba anulado", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: TX_UUID, voidedAt: new Date() }]);
+
+      await expect(
+        voidMoneyTransaction({
+          transactionId: TX_UUID,
+          reason: "Reintento",
+        })
+      ).rejects.toThrow("Este movimiento ya fue anulado.");
+    });
+  });
+
+  describe("returnOrder", () => {
+    const ORDER_UUID = "11111111-1111-4111-8111-111111111111";
+
+    it("pasa el pedido de DELIVERED a RETURNED, crea evento y gasto REFUNDS en una transacción (D6)", async () => {
+      const deliveredDate = new Date("2026-11-05T10:00:00Z");
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          status: "DELIVERED",
+          version: 2,
+          deliveredAt: deliveredDate,
+        },
+      ]);
+
+      const result = await returnOrder({
+        orderId: ORDER_UUID,
+        expectedVersion: 2,
+        operationId: VALID_OP_ID,
+        refundAmount: 6483,
+        method: "MERCADOLIBRE",
+        notes: "Devolución ML",
+      });
+
+      expect(requireCatalogContext).toHaveBeenCalled();
+      expect(prisma.order.update).toHaveBeenCalledWith({
+        where: { centerId_id: { centerId: "center-1", id: ORDER_UUID } },
+        data: {
+          status: "RETURNED",
+          version: 3,
+          deliveredAt: deliveredDate,
+        },
+      });
+      expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+        data: {
+          centerId: "center-1",
+          orderId: ORDER_UUID,
+          version: 3,
+          fromStatus: "DELIVERED",
+          toStatus: "RETURNED",
+          actorUserId: "user-1",
+        },
+      });
+      expect(prisma.moneyTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-1",
+          operationId: VALID_OP_ID,
+          type: "EXPENSE",
+          category: "REFUNDS",
+          amount: 6483,
+          method: "MERCADOLIBRE",
+          orderId: ORDER_UUID,
+          notes: "Devolución ML",
+        }),
+      });
+      expect(result).toEqual({
+        orderId: ORDER_UUID,
+        status: "RETURNED",
+        version: 3,
+        transactionId: "tx-1",
+      });
+    });
+
+    it("rechaza devolver un pedido que no está en DELIVERED", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          status: "READY",
+          version: 2,
+          deliveredAt: null,
+        },
+      ]);
+
+      await expect(
+        returnOrder({
+          orderId: ORDER_UUID,
+          expectedVersion: 2,
+          operationId: VALID_OP_ID,
+          refundAmount: 5000,
+          method: "TRANSFER",
+        })
+      ).rejects.toThrow('Solo se puede registrar una devolución sobre un pedido entregado (estado actual: "Listo").');
     });
   });
 });

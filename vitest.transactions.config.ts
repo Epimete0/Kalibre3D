@@ -13,6 +13,7 @@ export default defineConfig({
       "tests/customers.integration.test.ts",
       "tests/orders-creation.integration.test.ts",
       "tests/orders-status.integration.test.ts",
+      "tests/orders-payments-returns.integration.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 60_000,

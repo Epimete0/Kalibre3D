@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5 y 1.6 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.7 Cobros y devoluciones.**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5, 1.6 y 1.7 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.8 Dinero.**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,13 +20,31 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-status.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-payments-returns.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.7 (Cobros y devoluciones):**
-- `order-service.registerPayment`: idempotente por `operationId`, requiere `requireCatalogContext` (`OWNER`/`ADMIN`, D1), sugiere el saldo o el neto ML.
-- `voidMoneyTransaction` (D5): anula un movimiento una sola vez con motivo obligatorio (`voidedAt`, `voidedByUserId`, `voidReason`), requiere `requireCatalogContext`.
-- `returnOrder` (D6): una sola transacción desde `DELIVERED` a `RETURNED` (con versión y `FOR UPDATE`), registra `EXPENSE` `REFUNDS` por el monto devuelto y escribe `OrderEvent`.
-- Integrar controles de cobro, anulación y devolución en `/orders/[id]`.
+**Qué hay para la 1.8 (Dinero):**
+- `money-service.ts`: ingresos sueltos (`DIGITAL_SALE`, `OTHER_INCOME`), gastos manuales por categoría (`FILAMENT`, `PARTS`, `SHIPPING`, `ADVERTISING`, `FEES`, `UNEXPECTED`, `OTHER_EXPENSE`) y anulación (`voidMoneyTransaction`), todo protegido con `requireCatalogContext` (`OWNER`/`ADMIN`, D1).
+- `money-queries.ts`: consulta de movimientos y resumen mensual en la zona horaria del taller (`money-summary.ts`).
+- Pantalla `/money` responsiva (390 px): selector de mes, tarjetas de ingresos/gastos/ganancia, desglose por canal y por categoría, alta rápida de gasto o ingreso y lista de movimientos con opción de anular.
+- Prueba real de que el mes respeta `America/Santiago` en los bordes del día.
+
+---
+
+## Fase 1 — Cobros, anulaciones y devoluciones (tarea 1.7), 2026-11-08
+
+- **Servicio y concurrencia (`src/lib/order-service.ts`):**
+  - `registerPayment`: exclusivo para `OWNER`/`ADMIN` (`requireCatalogContext`, D1). Bloquea el pedido con `SELECT ... FOR UPDATE`, verifica que no esté cancelado y garantiza idempotencia por `(centerId, operationId)` antes y dentro de la transacción.
+  - `voidMoneyTransaction`: exclusivo para `OWNER`/`ADMIN` (`requireCatalogContext`, D5). Bloquea el movimiento con `SELECT ... FOR UPDATE`, comprueba `voidedAt === null` y registra fecha, autor y motivo obligatorio (1–300 caracteres). Rechaza dobles anulaciones con `DomainError`.
+  - `returnOrder`: exclusivo para `OWNER`/`ADMIN` (`requireCatalogContext`, D6). En una sola transacción bloquea el pedido con `FOR UPDATE`, valida `version === expectedVersion` y `status === 'DELIVERED'`, actualiza el pedido a `RETURNED` (`version + 1`) conservando `deliveredAt`, escribe el `OrderEvent` y registra el gasto `EXPENSE` `REFUNDS`.
+  - Procedimiento de concurrencia `AGENTS.md` cumplido: se observó el fallo en PostgreSQL antes de aplicar las defensas y luego se verificó en verde.
+- **Interfaz (`/orders/[id]` y `OrderMoneyControls.tsx`):**
+  - Panel táctil para registrar cobros con sugerencia automática del saldo pendiente (o neto de Mercado Libre) y método según el canal.
+  - Acción en línea para anular cobros con confirmación y motivo obligatorio.
+  - Formulario de devolución y reembolso cuando el pedido está en `DELIVERED`.
+- **Pruebas:**
+  - Unitarias en `order-service.test.ts` (19/19). Total unitarias: 303/303.
+  - Integración real contra PostgreSQL en `tests/orders-payments-returns.integration.test.ts` (3/3): cobro repetido en paralelo no se duplica, doble anulación simultánea o secuencial se rechaza con `DomainError`, y atomicidad de `returnOrder` (si falla el gasto, el pedido permanece en `DELIVERED`).
+- **Resultados:** `quality:gate` PASSED (303 unitarias, 0 lint warnings, build exitoso, 13 RLS, 3 S1, 1 S3, 47 transacciones).
 
 ---
 
@@ -601,7 +619,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.6 Listado, ficha y estados.** `order-queries.ts` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `order-service.changeOrderStatus(orderId, expectedVersion, to)`: `FOR UPDATE`, compara la versión, valida la transición, incrementa la versión, fija `deliveredAt` y escribe `OrderEvent`. Pantallas `/orders` (lista en tarjetas en celular y tabla en computador) y `/orders/[id]` (piezas, totales, neto ML, cobros, saldo, historial de estados y botones de avance). *Pruebas reales (concurrencia, AGENTS.md):* dos cambios con la misma versión → gana uno y queda exactamente un evento. Se describe la intercalación y se observa el fallo antes de corregir.
 
-- [ ] **1.7 Cobros y devoluciones.** `order-service.registerPayment` (idempotente por `operationId`; sugiere el saldo o el neto ML), `voidMoneyTransaction` (D5) y `returnOrder` (D6). *Pruebas reales:* pago repetido no se duplica; la devolución es atómica (si falla el gasto, el pedido no cambia de estado); anular dos veces se rechaza.
+- [x] **1.7 Cobros y devoluciones.** `order-service.registerPayment` (idempotente por `operationId`; sugiere el saldo o el neto ML), `voidMoneyTransaction` (D5) y `returnOrder` (D6). *Pruebas reales:* pago repetido no se duplica; la devolución es atómica (si falla el gasto, el pedido no cambia de estado); anular dos veces se rechaza.
 
 - [ ] **1.8 Dinero.** `money-service.ts` (ingresos sueltos como `DIGITAL_SALE`/`OTHER_INCOME` y gastos por categoría; solo `OWNER`/`ADMIN`) y `money-queries.ts` (mes en la zona del taller). Pantalla `/money`: selector de mes, ingresos, gastos y ganancia, por canal y por categoría, lista de movimientos con anulación y alta rápida de gasto o ingreso. *Pruebas:* unitarias del resumen (incluye anulados) y una real de que el mes respeta `America/Santiago` en los bordes del día.
 

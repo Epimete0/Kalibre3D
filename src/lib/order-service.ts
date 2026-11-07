@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
-import { requireOperationalContext } from "@/lib/auth";
+import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
+import { PAYMENT_METHODS } from "@/lib/money-presentation";
 import { todayInTimeZone } from "@/lib/money-summary";
 import { STATUS_LABEL } from "@/lib/order-presentation";
 import { canTransition, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
@@ -313,4 +314,253 @@ export async function changeOrderStatus(
     return { id: orderId, status: to, version: nextVersion };
   });
 }
+
+export const registerPaymentSchema = z.object({
+  orderId: z.string({ error: "Identificador de pedido inválido." }).uuid("Identificador de pedido inválido."),
+  operationId: z.string({ error: "Identificador de operación inválido." }).uuid("Identificador de operación inválido."),
+  amount: z.coerce
+    .number({ error: "El monto del cobro debe ser mayor a 0." })
+    .int("El monto del cobro debe ser un número entero.")
+    .min(1, "El monto del cobro debe ser mayor a 0."),
+  method: z.enum(PAYMENT_METHODS, { error: "El método de pago no es válido." }),
+  occurredOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener formato AAAA-MM-DD.")
+    .optional(),
+  notes: z.string().trim().max(1000, "Las notas no pueden superar 1000 caracteres.").nullable().optional().default(null),
+});
+
+export type RegisterPaymentInput = z.input<typeof registerPaymentSchema>;
+
+export async function registerPayment(
+  input: RegisterPaymentInput
+): Promise<{ id: string; amount: number }> {
+  const { centerId, userId, timeZone } = await requireCatalogContext();
+  const parsed = registerPaymentSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError(parsed.error.issues[0]?.message ?? "Datos de cobro inválidos.");
+  }
+  const data = parsed.data;
+  const tz = timeZone ?? "America/Santiago";
+  const dateStr = data.occurredOn ?? todayInTimeZone(new Date(), tz);
+
+  // Idempotencia previa fuera de la transacción si ya existe
+  const existingPre = await prisma.moneyTransaction.findUnique({
+    where: { centerId_operationId: { centerId, operationId: data.operationId } },
+    select: { id: true, amount: true },
+  });
+  if (existingPre) {
+    return existingPre;
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    // Bloquear el pedido para serializar cobros concurrentes del mismo pedido
+    const orderRows = await tx.$queryRaw<Array<{ id: string; status: string }>>`
+      SELECT id, status
+      FROM "Order"
+      WHERE "centerId" = ${centerId}::uuid AND id = ${data.orderId}::uuid
+      FOR UPDATE
+    `;
+    const order = orderRows[0];
+    if (!order) {
+      throw new DomainError("El pedido no existe o no pertenece a este taller.");
+    }
+    if (order.status === "CANCELED") {
+      throw new DomainError("No se puede registrar un cobro en un pedido cancelado.");
+    }
+
+    // Revalidar idempotencia dentro del bloqueo
+    const existingInTx = await tx.moneyTransaction.findUnique({
+      where: { centerId_operationId: { centerId, operationId: data.operationId } },
+      select: { id: true, amount: true },
+    });
+    if (existingInTx) {
+      return existingInTx;
+    }
+
+    const txRow = await tx.moneyTransaction.create({
+      data: {
+        centerId,
+        operationId: data.operationId,
+        type: "INCOME",
+        category: "ORDER_PAYMENT",
+        amount: data.amount,
+        occurredOn: new Date(`${dateStr}T00:00:00.000Z`),
+        method: data.method,
+        orderId: data.orderId,
+        notes: data.notes,
+        recordedByUserId: userId,
+      },
+    });
+    return { id: txRow.id, amount: txRow.amount };
+  });
+}
+
+export const voidMoneyTransactionSchema = z.object({
+  transactionId: z.string({ error: "Identificador de movimiento inválido." }).uuid("Identificador de movimiento inválido."),
+  reason: z
+    .string({ error: "Debes indicar el motivo de la anulación." })
+    .trim()
+    .min(1, "Debes indicar el motivo de la anulación.")
+    .max(300, "El motivo de la anulación no puede superar 300 caracteres."),
+});
+
+export type VoidMoneyTransactionInput = z.input<typeof voidMoneyTransactionSchema>;
+
+export async function voidMoneyTransaction(
+  input: VoidMoneyTransactionInput
+): Promise<{ id: string; voidedAt: Date }> {
+  const { centerId, userId } = await requireCatalogContext();
+  const parsed = voidMoneyTransactionSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError(parsed.error.issues[0]?.message ?? "Datos de anulación inválidos.");
+  }
+  const { transactionId, reason } = parsed.data;
+
+  return await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<
+      Array<{ id: string; voidedAt: Date | null }>
+    >`
+      SELECT id, "voidedAt"
+      FROM "MoneyTransaction"
+      WHERE "centerId" = ${centerId}::uuid AND id = ${transactionId}::uuid
+      FOR UPDATE
+    `;
+
+    const existing = rows[0];
+    if (!existing) {
+      throw new DomainError("El movimiento de dinero no existe o no pertenece a este taller.");
+    }
+
+    if (existing.voidedAt !== null) {
+      throw new DomainError("Este movimiento ya fue anulado.");
+    }
+
+    const now = new Date();
+    await tx.moneyTransaction.updateMany({
+      where: { centerId, id: transactionId },
+      data: {
+        voidedAt: now,
+        voidedByUserId: userId,
+        voidReason: reason,
+      },
+    });
+
+    return { id: transactionId, voidedAt: now };
+  });
+}
+
+export const returnOrderSchema = z.object({
+  orderId: z.string({ error: "Identificador de pedido inválido." }).uuid("Identificador de pedido inválido."),
+  expectedVersion: z.coerce
+    .number({ error: "La versión del pedido es inválida." })
+    .int("La versión del pedido debe ser un entero.")
+    .min(1, "La versión del pedido debe ser al menos 1."),
+  operationId: z.string({ error: "Identificador de operación inválido." }).uuid("Identificador de operación inválido."),
+  refundAmount: z.coerce
+    .number({ error: "El monto devuelto debe ser mayor a 0." })
+    .int("El monto devuelto debe ser un número entero.")
+    .min(1, "El monto devuelto debe ser mayor a 0."),
+  method: z.enum(PAYMENT_METHODS, { error: "El método de reembolso no es válido." }),
+  occurredOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener formato AAAA-MM-DD.")
+    .optional(),
+  notes: z.string().trim().max(1000, "Las notas no pueden superar 1000 caracteres.").nullable().optional().default(null),
+});
+
+export type ReturnOrderInput = z.input<typeof returnOrderSchema>;
+
+export async function returnOrder(
+  input: ReturnOrderInput
+): Promise<{ orderId: string; status: OrderStatus; version: number; transactionId: string }> {
+  const { centerId, userId, timeZone } = await requireCatalogContext();
+  const parsed = returnOrderSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError(parsed.error.issues[0]?.message ?? "Datos de devolución inválidos.");
+  }
+
+  const data = parsed.data;
+  const tz = timeZone ?? "America/Santiago";
+  const dateStr = data.occurredOn ?? todayInTimeZone(new Date(), tz);
+
+  return await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<
+      Array<{
+        id: string;
+        status: string;
+        version: number;
+        deliveredAt: Date | null;
+      }>
+    >`
+      SELECT id, status, version, "deliveredAt"
+      FROM "Order"
+      WHERE "centerId" = ${centerId}::uuid AND id = ${data.orderId}::uuid
+      FOR UPDATE
+    `;
+
+    const order = rows[0];
+    if (!order) {
+      throw new DomainError("El pedido no existe o no pertenece a este taller.");
+    }
+
+    if (order.version !== data.expectedVersion) {
+      throw new DomainError(
+        "El pedido fue modificado por otra persona o pestaña. Recarga la página para ver el estado actual."
+      );
+    }
+
+    const currentStatus = order.status as OrderStatus;
+    if (currentStatus !== "DELIVERED" || !canTransition(currentStatus, "RETURNED")) {
+      throw new DomainError(
+        `Solo se puede registrar una devolución sobre un pedido entregado (estado actual: "${STATUS_LABEL[currentStatus]}").`
+      );
+    }
+
+    const nextVersion = order.version + 1;
+
+    await tx.order.update({
+      where: { centerId_id: { centerId, id: data.orderId } },
+      data: {
+        status: "RETURNED",
+        version: nextVersion,
+        deliveredAt: order.deliveredAt ?? new Date(),
+      },
+    });
+
+    await tx.orderEvent.create({
+      data: {
+        centerId,
+        orderId: data.orderId,
+        version: nextVersion,
+        fromStatus: "DELIVERED",
+        toStatus: "RETURNED",
+        actorUserId: userId,
+      },
+    });
+
+    const refundTx = await tx.moneyTransaction.create({
+      data: {
+        centerId,
+        operationId: data.operationId,
+        type: "EXPENSE",
+        category: "REFUNDS",
+        amount: data.refundAmount,
+        occurredOn: new Date(`${dateStr}T00:00:00.000Z`),
+        method: data.method,
+        orderId: data.orderId,
+        notes: data.notes,
+        recordedByUserId: userId,
+      },
+    });
+
+    return {
+      orderId: data.orderId,
+      status: "RETURNED",
+      version: nextVersion,
+      transactionId: refundTx.id,
+    };
+  });
+}
+
 
