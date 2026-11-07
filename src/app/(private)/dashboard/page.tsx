@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
-import { canManageCatalog, getSessionMembershipState } from "@/lib/auth";
-import { getCenterSettings } from "@/lib/center-settings-service";
+import { getSessionMembershipState } from "@/lib/auth";
+import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
+import { getDashboardOverview } from "@/lib/dashboard-queries";
 import { formatMoney } from "@/lib/money-format";
-import { getMonthlyMoneyView } from "@/lib/money-queries";
+import { CATEGORY_LABEL, type MoneyCategory } from "@/lib/money-presentation";
 import {
   CHANNEL_LABEL,
   orderNumberLabel,
   STATUS_LABEL,
 } from "@/lib/order-presentation";
-import { listOrders } from "@/lib/order-queries";
-import type { OrderStatus } from "@/lib/order-status";
+import type { OrderChannel, OrderStatus } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,13 @@ function statusTone(status: OrderStatus): "neutral" | "ok" | "warn" | "danger" |
   }
 }
 
-export default async function DashboardPage() {
+type SearchParams = Promise<{ month?: string }>;
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const membershipState = await getSessionMembershipState();
   const active = membershipState.activeContext;
   if (!active) {
@@ -60,26 +66,42 @@ export default async function DashboardPage() {
     );
   }
 
+  const resolvedParams = searchParams ? await searchParams : {};
   const centerName = membershipState.memberships.find(
     (membership) => membership.centerId === active.centerId
   )?.center.name;
   const name = membershipState.profile?.displayName?.split(" ")[0];
-  const isManager = canManageCatalog(active.role);
-  const canOperate =
-    active.role === "OWNER" ||
-    active.role === "ADMIN" ||
-    active.role === "PROFESSIONAL";
-  const isViewer = active.role === "VIEWER";
 
-  const [activeOrders, settings, moneyView] = await Promise.all([
-    listOrders({ status: "ACTIVE" }),
-    getCenterSettings(),
-    isManager ? getMonthlyMoneyView() : Promise.resolve(null),
-  ]);
+  const overview = await getDashboardOverview({ month: resolvedParams.month });
+  const {
+    currency,
+    isManager,
+    canOperate,
+    isViewer,
+    moneyView,
+    pendingReceivableTotal,
+    overdueOrders,
+    upcomingOrders,
+    statusCounts,
+    lowSpools,
+    lowStockProducts,
+  } = overview;
 
-  const overdueOrders = activeOrders.filter((o) => o.isOverdue);
-  const upcomingOrders = activeOrders.filter((o) => !o.isOverdue);
-  const currency = settings.currency;
+  const hasAlerts =
+    overdueOrders.length > 0 ||
+    lowSpools.length > 0 ||
+    lowStockProducts.length > 0;
+
+  const incomeChannelEntries = moneyView
+    ? Object.entries(moneyView.summary.incomeByChannel).sort(
+        (a, b) => b[1] - a[1]
+      )
+    : [];
+  const expenseCategoryEntries = moneyView
+    ? Object.entries(moneyView.summary.expenseByCategory).sort(
+        (a, b) => b[1] - a[1]
+      )
+    : [];
 
   return (
     <div className="space-y-6 pb-20">
@@ -87,8 +109,8 @@ export default async function DashboardPage() {
         title={name ? `Hola, ${name}` : "Hola"}
         description={
           centerName
-            ? `Operación diaria de ${centerName}.`
-            : "Operación diaria de tu taller."
+            ? `Panel operativo y del mes de ${centerName}.`
+            : "Panel operativo y del mes de tu taller."
         }
       >
         {canOperate && (
@@ -117,44 +139,296 @@ export default async function DashboardPage() {
         )}
       </PageHeader>
 
-      {/* Resumen mensual rápido para OWNER / ADMIN */}
-      {isManager && moneyView && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Ingresos ({moneyView.month})
+      {/* Banda de alertas operativas: atrasados, poca bobina y stock bajo */}
+      {hasAlerts && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {overdueOrders.length > 0 && (
+            <Card className="p-4 border-danger/45 bg-danger-soft/10 flex flex-col justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-danger">
+                  Pedidos atrasados
+                </span>
+                <Badge tone="danger">{overdueOrders.length}</Badge>
+              </div>
+              <p className="text-xs text-muted">
+                Tienes {overdueOrders.length}{" "}
+                {overdueOrders.length === 1
+                  ? "pedido con fecha de entrega vencida."
+                  : "pedidos con fecha de entrega vencida."}
+              </p>
+              <Link
+                href="/orders?status=ACTIVE"
+                className="text-xs font-semibold text-danger hover:underline"
+              >
+                Revisar pedidos atrasados →
+              </Link>
+            </Card>
+          )}
+
+          {lowSpools.length > 0 && (
+            <Card className="p-4 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-warn">
+                  Bobinas por acabarse
+                </span>
+                <Badge tone="warn">{lowSpools.length}</Badge>
+              </div>
+              <div className="space-y-1">
+                {lowSpools.slice(0, 3).map((spool) => (
+                  <Link
+                    key={spool.id}
+                    href={`/spools/${spool.id}`}
+                    className="flex items-center justify-between text-xs text-ink hover:text-primary"
+                  >
+                    <span className="truncate font-medium">
+                      {MATERIAL_LABEL[spool.material as Material] ?? spool.material}{" "}
+                      · {spool.color}
+                    </span>
+                    <span className="shrink-0 font-bold text-warn">
+                      {spool.remainingGrams} g
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              <Link
+                href="/spools?onlyLow=1"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Ver bobinas bajas →
+              </Link>
+            </Card>
+          )}
+
+          {lowStockProducts.length > 0 && (
+            <Card className="p-4 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-warn">
+                  Piezas con stock bajo
+                </span>
+                <Badge tone="warn">{lowStockProducts.length}</Badge>
+              </div>
+              <div className="space-y-1">
+                {lowStockProducts.slice(0, 3).map((prod) => (
+                  <Link
+                    key={prod.id}
+                    href={`/products/${prod.id}`}
+                    className="flex items-center justify-between text-xs text-ink hover:text-primary"
+                  >
+                    <span className="truncate font-medium">{prod.name}</span>
+                    <span className="shrink-0 font-bold text-warn">
+                      {prod.currentStock} / mín. {prod.minStock}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              <Link
+                href="/products"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Reponer en catálogo →
+              </Link>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Carga operativa por etapa del taller */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {(
+          [
+            { status: "QUOTED" as const, count: statusCounts.QUOTED },
+            { status: "CONFIRMED" as const, count: statusCounts.CONFIRMED },
+            { status: "PRINTING" as const, count: statusCounts.PRINTING },
+            { status: "READY" as const, count: statusCounts.READY },
+          ] as const
+        ).map((item) => (
+          <Link
+            key={item.status}
+            href={`/orders?status=${item.status}`}
+            className="rounded-2xl border border-line bg-surface p-3.5 hover:border-primary/40 transition-colors flex items-center justify-between gap-2"
+          >
+            <div>
+              <span className="block text-xs font-semibold text-muted">
+                {STATUS_LABEL[item.status]}
               </span>
-              <Link href="/money" className="text-xs font-semibold text-primary hover:underline">
-                Ver detalle →
+              <span className="mt-0.5 block text-xl font-bold text-ink">
+                {item.count}
+              </span>
+            </div>
+            <Badge tone={statusTone(item.status)}>{STATUS_LABEL[item.status]}</Badge>
+          </Link>
+        ))}
+      </div>
+
+      {/* Panel financiero del mes para OWNER / ADMIN */}
+      {isManager && moneyView && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-ink">
+                Resumen del mes ({moneyView.month})
+              </h2>
+              <Link
+                href={`/money?month=${moneyView.month}`}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Abrir módulo Dinero →
               </Link>
             </div>
-            <span className="mt-1 block text-xl sm:text-2xl font-bold text-ok">
-              {formatMoney(moneyView.summary.income, currency)}
-            </span>
-          </Card>
 
-          <Card className="p-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-              Gastos ({moneyView.month})
-            </span>
-            <span className="mt-1 block text-xl sm:text-2xl font-bold text-danger">
-              {formatMoney(moneyView.summary.expense, currency)}
-            </span>
-          </Card>
+            <div className="inline-flex items-center gap-1 rounded-xl border border-line bg-surface p-1">
+              <Link
+                href={`/dashboard?month=${moneyView.previousMonth}`}
+                className="min-h-9 px-2.5 inline-flex items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+              >
+                ← {moneyView.previousMonth}
+              </Link>
+              <span className="px-2.5 text-xs font-bold text-ink">
+                {moneyView.month}
+              </span>
+              <Link
+                href={`/dashboard?month=${moneyView.nextMonth}`}
+                className="min-h-9 px-2.5 inline-flex items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+              >
+                {moneyView.nextMonth} →
+              </Link>
+            </div>
+          </div>
 
-          <Card className="p-4 border-primary/25">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-              Ganancia del mes
-            </span>
-            <span
-              className={`mt-1 block text-xl sm:text-2xl font-bold ${
-                moneyView.summary.profit >= 0 ? "text-ink" : "text-danger"
-              }`}
-            >
-              {formatMoney(moneyView.summary.profit, currency)}
-            </span>
-          </Card>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <Card className="p-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Ingresos ({moneyView.month})
+              </span>
+              <span className="mt-1 block text-xl sm:text-2xl font-bold text-ok">
+                {formatMoney(moneyView.summary.income, currency)}
+              </span>
+            </Card>
+
+            <Card className="p-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Gastos ({moneyView.month})
+              </span>
+              <span className="mt-1 block text-xl sm:text-2xl font-bold text-danger">
+                {formatMoney(moneyView.summary.expense, currency)}
+              </span>
+            </Card>
+
+            <Card className="p-4 border-primary/25">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Ganancia neta
+              </span>
+              <span
+                className={`mt-1 block text-xl sm:text-2xl font-bold ${
+                  moneyView.summary.profit >= 0 ? "text-ink" : "text-danger"
+                }`}
+              >
+                {formatMoney(moneyView.summary.profit, currency)}
+              </span>
+            </Card>
+
+            <Card className="p-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Por cobrar (pedidos activos)
+              </span>
+              <span className="mt-1 block text-xl sm:text-2xl font-bold text-warn">
+                {formatMoney(pendingReceivableTotal ?? 0, currency)}
+              </span>
+            </Card>
+          </div>
+
+          {/* Desglose por canal y por categoría */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-ink">
+                  Ingresos por canal ({moneyView.month})
+                </h3>
+                <span className="text-xs text-muted">
+                  Total {formatMoney(moneyView.summary.income, currency)}
+                </span>
+              </div>
+
+              {incomeChannelEntries.length === 0 ? (
+                <p className="text-xs text-muted">
+                  Sin ingresos registrados en este mes.
+                </p>
+              ) : (
+                <div className="space-y-2.5">
+                  {incomeChannelEntries.map(([ch, amount]) => {
+                    const pct =
+                      moneyView.summary.income > 0
+                        ? Math.round((amount / moneyView.summary.income) * 100)
+                        : 0;
+                    const label =
+                      CHANNEL_LABEL[ch as OrderChannel] ?? ch;
+                    return (
+                      <div key={ch} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-ink">{label}</span>
+                          <span className="font-semibold text-ink">
+                            {formatMoney(amount, currency)}{" "}
+                            <span className="text-muted font-normal">({pct}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-canvas overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-ok"
+                            style={{ width: `${Math.max(4, pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            <Card className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-ink">
+                  Gastos por categoría ({moneyView.month})
+                </h3>
+                <span className="text-xs text-muted">
+                  Total {formatMoney(moneyView.summary.expense, currency)}
+                </span>
+              </div>
+
+              {expenseCategoryEntries.length === 0 ? (
+                <p className="text-xs text-muted">
+                  Sin gastos registrados en este mes.
+                </p>
+              ) : (
+                <div className="space-y-2.5">
+                  {expenseCategoryEntries.map(([cat, amount]) => {
+                    const pct =
+                      moneyView.summary.expense > 0
+                        ? Math.round((amount / moneyView.summary.expense) * 100)
+                        : 0;
+                    const label =
+                      CATEGORY_LABEL[cat as MoneyCategory] ?? cat;
+                    return (
+                      <div key={cat} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-ink">{label}</span>
+                          <span className="font-semibold text-ink">
+                            {formatMoney(amount, currency)}{" "}
+                            <span className="text-muted font-normal">({pct}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-canvas overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-danger"
+                            style={{ width: `${Math.max(4, pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
       )}
 

@@ -6,6 +6,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Fase 3: Panel Operativo y Financiero del Mes con Alertas (`/dashboard`, `src/lib/dashboard-queries.ts`) (Tareas 3.1 a 3.3):**
+  - Banda superior de **Alertas del taller** con indicadores y accesos directos a **Pedidos atrasados**, **Bobinas por acabarse** (`remainingGrams <= lowSpoolThresholdGrams`) y **Piezas con stock bajo** (`currentStock <= minStock`).
+  - Tarjetas táctiles de **Carga operativa por etapa** (`Cotizados`, `Confirmados`, `Imprimiendo`, `Listos`) enlazadas a `/orders?status=...`.
+  - **Panel financiero del mes** en `/dashboard` (exclusivo para `OWNER` y `ADMIN`) con selector de mes (`←` / `→`), tarjetas de **Ingresos**, **Gastos**, **Ganancia neta** y **Por cobrar en pedidos activos**, y barras proporcionales de **Ingresos por canal** y **Gastos por categoría**.
+  - Aislamiento por rol en `getDashboardOverview` (`OWNER`/`ADMIN` ven finanzas y alertas; `PROFESSIONAL` ve alertas y operación; `VIEWER` ve operación sin montos ni costos).
 - **Fase 2: Catálogo Técnico de Piezas, Cotizador 3D, Bobinas y Movimientos de Stock (`/products`, `/spools`, `/quote`) (Tareas 2.1 a 2.6):**
   - **Bobinas de filamento (`/spools` y `/spools/[id]`) (Tarea 2.3):**
     - Gestión de bobinas por material (`PLA`, `PETG`, `ASA`, `ABS`, `TPU`, `OTHER`), color, marca, peso total, gramos restantes, precio pagado y fecha de compra.

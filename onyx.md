@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1 cerrada (quality gate PASSED). **Fase 2 cerrada (2.1 a 2.6 hechas, quality gate PASSED)** — ver la entrada fechada abajo y las casillas en la sección 18.3. **Siguiente: Fase 3 (Panel del mes: ingresos, gastos, ganancia, canales, pendientes, atrasados y alertas de stock/bobinas, sección 18.3).**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1 cerrada (quality gate PASSED). Fase 2 cerrada (quality gate PASSED). **Fase 3 cerrada (3.1 a 3.3 hechas, quality gate PASSED — MVP Fases 0 a 3 completo)** — ver las entradas fechadas abajo y las casillas en la sección 18. **Siguiente: Fase 4 (Uso real por Surko durante 2 a 4 semanas, con correcciones, sección 18.5).**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -21,6 +21,26 @@
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` + `npm run local:demo` (desarrollo `saas3d-local`, 5444x, con el taller "Taller QA").
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (`qa-local@saas3d.local`, creada o actualizada por `npm run local:demo`).
 - Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions`, `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+
+---
+
+## Fase 3 cerrada — Panel operativo y financiero del mes con alertas (tareas 3.1 a 3.3), 2026-11-08
+
+- **Consultas agregadas del panel (`src/lib/dashboard-queries.ts` y `src/lib/dashboard-queries.test.ts`, tarea 3.1):**
+  - `getDashboardOverview({ month })`: abre con `requireAuthContext()` y filtra datos según el rol del integrante:
+    - `OWNER` y `ADMIN`: reciben `moneyView` (`getMonthlyMoneyView({ month })`), `pendingReceivableTotal` (suma de saldos pendientes de pedidos activos), conteo por etapas (`QUOTED`, `CONFIRMED`, `PRINTING`, `READY`), pedidos atrasados y próximos, y alertas de bobinas bajas (`lowSpools`) y piezas con stock bajo (`lowStockProducts`).
+    - `PROFESSIONAL`: recibe carga operativa por etapas, pedidos atrasados/próximos y alertas de bobinas y stock, con `moneyView: null` y `pendingReceivableTotal: null`.
+    - `VIEWER`: recibe carga operativa y pedidos sin invocar consultas de dinero ni configuraciones restringidas.
+  - Pruebas unitarias en `src/lib/dashboard-queries.test.ts` (3/3).
+- **Interfaz del Panel del Mes (`src/app/(private)/dashboard/page.tsx`, tarea 3.2):**
+  - Banda superior de **Alertas del taller** con tarjetas para **Pedidos atrasados**, **Bobinas por acabarse** (con enlaces a `/spools/[id]` y `/spools?onlyLow=1`) y **Piezas con stock bajo** (con enlaces a `/products/[id]` y `/products`).
+  - Tarjetas táctiles de **Carga operativa por etapa** (`Cotizados`, `Confirmados`, `Imprimiendo`, `Listos`) enlazadas a `/orders?status=...`.
+  - **Resumen financiero del mes** (`OWNER`/`ADMIN`) con selector táctil de mes (`←` / `→` vía `?month=AAAA-MM`), 4 indicadores (**Ingresos**, **Gastos**, **Ganancia neta** y **Por cobrar en pedidos activos**) y barras proporcionales de **Ingresos por canal** y **Gastos por categoría**.
+- **Quality gate (`npm run quality:gate`, tarea 3.3) → PASSED:**
+  - Unitarias: **323/323** (51 archivos).
+  - Lint y tipos: 0 errores.
+  - Build de producción Next.js 16: exitoso.
+  - Integración real PostgreSQL: `test:rls` **13/13**, `test:s1` **3/3**, `test:s3` **1/1**, `test:transactions` **55/55** (12 suites).
 
 ---
 
@@ -724,9 +744,14 @@ Catálogo de piezas, cotizador, bobinas y stock (Fase 2); panel del mes (Fase 3)
 - [x] **2.5 Cotizador interactivo (`/quote`).** Calculadora móvil y de escritorio conectada al costo real por material de las bobinas activas, con creación en un toque de pedidos `QUOTED` o piezas de catálogo.
 - [x] **2.6 Navegación, datos demo de Fase 2 y cierre (`quality:gate`).** Enlaces en `Sidebar`, `MobileNav` y `/dashboard`, semilla `npm run local:demo` actualizada y `npm run quality:gate` → PASSED.
 
-### 18.4 Fases siguientes
+### 18.4 Fase 3 — Panel operativo y financiero del mes con alertas (cerrada, 2026-11-08)
 
-- **Fase 3:** panel del mes (ingresos, gastos, ganancia, canales, pendientes, atrasados y alertas).
+- [x] **3.1 Consultas agregadas del panel (`src/lib/dashboard-queries.ts` y `src/lib/dashboard-queries.test.ts`).** `getDashboardOverview({ month })` con aislamiento por rol (`OWNER`/`ADMIN`, `PROFESSIONAL`, `VIEWER`), conteo por etapas, total pendiente por cobrar y alertas de bobinas bajas y piezas con stock bajo.
+- [x] **3.2 Interfaz móvil y de escritorio del Panel del Mes (`src/app/(private)/dashboard/page.tsx`).** Banda de alertas accionables, carga operativa por etapa, selector de mes, KPIs financieros (`Ingresos`, `Gastos`, `Ganancia neta`, `Por cobrar`) y barras proporcionales por canal y por categoría.
+- [x] **3.3 Revisión de seguridad, `quality:gate` y cierre documental (`onyx.md`, `CHANGELOG.md`).** `npm run quality:gate` → PASSED (323 unitarias, 13 RLS, 3 S1, 1 S3, 55 transacciones).
+
+### 18.5 Fases siguientes
+
 - **Fase 4:** uso real por Surko durante 2 a 4 semanas, con correcciones.
 - **Fase 5:** beta con 5 a 10 makers y entrevistas.
 - **Fase 6:** según lo que pida la beta: API de ML, cobro, equipo y calculadora pública.
