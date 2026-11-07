@@ -61,12 +61,12 @@ export async function signupAction(_state: AuthFormState, formData: FormData): P
     return { error: mapSupabaseSignupError(error) };
   }
   if (data.user.identities?.length === 0) return { message: signupConfirmationMessage };
-  if (await profileExists(data.user.id)) return { message: signupConfirmationMessage };
-   let centerId: string | undefined;
-   try {
-     if (invitationCode) centerId = await redeemInvitation({ userId: data.user.id, codeHash: invitationHash!, profileData: { displayName } });
-     else await ensureProfile(data.user.id, displayName);
-   } catch (error) {
+  let centerId: string | undefined;
+  try {
+    if (await profileExists(data.user.id)) return { message: signupConfirmationMessage };
+    if (invitationCode) centerId = await redeemInvitation({ userId: data.user.id, codeHash: invitationHash!, profileData: { displayName } });
+    else await ensureProfile(data.user.id, displayName);
+  } catch (error) {
     console.error("Signup profile or membership transaction failed", error);
     try {
        await ensureProfile(data.user.id, displayName);

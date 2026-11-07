@@ -60,6 +60,30 @@ describe("createPostgresTlsConfig", () => {
     expect(config.ssl).toEqual({ ca: certificateAuthority, rejectUnauthorized: true });
   });
 
+  it("normalizes sslmode=require from cloud platforms (Supabase/Vercel) when CA is absent", () => {
+    vi.stubEnv("SUPABASE_DB_CA_CERT", "");
+    const url = new URL(connectionString);
+    url.searchParams.append("sslmode", "require");
+
+    const config = createPostgresTlsConfig(url.toString());
+
+    expect(config.connectionString).toBeDefined();
+    expect(new URL(config.connectionString!).searchParams.has("sslmode")).toBe(false);
+    expect(config.ssl).toEqual({ rejectUnauthorized: false });
+  });
+
+  it("uses custom CA with sslmode=require if provided", () => {
+    vi.stubEnv("SUPABASE_DB_CA_CERT", certificateAuthority);
+    const url = new URL(connectionString);
+    url.searchParams.append("sslmode", "require");
+
+    const config = createPostgresTlsConfig(url.toString());
+
+    expect(config.connectionString).toBeDefined();
+    expect(new URL(config.connectionString!).searchParams.has("sslmode")).toBe(false);
+    expect(config.ssl).toEqual({ ca: certificateAuthority, rejectUnauthorized: true });
+  });
+
   it("rejects duplicate TLS parameters", () => {
     vi.stubEnv("SUPABASE_DB_CA_CERT", certificateAuthority);
     const url = new URL(connectionString);
