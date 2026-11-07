@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5, 1.6 y 1.7 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.8 Dinero.**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5, 1.6, 1.7 y 1.8 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.9 Navegación, inicio y datos demo y 1.10 Cierre.**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,13 +20,22 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-payments-returns.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/money.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.8 (Dinero):**
-- `money-service.ts`: ingresos sueltos (`DIGITAL_SALE`, `OTHER_INCOME`), gastos manuales por categoría (`FILAMENT`, `PARTS`, `SHIPPING`, `ADVERTISING`, `FEES`, `UNEXPECTED`, `OTHER_EXPENSE`) y anulación (`voidMoneyTransaction`), todo protegido con `requireCatalogContext` (`OWNER`/`ADMIN`, D1).
-- `money-queries.ts`: consulta de movimientos y resumen mensual en la zona horaria del taller (`money-summary.ts`).
-- Pantalla `/money` responsiva (390 px): selector de mes, tarjetas de ingresos/gastos/ganancia, desglose por canal y por categoría, alta rápida de gasto o ingreso y lista de movimientos con opción de anular.
-- Prueba real de que el mes respeta `America/Santiago` en los bordes del día.
+---
+
+## Fase 1 — Dinero (tarea 1.8), 2026-11-08
+
+- **Servicio y consultas (`src/lib/money-service.ts` y `src/lib/money-queries.ts`):**
+  - `recordManualMoneyTransaction`: requiere `requireCatalogContext` (`OWNER`/`ADMIN`, D1). Registra ingresos sueltos (`DIGITAL_SALE`, `OTHER_INCOME`) y gastos manuales por categoría (`FILAMENT`, `PARTS`, `SHIPPING`, `ADVERTISING`, `FEES`, `UNEXPECTED`, `OTHER_EXPENSE`) con idempotencia por `(centerId, operationId)` y fecha calculada en la zona horaria del taller (`todayInTimeZone`).
+  - `voidManualMoneyTransaction`: delega a `voidMoneyTransaction` (D5) exigiendo `requireCatalogContext`.
+  - `getMonthlyMoneyView`: requiere `requireCatalogContext`, calcula el mes actual o solicitado en la zona del taller (`currentMonth`, `monthDateRange`, `shiftMonth`), obtiene los movimientos del mes con su pedido asociado y calcula el resumen con `monthlySummary` (ingresos, gastos, ganancia, ingresos por canal y gastos por categoría excluyendo anulados).
+- **Interfaz (`/money` y `MoneyControls.tsx`):**
+  - Restringida a `OWNER`/`ADMIN` (`<NoPermission />` para otros roles).
+  - Selector táctil de mes (`←` / `→`), tarjetas de Ingresos, Gastos y Ganancia neta, formularios rápidos para registrar gastos o ingresos sueltos, desglose por canal y por categoría, y listado de movimientos con enlace a `Pedido #N` y anulación en línea.
+- **Pruebas:**
+  - Unitarias en `money-service.test.ts` (5/5) y `money-queries.test.ts` (2/2). Total unitarias: 310/310.
+  - Integración real contra PostgreSQL en `tests/money.integration.test.ts` (1/1): comprueba que un movimiento registrado el `2026-11-01T01:30:00Z` cae en `2026-10-31` (`2026-10`) según `America/Santiago` y que los movimientos anulados no suman en el resumen.
 
 ---
 
@@ -358,7 +367,7 @@ docs/                    especificaciones, planes y runbooks
 | Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
 | Clientes | `/clients`, `/clients/[id]` | Implementado (Fase 1): lista con búsqueda sin tildes, alta rápida y ficha con saldo |
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Implementado (Fase 1): alta rápida, listado con filtros y atrasados, ficha y estados |
-| Dinero | `/money` | Planificado (Fase 1) |
+| Dinero | `/money` | Implementado (Fase 1): resumen mensual, ingresos/gastos manuales y anulación |
 | Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
 | Catálogo y cotizador | `/products` (lista de precios mínima, Fase 1); `/products/new`, `/products/[id]`, `/quote` | Implementado `/products` (Fase 1); cotizador planificado (Fase 2) |
 | Filamento | `/spools`, `/spools/[id]` | Planificado (Fase 2) |
@@ -621,7 +630,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.7 Cobros y devoluciones.** `order-service.registerPayment` (idempotente por `operationId`; sugiere el saldo o el neto ML), `voidMoneyTransaction` (D5) y `returnOrder` (D6). *Pruebas reales:* pago repetido no se duplica; la devolución es atómica (si falla el gasto, el pedido no cambia de estado); anular dos veces se rechaza.
 
-- [ ] **1.8 Dinero.** `money-service.ts` (ingresos sueltos como `DIGITAL_SALE`/`OTHER_INCOME` y gastos por categoría; solo `OWNER`/`ADMIN`) y `money-queries.ts` (mes en la zona del taller). Pantalla `/money`: selector de mes, ingresos, gastos y ganancia, por canal y por categoría, lista de movimientos con anulación y alta rápida de gasto o ingreso. *Pruebas:* unitarias del resumen (incluye anulados) y una real de que el mes respeta `America/Santiago` en los bordes del día.
+- [x] **1.8 Dinero.** `money-service.ts` (ingresos sueltos como `DIGITAL_SALE`/`OTHER_INCOME` y gastos por categoría; solo `OWNER`/`ADMIN`) y `money-queries.ts` (mes en la zona del taller). Pantalla `/money`: selector de mes, ingresos, gastos y ganancia, por canal y por categoría, lista de movimientos con anulación y alta rápida de gasto o ingreso. *Pruebas:* unitarias del resumen (incluye anulados) y una real de que el mes respeta `America/Santiago` en los bordes del día.
 
 - [ ] **1.9 Navegación, inicio y datos demo.**
   - Menú: **Inicio, Pedidos, Clientes y Dinero**, con Ajustes y Mi taller en "Más" en el celular. Dinero solo para `OWNER`/`ADMIN`.

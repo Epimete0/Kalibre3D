@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Módulo de Dinero y Resumen Mensual (`/money`) (Tarea 1.8):**
+  - Panel mensual exclusivo para dueños y administradores del taller (`OWNER`/`ADMIN`) con cálculo exacto en la zona horaria del taller (`America/Santiago`).
+  - Indicadores principales del mes: ingresos totales, gastos totales y ganancia neta real (excluyendo movimientos anulados).
+  - Desglose de ingresos por canal de venta (Mercado Libre, WhatsApp, Instagram, en persona, archivo digital) y gastos por categoría.
+  - Registro rápido e idempotente de gastos del taller (filamento, repuestos, envíos, publicidad, comisiones, imprevistos) e ingresos sueltos (venta de archivos digitales en Cults3D u otros).
+  - Listado mensual de movimientos con enlace directo a la venta asociada y opción de anulación con motivo obligatorio.
 - **Cobros, anulaciones y devoluciones de ventas (`/orders/[id]`) (Tarea 1.7):**
   - Registro de cobros adicionales o abonos con sugerencia automática del saldo pendiente o del monto neto de Mercado Libre e idempotencia por `operationId`.
   - Anulación controlada de movimientos de dinero con motivo obligatorio (D5), preservando la trazabilidad histórica sin borrado físico.
