@@ -5,6 +5,9 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Corregido
+- **Landing:** las cifras del ejemplo del Pedido #42 ahora coinciden con el cotizador (filamento $960, costo total $1.105, ganancia +$5.395 en venta directa y +$5.378 en Mercado Libre), y el texto principal ya no se corta en celulares de 375 px.
+
 ### Añadido
 - **Despliegue en Producción (`kalibre3d.vercel.app`), Visibilidad de Contraseña y Corrección Responsiva Integral:**
   - Botón para mostrar/ocultar contraseña en `/login`, `/registro`, `/reset-password` y `/profile`, más guía contextual diferenciando el nombre personal del usuario y el nombre del taller (`/taller/nuevo`).

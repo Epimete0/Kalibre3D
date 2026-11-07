@@ -63,7 +63,7 @@ export default function HomePage() {
         {/* HERO TÉCNICO */}
         <section className="kalibre-grid-bg relative overflow-hidden border-b border-line py-14 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
-            <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] [&>*]:min-w-0">
               {/* Columna izquierda: Tesis */}
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 shadow-2xs">
@@ -102,7 +102,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Escala de datos clave */}
-                <div className="grid grid-cols-3 gap-4 border-t border-line pt-6 sm:max-w-lg">
+                <div className="grid grid-cols-3 gap-4 border-t border-line pt-6 sm:max-w-lg [&>*]:min-w-0">
                   <div>
                     <p className="font-mono text-xl font-bold text-ink sm:text-2xl">&lt; 30 s</p>
                     <p className="mt-0.5 text-xs text-muted">Para anotar una venta desde el celular</p>
@@ -161,7 +161,7 @@ export default function HomePage() {
                       </div>
                       <div>
                         <span className="block text-[10px] text-slate-400">COSTO TOTAL</span>
-                        <strong className="text-orange-300">$895</strong>
+                        <strong className="text-orange-300">$1.105</strong>
                       </div>
                     </div>
                   </div>
@@ -186,7 +186,7 @@ export default function HomePage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-500/10 px-3 py-2 text-sm">
                       <span className="font-sans font-semibold text-emerald-300">Ganancia real (Neto − Costo)</span>
-                      <strong className="text-emerald-400">+$5.588</strong>
+                      <strong className="text-emerald-400">+$5.378</strong>
                     </div>
                   </div>
 
@@ -287,7 +287,7 @@ export default function HomePage() {
                   <dl className="mt-5 space-y-2 border-t border-line pt-4 font-mono text-xs">
                     <div className="flex justify-between">
                       <dt className="text-muted">Filamento + Purga (64 g)</dt>
-                      <dd className="text-ink">$750</dd>
+                      <dd className="text-ink">$960</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted">Luz (1h 45m) + Embalaje</dt>
@@ -295,7 +295,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between border-t border-line pt-2 text-sm font-bold">
                       <dt className="font-sans text-ink">Te quedan limpios</dt>
-                      <dd className="text-ok">+$5.605</dd>
+                      <dd className="text-ok">+$5.395</dd>
                     </div>
                   </dl>
                 </div>
@@ -313,11 +313,11 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted">Costo de fabricación</dt>
-                      <dd className="text-ink">−$895</dd>
+                      <dd className="text-ink">−$1.105</dd>
                     </div>
                     <div className="flex justify-between border-t border-line pt-2 text-sm font-bold">
                       <dt className="font-sans text-ink">Te quedan limpios</dt>
-                      <dd className="text-ok">+$5.588</dd>
+                      <dd className="text-ok">+$5.378</dd>
                     </div>
                   </dl>
                 </div>

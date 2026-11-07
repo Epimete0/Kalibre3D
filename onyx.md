@@ -6,6 +6,16 @@
 
 ---
 
+## Corrección de la landing: ejemplo de costeo y desborde en celular — 2026-11-08
+
+- **Ejemplo de costeo del Pedido #42 (`src/app/page.tsx`):** el texto mostraba "Filamento + Purga (64 g) $750", que en realidad eran solo los 50 g de pieza sin purga. Con `computePieceCost` (64 g × $15/g) el filamento cuesta **$960**, el costo total **$1.105**, la ganancia en venta directa **+$5.395** y en Mercado Libre **+$5.378** (antes $895, +$5.605 y +$5.588).
+- **Prueba nueva `src/lib/landing-example.test.ts`:** recalcula el ejemplo con `computePieceCost` y `mercadoLibreNet` y exige que la landing contenga esas cifras, para que el marketing no se descuadre del cotizador.
+- **Desborde horizontal del hero en celular (375 px):** la columna de la ficha "Pedido #42" ensanchaba la grilla de una columna (`1fr` = `minmax(auto, 1fr)`) y cortaba el párrafo principal. Se fijó `grid-cols-1` y `[&>*]:min-w-0` en la grilla del hero y en la escala de datos clave. Verificado en el navegador a 375 px (ningún elemento sobrepasa el ancho) y en escritorio.
+- **Pendiente del lado del dueño (sin cambio de código):** cargar `SUPABASE_DB_CA_CERT` en Vercel para que `createPostgresTlsConfig` vuelva a verificar el certificado de Supabase (hoy, con `sslmode=require` y sin CA, usa `rejectUnauthorized: false`).
+- Las pruebas reales de RLS y transacciones no se ejecutaron en esta revisión (Docker Desktop apagado); el cambio no toca datos, RLS ni autenticación.
+
+---
+
 ## Despliegue en vivo (`kalibre3d.vercel.app`), Conexión Supabase/Vercel y Pulido Responsivo — 2026-11-08
 
 - **Despliegue en producción y variables de entorno de la integración Vercel ↔ Supabase:**
@@ -40,7 +50,7 @@
   - La "K" diferencia la marca del software de libros electrónicos (*Calibre*) y le otorga un carácter SaaS moderno, técnico y ágil.
 - **Unificación de interfaz, identidad visual propia y Landing Page de Kalibre:**
   - Se reemplazó por completo la paleta provisional heredada de Kurova en `src/app/globals.css` y `src/app/layout.tsx` por el sistema de diseño técnico de **Kalibre**: tipografías `Space Grotesk` (display geométrica), `Hanken Grotesk` (interfaz) y `JetBrains Mono` (lecturas de gramos, milímetros y montos); paleta clara en aluminio anodizado (`#f3f5f7`), primario en naranja cobre de boquilla térmica (`#d9531e`), acento azul cian de calibración láser (`#0284c7`) y modo oscuro inspirado en cama PEI de carbono (`#0b0f17`) con retícula milimétrica.
-  - Se construyó desde cero la **Landing Page de Kalibre (`src/app/page.tsx`)** con el instrumento en vivo del Pedido #42 (Emblema 13×9 PETG, 50 g + 14 g purga, desglose real de Mercado Libre $8.990 → neto $6.483 → ganancia +$5.588 y alerta de bobina baja), los 4 módulos operativos (`#pilares`), la comparativa Venta Directa vs. Mercado Libre (`#cotizador-real`) y el flujo de 3 pasos (`#flujo`).
+  - Se construyó desde cero la **Landing Page de Kalibre (`src/app/page.tsx`)** con el instrumento en vivo del Pedido #42 (Emblema 13×9 PETG, 50 g + 14 g purga, desglose real de Mercado Libre $8.990 → neto $6.483 → ganancia +$5.378 y alerta de bobina baja), los 4 módulos operativos (`#pilares`), la comparativa Venta Directa vs. Mercado Libre (`#cotizador-real`) y el flujo de 3 pasos (`#flujo`).
   - Se rediseñó **`src/components/AuthLayout.tsx`** (acceso a `/login`, `/registro`, `/forgot-password`, `/taller/nuevo`) con un panel técnico de cama PEI con escala vernier milimétrica y telemetría de taller 3D, eliminando por completo los textos e identidad de Kurova.
   - Se actualizó el isotipo en `PublicShell.tsx` y `Sidebar.tsx` con un icono geométrico de calibre/boquilla y etiqueta `3D`.
 - Se preserva `saas3d` como identificador técnico en base de datos, carpetas y configuración según el contrato de `AGENTS.md`.
