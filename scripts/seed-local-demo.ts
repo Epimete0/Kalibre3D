@@ -61,17 +61,7 @@ async function main() {
       [ownerId]
     );
 
-    // 2. Recrear "Taller QA" de forma limpia e idempotente
-    const existingCenter = await db.query<{ id: string }>(
-      `SELECT id FROM "Center" WHERE name = 'Taller QA' LIMIT 1`
-    );
-    if (existingCenter.rows[0]) {
-      const oldCenterId = existingCenter.rows[0].id;
-      await db.query(`DELETE FROM "MoneyTransaction" WHERE "centerId" = $1`, [oldCenterId]).catch(() => {});
-      // Como OrderEvent y MoneyTransaction tienen triggers de inmutabilidad en filas individuales,
-      // eliminar el Center en cascada o recrear con nuevo ID si tiene triggers:
-    }
-
+    // 2. Asegurar "Taller QA" de forma limpia e idempotente
     const centerId = "00000000-0000-4000-8000-000000000100";
     const alreadySeeded = await db.query<{ id: string }>(
       `SELECT id FROM "Center" WHERE id = $1`,
@@ -79,7 +69,7 @@ async function main() {
     );
 
     if (alreadySeeded.rows.length > 0) {
-      console.log("[local:demo] 'Taller QA' ya existe en saas3d-local. Asegurando membresías...");
+      console.log("[local:demo] 'Taller QA' ya existe en saas3d-local. Asegurando membresías y datos de Fase 2...");
       for (const u of existingUsers.rows) {
         await db.query(
           `INSERT INTO "Profile" (id, "displayName", "updatedAt") VALUES ($1, 'Surko Maker', now()) ON CONFLICT (id) DO NOTHING`,
@@ -92,8 +82,9 @@ async function main() {
           [centerId, u.id]
         );
       }
+      await ensurePhase2DemoData(db, centerId, ownerId);
       await db.query("COMMIT");
-      console.log("[local:demo] Listo. Taller QA disponible para todas las cuentas locales.");
+      console.log("[local:demo] Listo. Taller QA actualizado con catálogo técnico, stock y bobinas de Fase 2.");
       return;
     }
 
@@ -320,15 +311,195 @@ async function main() {
       [randomUUID(), randomUUID(), centerId, randomUUID(), randomUUID(), fmtDate(-1), ownerId]
     );
 
+    await ensurePhase2DemoData(db, centerId, ownerId);
+
     await db.query("COMMIT");
     console.log(
-      "[local:demo] 'Taller QA' creado en saas3d-local con clientes, 7 pedidos en todos los estados, ML $8.990 -> neto $6.483, devolución, gasto de filamento y venta Cults3D."
+      "[local:demo] 'Taller QA' creado en saas3d-local con clientes, 7 pedidos, catálogo técnico, stock, bobinas PETG y finanzas."
     );
   } catch (error) {
     await db.query("ROLLBACK").catch(() => {});
     throw error;
   } finally {
     await db.end();
+  }
+}
+
+async function ensurePhase2DemoData(db: Client, centerId: string, ownerId: string) {
+  // 1. Actualizar datos técnicos de las piezas existentes y agregar 4ta pieza demo con stock bajo
+  await db.query(
+    `UPDATE "Product"
+     SET category = 'Emblemas 4x4',
+         material = 'PETG',
+         grams = 38,
+         "printMinutes" = 75,
+         "colorsCount" = 2,
+         "purgeGrams" = 12,
+         "minStock" = 3
+     WHERE "centerId" = $1 AND name = 'Emblema Hilux TRD'`,
+    [centerId]
+  );
+
+  await db.query(
+    `UPDATE "Product"
+     SET category = 'Emblemas 4x4',
+         material = 'PETG',
+         grams = 52,
+         "printMinutes" = 95,
+         "colorsCount" = 2,
+         "purgeGrams" = 14,
+         "minStock" = 2
+     WHERE "centerId" = $1 AND name = 'Emblema Ranger Raptor'`,
+    [centerId]
+  );
+
+  await db.query(
+    `UPDATE "Product"
+     SET category = 'Accesorios Gaming',
+         material = 'PETG',
+         grams = 45,
+         "printMinutes" = 60,
+         "colorsCount" = 1,
+         "purgeGrams" = 0,
+         "minStock" = 4
+     WHERE "centerId" = $1 AND name = 'Soporte Pared Control PS5'`,
+    [centerId]
+  );
+
+  const existingTacoma = await db.query<{ id: string }>(
+    `SELECT id FROM "Product" WHERE "centerId" = $1 AND name = 'Letras Parrilla Tacoma TRD' LIMIT 1`,
+    [centerId]
+  );
+  if (existingTacoma.rows.length === 0) {
+    await db.query(
+      `INSERT INTO "Product" (
+         id, "centerId", name, category, material, grams, "printMinutes",
+         "colorsCount", "purgeGrams", "salePrice", "mlPrice", "currentStock", "minStock",
+         active, "createdByUserId", "updatedAt"
+       ) VALUES ($1, $2, 'Letras Parrilla Tacoma TRD', 'Emblemas 4x4', 'PETG', 65, 110, 2, 15, 9500, 11990, 0, 2, true, $3, now())`,
+      [randomUUID(), centerId, ownerId]
+    );
+  }
+
+  // 2. Asegurar movimientos de stock inicial si aún no existen para las piezas del taller
+  const products = await db.query<{ id: string; name: string; currentStock: number }>(
+    `SELECT id, name, "currentStock" FROM "Product" WHERE "centerId" = $1`,
+    [centerId]
+  );
+
+  const targetStocks: Record<string, number> = {
+    "Emblema Hilux TRD": 6,
+    "Emblema Ranger Raptor": 1, // Bajo stock (minStock = 2)
+    "Soporte Pared Control PS5": 5,
+    "Letras Parrilla Tacoma TRD": 0, // Sin stock (minStock = 2)
+  };
+
+  for (const prod of products.rows) {
+    const movCount = await db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM "ProductMovement" WHERE "centerId" = $1 AND "productId" = $2`,
+      [centerId, prod.id]
+    );
+    if (Number(movCount.rows[0]?.count ?? 0) === 0) {
+      const target = targetStocks[prod.name] ?? 3;
+      if (target > 0) {
+        await db.query(
+          `UPDATE "Product" SET "currentStock" = $1, "updatedAt" = now() WHERE "centerId" = $2 AND id = $3`,
+          [target, centerId, prod.id]
+        );
+        await db.query(
+          `INSERT INTO "ProductMovement" (
+             id, "centerId", "productId", "operationId", kind, delta, "resultingStock", notes, "actorUserId"
+           ) VALUES ($1, $2, $3, $4, 'INITIAL', $5, $5, 'Stock inicial de demostración', $6)`,
+          [randomUUID(), centerId, prod.id, randomUUID(), target, ownerId]
+        );
+      }
+    }
+  }
+
+  // 3. Asegurar 4 bobinas PETG de demostración (incluyendo 1 bobina con pocos gramos <= 150 g)
+  const existingSpools = await db.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM "Spool" WHERE "centerId" = $1`,
+    [centerId]
+  );
+
+  if (Number(existingSpools.rows[0]?.count ?? 0) === 0) {
+    const spoolsDemo = [
+      {
+        material: "PETG",
+        color: "Negro Mate",
+        brand: "eSUN",
+        totalGrams: 1000,
+        remainingGrams: 680,
+        pricePaid: 14990,
+        notes: "Bobina principal para bases de emblemas",
+      },
+      {
+        material: "PETG",
+        color: "Rojo Intenso",
+        brand: "Bambu Lab",
+        totalGrams: 1000,
+        remainingGrams: 790,
+        pricePaid: 16990,
+        notes: "Letras TRD y detalles deportivos",
+      },
+      {
+        material: "PETG",
+        color: "Blanco Polar",
+        brand: "Anycubic",
+        totalGrams: 1000,
+        remainingGrams: 540,
+        pricePaid: 13990,
+        notes: "Soportes PS5 y piezas limpias",
+      },
+      {
+        material: "PETG",
+        color: "Gris Plata",
+        brand: "Creality",
+        totalGrams: 1000,
+        remainingGrams: 120, // <= 150 g -> Alerta de bobina baja
+        pricePaid: 14500,
+        notes: "Queda poco filamento para letras cromadas",
+      },
+    ];
+
+    for (const s of spoolsDemo) {
+      const spoolId = randomUUID();
+      await db.query(
+        `INSERT INTO "Spool" (
+           id, "centerId", material, color, brand, "totalGrams", "remainingGrams",
+           "pricePaid", "purchasedOn", notes, active, "createdByUserId", "updatedAt"
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE - INTERVAL '10 days', $9, true, $10, now())`,
+        [
+          spoolId,
+          centerId,
+          s.material,
+          s.color,
+          s.brand,
+          s.totalGrams,
+          s.remainingGrams,
+          s.pricePaid,
+          s.notes,
+          ownerId,
+        ]
+      );
+
+      await db.query(
+        `INSERT INTO "SpoolMovement" (
+           id, "centerId", "spoolId", "operationId", kind, "deltaGrams", "resultingGrams", notes, "actorUserId"
+         ) VALUES ($1, $2, $3, $4, 'INITIAL', $5, $5, 'Alta inicial de bobina sellada', $6)`,
+        [randomUUID(), centerId, spoolId, randomUUID(), s.totalGrams, ownerId]
+      );
+
+      const consumed = s.totalGrams - s.remainingGrams;
+      if (consumed > 0) {
+        await db.query(
+          `INSERT INTO "SpoolMovement" (
+             id, "centerId", "spoolId", "operationId", kind, "deltaGrams", "resultingGrams", notes, "actorUserId"
+           ) VALUES ($1, $2, $3, $4, 'CONSUME', $5, $6, 'Consumo acumulado en lotes de emblemas', $7)`,
+          [randomUUID(), centerId, spoolId, randomUUID(), -consumed, s.remainingGrams, ownerId]
+        );
+      }
+    }
   }
 }
 

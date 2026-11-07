@@ -99,6 +99,12 @@ export default async function DashboardPage() {
             >
               + Nueva venta
             </Link>
+            <Link
+              href="/quote"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-colors touch-manipulation"
+            >
+              Cotizar pieza
+            </Link>
             {isManager && (
               <Link
                 href="/money?new=expense"

@@ -6,6 +6,24 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Fase 2: Catálogo Técnico de Piezas, Cotizador 3D, Bobinas y Movimientos de Stock (`/products`, `/spools`, `/quote`) (Tareas 2.1 a 2.6):**
+  - **Bobinas de filamento (`/spools` y `/spools/[id]`) (Tarea 2.3):**
+    - Gestión de bobinas por material (`PLA`, `PETG`, `ASA`, `ABS`, `TPU`, `OTHER`), color, marca, peso total, gramos restantes, precio pagado y fecha de compra.
+    - Opción al crear una bobina para registrar en el mismo paso el gasto `FILAMENT` en el módulo de Dinero (`MoneyTransaction`).
+    - Barra visual de filamento restante y alerta de **Poca bobina** cuando los gramos restantes bajan del umbral configurado en Ajustes (`lowSpoolThresholdGrams`).
+    - Consumo rápido (`-25 g`, `-50 g`, `-100 g` o personalizado) y ajuste de gramos con movimientos inmutables (`SpoolMovement`), idempotencia por `operationId` y bloqueo transaccional `SELECT ... FOR UPDATE`.
+  - **Catálogo técnico de piezas y stock inmutable (`/products` y `/products/[id]`) (Tarea 2.4):**
+    - Ampliación de cada pieza con categoría, material, gramos de pieza, minutos de impresión, cantidad de colores (`1–16`), gramos de purga multicolor, stock actual y stock mínimo de alerta.
+    - Cálculo automático de costo real de fabricación (filamento según promedio de bobinas activas del material + electricidad + embalaje) y margen estimado en venta directa y en Mercado Libre.
+    - Control de stock por movimientos inmutables (`ProductMovement`: `INITIAL`, `ENTRY`, `EXIT`, `ADJUST`) con bloqueo `SELECT ... FOR UPDATE` e idempotencia.
+    - Eliminación física restringida en servicio y base de datos (`guard_product_delete`) exclusivamente a piezas sin pedidos y sin movimientos reales (`kind <> 'INITIAL'`).
+  - **Cotizador interactivo de impresión 3D (`/quote`) (Tarea 2.5):**
+    - Calculadora en vivo para teléfonos móviles y computador con selección de material (usando el costo por gramo real de las bobinas activas del taller), peso, tiempo, colores/purga, embalaje y margen objetivo.
+    - Comparativa en tiempo real entre **Venta directa** y **Mercado Libre** (calculando el precio a publicar para conservar la ganancia neta tras comisión y envío).
+    - Conversión en un toque en **Pedido cotizado (`QUOTED`)** (con cliente existente o nuevo) o en **Pieza del catálogo**.
+  - **Navegación y semilla de demostración (`Sidebar`, `MobileNav`, `npm run local:demo`) (Tarea 2.6):**
+    - Accesos a **Cotizador** (`/quote`), **Catálogo de piezas** (`/products`) y **Bobinas** (`/spools`) en barra lateral y menú móvil **Más**, más acceso rápido `Cotizar pieza` en `/dashboard`.
+    - Semilla `npm run local:demo` ampliada con 4 bobinas PETG (incluyendo alerta de bobina baja), movimientos de filamento y especificaciones técnicas + stock en las piezas de `"Taller QA"`.
 - **Navegación móvil, Inicio operativo y Datos Demo (`MobileNav`, `/dashboard`, `npm run local:demo`) (Tareas 1.9 y 1.10 — Cierre Fase 1):**
   - Barra inferior móvil (`MobileNav`) optimizada para pantallas de 390 px con accesos principales (**Inicio, Pedidos, Clientes y Dinero**) y cajón desplegable **Más** con Lista de piezas, Ajustes del taller y Mi taller.
   - Barra lateral de computador (`Sidebar`) sincronizada con acceso a Dinero (`/money`) restringido a `OWNER` y `ADMIN`.

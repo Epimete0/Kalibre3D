@@ -12,6 +12,8 @@ const icons = {
   people: <><circle cx="9" cy="8" r="3.5" /><path d="M3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0-1-5.8M17 14a4 4 0 0 1 4 4v1" /></>,
   orders: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><path d="m9 14 2 2 4-4" /></>,
   cube: <><path d="m3 7.5 9-4.5 9 4.5-9 4.5-9-4.5Z" /><path d="M3 7.5v9L12 21l9-4.5v-9M12 12v9" /></>,
+  spool: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 4v5M12 15v5M4 12h5M15 12h5" /></>,
+  calculator: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2" /></>,
   chart: <><path d="M4 19V5M4 19h16" /><path d="m7 15 4-4 3 2 5-6" /></>,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.3l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>,
   workshop: <><circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /></>,
@@ -33,6 +35,10 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
   const pathname = usePathname();
   const isActive = (href: string) => href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   const isManager = account?.role === "OWNER" || account?.role === "ADMIN";
+  const canOperate =
+    account?.role === "OWNER" ||
+    account?.role === "ADMIN" ||
+    account?.role === "PROFESSIONAL";
 
   return (
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
@@ -48,12 +54,14 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
         <FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} active={isActive("/dashboard")} />
         <div className="pt-3 space-y-1">
           <PlainLink item={{ href: "/orders", label: "Pedidos", icon: icons.orders }} active={isActive("/orders")} />
+          {canOperate ? (
+            <PlainLink item={{ href: "/quote", label: "Cotizador", icon: icons.calculator }} active={isActive("/quote")} />
+          ) : null}
+          <PlainLink item={{ href: "/products", label: "Catálogo de piezas", icon: icons.cube }} active={isActive("/products")} />
+          <PlainLink item={{ href: "/spools", label: "Bobinas", icon: icons.spool }} active={isActive("/spools")} />
           <PlainLink item={{ href: "/clients", label: "Clientes", icon: icons.people }} active={isActive("/clients")} />
           {isManager ? (
             <PlainLink item={{ href: "/money", label: "Dinero", icon: icons.chart }} active={isActive("/money")} />
-          ) : null}
-          {isManager ? (
-            <PlainLink item={{ href: "/products", label: "Lista de piezas", icon: icons.cube }} active={isActive("/products")} />
           ) : null}
           {isManager ? (
             <PlainLink item={{ href: "/settings", label: "Ajustes", icon: icons.settings }} active={isActive("/settings")} />

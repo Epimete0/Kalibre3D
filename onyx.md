@@ -8,19 +8,50 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). **Fase 1 cerrada (1.0 a 1.10 hechas, quality gate PASSED)** — ver las entradas fechadas abajo y las casillas en la sección 18.2. **Siguiente: Fase 2 (Catálogo de piezas, cotizador, bobinas y movimientos de stock y filamento, sección 18.3).**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1 cerrada (quality gate PASSED). **Fase 2 cerrada (2.1 a 2.6 hechas, quality gate PASSED)** — ver la entrada fechada abajo y las casillas en la sección 18.3. **Siguiente: Fase 3 (Panel del mes: ingresos, gastos, ganancia, canales, pendientes, atrasados y alertas de stock/bobinas, sección 18.3).**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
 2. Seguir `AGENTS.md` (forma de trabajo de 12 pasos). Pedir aprobación antes de cambios de RLS, autenticación, datos o concurrencia. Toda función exportada de un servicio abre con `requireAuthContext`/`requireOperationalContext`/`requireCatalogContext`; las Server Actions no importan Prisma (lo verifica `src/lib/auth-boundaries.test.ts`).
 3. **Nada en la nube** sin aprobación explícita. `.env` (nube) no se toca; el desarrollo usa `.env.local` (local).
 4. Mensajes visibles en español (Taller, Dueño, Ayudante) y convención de mensajes de `AGENTS.md`. Montos enteros en unidad mínima (`src/lib/money-format.ts`).
-5. Al terminar cada tarea: pruebas en verde, commit propio, casilla marcada en 18.2 y entrada fechada aquí arriba (sección 17).
+5. Al terminar cada tarea: pruebas en verde, commit propio, casilla marcada en 18 y entrada fechada aquí arriba (sección 17).
 
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` + `npm run local:demo` (desarrollo `saas3d-local`, 5444x, con el taller "Taller QA").
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (`qa-local@saas3d.local`, creada o actualizada por `npm run local:demo`).
 - Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions`, `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+
+---
+
+## Fase 2 cerrada — Catálogo de piezas, Cotizador, Bobinas y Movimientos de Stock (tareas 2.1 a 2.6), 2026-11-08
+
+- **Migración `20261109000000_phase2_catalog_spools_stock` (tarea 2.1):**
+  - Ampliación de `Product` con `category`, `material` (`PLA`, `PETG`, `ASA`, `ABS`, `TPU`, `OTHER`), `grams`, `printMinutes`, `colorsCount` (`1..16`), `purgeGrams`, `currentStock` (`>= 0`) y `minStock` (`>= 0`).
+  - Nuevas tablas `ProductMovement`, `Spool` y `SpoolMovement` (`SERVER_ONLY`, RLS habilitado con 0 políticas y `REVOKE ALL` a `PUBLIC, anon, authenticated`).
+  - Claves foráneas compuestas `(centerId, productId)`, `(centerId, spoolId)`, `(centerId, orderId)` y `(centerId, actorUserId) → CenterMember`.
+  - Triggers de integridad: `guard_product_movement()` (bloquea `UPDATE` y `DELETE` directos sobre `ProductMovement`), `guard_product_delete()` (permite borrar un `Product` solo si no tiene `OrderItem`s ni `ProductMovement`s con `kind <> 'INITIAL'`, limpiando los `INITIAL` en cascada interna), `guard_immutable_row()` en `SpoolMovement` y `guard_spool_delete()` en `Spool` (impide el borrado físico de bobinas).
+- **Reglas puras de costeo y presentación (`src/lib/costing.ts` y `src/lib/catalog-presentation.ts`, tarea 2.2):**
+  - `computeMaterialCostPerGram(spools, material, defaultCostPerKg)`: calcula el promedio ponderado (`Σ pricePaid / Σ totalGrams`) de las bobinas activas de ese material en el taller, o `defaultCostPerKg / 1000` si no hay bobinas activas de ese material (D18).
+  - `suggestMlPriceForTargetNet({ targetNet, commissionPct, sellerShippingCost })`: calcula el precio entero a publicar en Mercado Libre para conservar el neto objetivo tras la comisión redondeada y el envío a cargo del vendedor.
+  - Etiquetas y constantes cerradas `MATERIALS`, `MATERIAL_LABEL`, `PRODUCT_MOVEMENT_KINDS`, `PRODUCT_MOVEMENT_LABEL`, `SPOOL_MOVEMENT_KINDS` y `SPOOL_MOVEMENT_LABEL`.
+- **Bobinas y movimientos de filamento (`/spools`, `/spools/[id]`, `src/lib/spool-service.ts`, `src/lib/spool-queries.ts`, tarea 2.3):**
+  - `createSpool`, `updateSpool`, `setSpoolActive` (`requireCatalogContext`) y `recordSpoolMovement` (`requireOperationalContext`).
+  - Al dar de alta una bobina con `pricePaid > 0`, opción de registrar en la misma transacción el gasto `FILAMENT` en `MoneyTransaction`.
+  - `recordSpoolMovement` bloquea la fila de `Spool` con `SELECT ... FOR UPDATE`, verifica idempotencia por `(centerId, operationId)` y garantiza que `remainingGrams` nunca quede negativo.
+  - Procedimiento de concurrencia `AGENTS.md` cumplido en `tests/spools.integration.test.ts`: se observó el fallo sin `FOR UPDATE` ante consumos simultáneos sobre una bobina y se verificó en verde tras aplicar el bloqueo.
+- **Catálogo técnico de piezas y movimientos de stock (`/products`, `/products/[id]`, `src/lib/product-service.ts`, `src/lib/product-queries.ts`, tarea 2.4):**
+  - `createProduct` y `updateProduct` con especificaciones técnicas completas y stock inicial opcional (generando `ProductMovement` `INITIAL`).
+  - `recordProductMovement` (`ENTRY`, `EXIT`, `ADJUST`) con `SELECT ... FOR UPDATE` e idempotencia por `(centerId, operationId)`.
+  - Procedimiento de concurrencia `AGENTS.md` cumplido en `tests/products.integration.test.ts`: tres salidas simultáneas de 6 unidades sobre stock 10 permiten exactamente una (quedando 4) y rechazan las otras dos con `DomainError`.
+  - Cálculo en vivo de costo de fabricación y margen directo y en Mercado Libre (ocultos para `VIEWER`).
+- **Cotizador interactivo (`/quote`, `QuoteCalculator.tsx`, `actions.ts`, tarea 2.5):**
+  - Calculadora móvil y de escritorio con selección de material (usando el `costPerGram` real del taller), peso, tiempo, colores/purga, embalaje y margen objetivo.
+  - Acciones en un toque para **Crear pedido cotizado (`QUOTED`)** (redirigiendo a `/orders/[id]`) o **Guardar como pieza en el catálogo**.
+- **Navegación, semilla demo y quality gate (tarea 2.6):**
+  - Enlaces a **Cotizador** (`/quote`), **Catálogo de piezas** (`/products`) y **Bobinas** (`/spools`) en `Sidebar.tsx` y `MobileNav.tsx`, más botón rápido `Cotizar pieza` en `/dashboard`.
+  - `npm run local:demo` actualiza `"Taller QA"` con especificaciones técnicas, stock inicial y 4 bobinas PETG (incluyendo 1 bobina con `120 g <= 150 g` en alerta de poca bobina).
+  - **Quality gate (`npm run quality:gate`) → PASSED:** 320/320 pruebas unitarias (50 archivos), 0 errores de lint, build de producción Next.js 16 exitoso, 4 migraciones aplicadas, `test:rls` 13/13, `test:s1` 3/3, `test:s3` 1/1 y `test:transactions` 55/55 (12 suites).
 
 ---
 
@@ -684,9 +715,17 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 Catálogo de piezas, cotizador, bobinas y stock (Fase 2); panel del mes (Fase 3); API de Mercado Libre, cobro de suscripción y pantalla de equipo visible.
 
-### 18.3 Fases siguientes
+### 18.3 Fase 2 — Catálogo de piezas, cotizador, bobinas y movimientos de stock y filamento (cerrada, 2026-11-08)
 
-- **Fase 2:** catálogo de piezas, cotizador (crea pedidos `QUOTED`), bobinas y movimientos de stock y filamento.
+- [x] **2.1 Migración `20261109000000_phase2_catalog_spools_stock`.** Columnas técnicas y de stock en `Product`; tablas `ProductMovement`, `Spool` y `SpoolMovement` (`SERVER_ONLY`, RLS habilitado, 0 políticas, `REVOKE ALL`, claves compuestas y triggers `guard_product_movement`, `guard_product_delete`, `guard_immutable_row`, `guard_spool_delete`).
+- [x] **2.2 Reglas puras de costo por material y presentación.** `computeMaterialCostPerGram`, `suggestMlPriceForTargetNet` y `catalog-presentation.ts`.
+- [x] **2.3 Bobinas y movimientos de filamento (`/spools`, `/spools/[id]`).** `spool-service.ts`, `spool-queries.ts`, consumo concurrente con `SELECT ... FOR UPDATE`, registro opcional de gasto `FILAMENT` y barra de progreso con alerta de bobina baja.
+- [x] **2.4 Catálogo completo de piezas y movimientos de stock (`/products`, `/products/[id]`).** `product-service.ts`, `product-queries.ts`, movimientos de stock con `SELECT ... FOR UPDATE`, costo y margen en vivo y regla de eliminación física restringida.
+- [x] **2.5 Cotizador interactivo (`/quote`).** Calculadora móvil y de escritorio conectada al costo real por material de las bobinas activas, con creación en un toque de pedidos `QUOTED` o piezas de catálogo.
+- [x] **2.6 Navegación, datos demo de Fase 2 y cierre (`quality:gate`).** Enlaces en `Sidebar`, `MobileNav` y `/dashboard`, semilla `npm run local:demo` actualizada y `npm run quality:gate` → PASSED.
+
+### 18.4 Fases siguientes
+
 - **Fase 3:** panel del mes (ingresos, gastos, ganancia, canales, pendientes, atrasados y alertas).
 - **Fase 4:** uso real por Surko durante 2 a 4 semanas, con correcciones.
 - **Fase 5:** beta con 5 a 10 makers y entrevistas.
