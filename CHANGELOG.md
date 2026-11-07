@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Listado, ficha de pedido y control de estados (`/orders` y `/orders/[id]`) (Tarea 1.6):**
+  - Listado de pedidos y ventas con priorización automática de **pedidos atrasados primero** según la zona horaria del taller.
+  - Filtros en vivo por estado (Todos, Pendientes, Cotizados, Confirmados, Imprimiendo, Listos, Entregados, Cancelados), por canal de venta y búsqueda insensible a tildes por `#número`, cliente o pieza.
+  - Vista responsiva de tarjetas táctiles en teléfonos móviles (390 px) con botón rápido para avanzar al siguiente estado en un toque y vista de tabla en computador.
+  - Ficha detallada de pedido (`/orders/[id]`): piezas, desglose transparente de comisión, envío y neto real de Mercado Libre, cobros recibidos, saldo pendiente y accesos rápidos a WhatsApp e Instagram del cliente.
+  - Avance y cancelación de estados con control de concurrencia pesimista/optimista (`FOR UPDATE` + `version`) y registro inmutable en la línea de tiempo (`OrderEvent`).
 - **Creación de pedidos y ventas rápidas (`/orders/new`) (Tarea 1.5):**
   - Formulario de alta rápida de pedidos diseñado para teléfonos móviles (390 px) para registrar ventas en menos de 30 segundos.
   - Soporte de dos modalidades operativas: **Venta rápida** (se entrega y cobra en el acto en un solo paso, con registro de ingreso inmediato) y **Pedido por encargo** (pasa por el ciclo de fabricación y entrega con anticipo opcional).

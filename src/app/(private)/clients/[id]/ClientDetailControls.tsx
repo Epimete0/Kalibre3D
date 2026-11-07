@@ -409,7 +409,9 @@ export function CustomerOrdersTable({
               return (
                 <tr key={o.id} className="transition-colors hover:bg-canvas/30">
                   <td className="px-4 py-3 font-semibold text-ink">
-                    {orderNumberLabel(o.number)}
+                    <Link href={`/orders/${o.id}`} className="text-primary hover:underline">
+                      {orderNumberLabel(o.number)}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted">
                     {CHANNEL_LABEL[channel] ?? o.channel}
@@ -454,9 +456,12 @@ export function CustomerOrdersTable({
           return (
             <div key={o.id} className="p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-ink text-sm">
+                <Link
+                  href={`/orders/${o.id}`}
+                  className="font-semibold text-primary hover:underline text-sm"
+                >
                   {orderNumberLabel(o.number)}
-                </span>
+                </Link>
                 <Badge tone={tone}>
                   {STATUS_LABEL[status] ?? o.status}
                 </Badge>

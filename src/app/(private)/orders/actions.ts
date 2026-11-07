@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actionFailure } from "@/lib/action-failure";
-import { createOrder } from "@/lib/order-service";
+import { changeOrderStatus, createOrder } from "@/lib/order-service";
+import type { OrderStatus } from "@/lib/order-status";
 
 type CreateOrderState = {
   error?: string;
@@ -27,8 +28,30 @@ export async function createOrderAction(
   }
 
   if (createdOrderId) {
-    redirect(`/orders`);
+    redirect(`/orders/${createdOrderId}`);
   }
 
   return {};
+}
+
+export type ChangeOrderStatusState = {
+  error?: string;
+  message?: string;
+};
+
+export async function changeOrderStatusAction(input: {
+  orderId: string;
+  expectedVersion: number;
+  to: OrderStatus;
+}): Promise<ChangeOrderStatusState> {
+  try {
+    await changeOrderStatus(input);
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${input.orderId}`);
+    revalidatePath("/clients");
+    revalidatePath("/dashboard");
+    return { message: "Estado de pedido actualizado correctamente." };
+  } catch (error) {
+    return actionFailure(error, "No fue posible actualizar el estado del pedido. Intenta nuevamente.");
+  }
 }

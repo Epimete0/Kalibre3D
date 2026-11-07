@@ -3,6 +3,8 @@ import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
 import { requireOperationalContext } from "@/lib/auth";
 import { todayInTimeZone } from "@/lib/money-summary";
+import { STATUS_LABEL } from "@/lib/order-presentation";
+import { canTransition, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
 import { orderTotal } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
 
@@ -218,3 +220,97 @@ export async function createOrder(input: unknown) {
 
   return result;
 }
+
+export const changeOrderStatusSchema = z.object({
+  orderId: z.string({ error: "Identificador de pedido inválido." }).uuid("Identificador de pedido inválido."),
+  expectedVersion: z.coerce
+    .number({ error: "La versión del pedido es inválida." })
+    .int("La versión del pedido debe ser un entero.")
+    .min(1, "La versión del pedido debe ser al menos 1."),
+  to: z.enum(ORDER_STATUSES, {
+    error: "El estado de destino no es válido.",
+  }),
+});
+
+export type ChangeOrderStatusInput = z.input<typeof changeOrderStatusSchema>;
+
+export async function changeOrderStatus(
+  input: ChangeOrderStatusInput
+): Promise<{ id: string; status: OrderStatus; version: number }> {
+  const { centerId, userId } = await requireOperationalContext();
+  const parsed = changeOrderStatusSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError(parsed.error.issues[0]?.message ?? "Datos de cambio de estado inválidos.");
+  }
+
+  const { orderId, expectedVersion, to } = parsed.data;
+  if (to === "RETURNED") {
+    throw new DomainError("Para registrar una devolución utiliza la opción de devolución con reembolso.");
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<
+      Array<{
+        id: string;
+        centerId: string;
+        status: string;
+        version: number;
+        deliveredAt: Date | null;
+      }>
+    >`
+      SELECT id, "centerId", status, version, "deliveredAt"
+      FROM "Order"
+      WHERE "centerId" = ${centerId}::uuid AND id = ${orderId}::uuid
+      FOR UPDATE
+    `;
+
+    const order = rows[0];
+    if (!order) {
+      throw new DomainError("El pedido no existe o no pertenece a este taller.");
+    }
+
+    if (order.version !== expectedVersion) {
+      throw new DomainError(
+        "El pedido fue modificado por otra persona o pestaña. Recarga la página para ver el estado actual."
+      );
+    }
+
+    const currentStatus = order.status as OrderStatus;
+    if (!canTransition(currentStatus, to)) {
+      throw new DomainError(
+        `No se puede cambiar el estado de "${STATUS_LABEL[currentStatus]}" a "${STATUS_LABEL[to]}".`
+      );
+    }
+
+    const nextVersion = order.version + 1;
+    const nextDeliveredAt =
+      to === "DELIVERED"
+        ? new Date()
+        : currentStatus === "DELIVERED"
+          ? order.deliveredAt
+          : null;
+
+    await tx.order.update({
+      where: { centerId_id: { centerId, id: orderId } },
+      data: {
+        status: to,
+        version: nextVersion,
+        deliveredAt: nextDeliveredAt,
+      },
+    });
+
+    await tx.orderEvent.create({
+      data: {
+        centerId,
+        orderId,
+        version: nextVersion,
+        fromStatus: currentStatus,
+        toStatus: to,
+        actorUserId: userId,
+      },
+    });
+
+    return { id: orderId, status: to, version: nextVersion };
+  });
+}
+

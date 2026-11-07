@@ -7,6 +7,7 @@ const { prisma, requireOperationalContext } = vi.hoisted(() => {
     order: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     orderItem: {
       createMany: vi.fn(),
@@ -39,7 +40,7 @@ const { prisma, requireOperationalContext } = vi.hoisted(() => {
 vi.mock("@/lib/prisma", () => ({ prisma }));
 vi.mock("@/lib/auth", () => ({ requireOperationalContext }));
 
-import { createOrder } from "./order-service";
+import { changeOrderStatus, createOrder } from "./order-service";
 
 const VALID_OP_ID = "22222222-2222-4222-8222-222222222222";
 
@@ -266,6 +267,138 @@ describe("order-service", () => {
           items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }],
         })
       ).rejects.toThrow("El descuento debe ser mayor o igual a 0.");
+    });
+  });
+
+  describe("changeOrderStatus", () => {
+    const ORDER_UUID = "11111111-1111-4111-8111-111111111111";
+
+    it("actualiza el estado, incrementa la versión y registra OrderEvent", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          centerId: "center-1",
+          status: "CONFIRMED",
+          version: 1,
+          deliveredAt: null,
+        },
+      ]);
+
+      const result = await changeOrderStatus({
+        orderId: ORDER_UUID,
+        expectedVersion: 1,
+        to: "PRINTING",
+      });
+
+      expect(prisma.order.update).toHaveBeenCalledWith({
+        where: { centerId_id: { centerId: "center-1", id: ORDER_UUID } },
+        data: {
+          status: "PRINTING",
+          version: 2,
+          deliveredAt: null,
+        },
+      });
+      expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+        data: {
+          centerId: "center-1",
+          orderId: ORDER_UUID,
+          version: 2,
+          fromStatus: "CONFIRMED",
+          toStatus: "PRINTING",
+          actorUserId: "user-1",
+        },
+      });
+      expect(result).toEqual({ id: ORDER_UUID, status: "PRINTING", version: 2 });
+    });
+
+    it("fija deliveredAt cuando el estado pasa a DELIVERED", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          centerId: "center-1",
+          status: "READY",
+          version: 3,
+          deliveredAt: null,
+        },
+      ]);
+
+      const result = await changeOrderStatus({
+        orderId: ORDER_UUID,
+        expectedVersion: 3,
+        to: "DELIVERED",
+      });
+
+      expect(prisma.order.update).toHaveBeenCalledWith({
+        where: { centerId_id: { centerId: "center-1", id: ORDER_UUID } },
+        data: {
+          status: "DELIVERED",
+          version: 4,
+          deliveredAt: expect.any(Date),
+        },
+      });
+      expect(result).toEqual({ id: ORDER_UUID, status: "DELIVERED", version: 4 });
+    });
+
+    it("rechaza cuando la versión esperada no coincide (concurrencia)", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          centerId: "center-1",
+          status: "PRINTING",
+          version: 2,
+          deliveredAt: null,
+        },
+      ]);
+
+      await expect(
+        changeOrderStatus({
+          orderId: ORDER_UUID,
+          expectedVersion: 1,
+          to: "READY",
+        })
+      ).rejects.toThrow("El pedido fue modificado por otra persona o pestaña. Recarga la página para ver el estado actual.");
+    });
+
+    it("rechaza una transición inválida del ciclo de vida", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([
+        {
+          id: ORDER_UUID,
+          centerId: "center-1",
+          status: "DELIVERED",
+          version: 2,
+          deliveredAt: new Date(),
+        },
+      ]);
+
+      await expect(
+        changeOrderStatus({
+          orderId: ORDER_UUID,
+          expectedVersion: 2,
+          to: "PRINTING",
+        })
+      ).rejects.toThrow('No se puede cambiar el estado de "Entregado" a "Imprimiendo".');
+    });
+
+    it("rechaza cambiar directamente a RETURNED sin flujo de devolución", async () => {
+      await expect(
+        changeOrderStatus({
+          orderId: ORDER_UUID,
+          expectedVersion: 2,
+          to: "RETURNED",
+        })
+      ).rejects.toThrow("Para registrar una devolución utiliza la opción de devolución con reembolso.");
+    });
+
+    it("rechaza cuando el pedido no existe en el taller", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([]);
+
+      await expect(
+        changeOrderStatus({
+          orderId: ORDER_UUID,
+          expectedVersion: 1,
+          to: "CONFIRMED",
+        })
+      ).rejects.toThrow("El pedido no existe o no pertenece a este taller.");
     });
   });
 });

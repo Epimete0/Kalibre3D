@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4 y 1.5 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.6 Listado, ficha y estados.**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5 y 1.6 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.7 Cobros y devoluciones.**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,13 +20,32 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-creation.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-status.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.6 (Listado, ficha y estados):**
-- Consultas `order-queries.ts`: `listOrders` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `getOrderDetail` (pedido con cliente, piezas, eventos y cobros).
-- Servicio `order-service.ts`: `changeOrderStatus(orderId, expectedVersion, to)` con `FOR UPDATE`, validación de versión actual, validación de transición de estado (`canTransition`), incremento de `version`, fijación de `deliveredAt` (en `DELIVERED` o `RETURNED`) y creación de `OrderEvent`.
-- Pantallas `/orders` (tarjetas responsivas en móvil ~390px y tabla en escritorio) y `/orders/[id]` (ficha completa, piezas, cobros, saldo, eventos y botones de cambio de estado).
-- Concurrencia obligatoria (`AGENTS.md`): prueba real de carrera con la misma versión donde solo uno gana y queda exactamente un evento.
+**Qué hay para la 1.7 (Cobros y devoluciones):**
+- `order-service.registerPayment`: idempotente por `operationId`, requiere `requireCatalogContext` (`OWNER`/`ADMIN`, D1), sugiere el saldo o el neto ML.
+- `voidMoneyTransaction` (D5): anula un movimiento una sola vez con motivo obligatorio (`voidedAt`, `voidedByUserId`, `voidReason`), requiere `requireCatalogContext`.
+- `returnOrder` (D6): una sola transacción desde `DELIVERED` a `RETURNED` (con versión y `FOR UPDATE`), registra `EXPENSE` `REFUNDS` por el monto devuelto y escribe `OrderEvent`.
+- Integrar controles de cobro, anulación y devolución en `/orders/[id]`.
+
+---
+
+## Fase 1 — Listado, ficha y estados de pedidos (tarea 1.6), 2026-11-08
+
+- **Servicio y concurrencia (`src/lib/order-service.ts`):**
+  - `changeOrderStatus`: valida con Zod (`orderId`, `expectedVersion`, `to`), requiere `requireOperationalContext` (`OWNER`, `ADMIN`, `PROFESSIONAL`). Bloquea la fila con `SELECT ... FOR UPDATE`, compara `order.version === expectedVersion`, verifica `canTransition(currentStatus, to)`, incrementa `version` a `version + 1`, fija `deliveredAt` al pasar a `DELIVERED` y registra el `OrderEvent` inmutable en la misma transacción.
+  - Procedimiento de concurrencia `AGENTS.md` cumplido: se describió la intercalación, se creó la prueba real en PostgreSQL, se observó el fallo sin `FOR UPDATE`, se aplicó la corrección y se verificó en verde.
+- **Consultas (`src/lib/order-queries.ts`):**
+  - `listOrders`: filtros por estado (`ALL`, `ACTIVE`, o estado específico), canal y búsqueda insensible a tildes por `#número`, nombre de cliente o descripción de pieza. Calcula `isOverdue` en la zona horaria del taller, `expectedReceivable` y `balance`, y ordena los pedidos **atrasados primero**. Enmascara montos para `VIEWER`.
+  - `getOrderDetail`: obtiene la ficha completa del pedido con cliente, piezas, resumen financiero (incluyendo desglose de comisión, envío y neto real de Mercado Libre), cobros asociados e historial cronológico de `OrderEvent` con nombre del integrante (`Profile.displayName`).
+- **Interfaz (`/orders` y `/orders/[id]`):**
+  - `/orders`: buscador rápido, selector de canal y pestañas horizontales táctiles de estado; tarjetas móviles responsivas (390 px) con avance rápido en un toque y tabla en escritorio.
+  - `/orders/[id]`: encabezado con estado, fecha comprometida y alerta de atraso, botones de avance de estado y cancelación con confirmación, accesos directos a WhatsApp e Instagram del cliente, desglose de piezas, resumen financiero con neto ML y línea de tiempo de eventos.
+  - Números de pedido en `/clients/[id]` enlazados directamente a `/orders/[id]`.
+- **Pruebas:**
+  - Unitarias en `order-service.test.ts` (12/12) y `order-queries.test.ts` (6/6). Total unitarias: 296/296.
+  - Integración real contra PostgreSQL en `tests/orders-status.integration.test.ts` (2/2): carrera simultánea con la misma versión donde gana exactamente uno y el otro rechaza con `DomainError`, y ciclo completo hasta `DELIVERED`.
+- **Resultados:** `quality:gate` PASSED (296 unitarias, 0 lint warnings, build exitoso, 13 RLS, 3 S1, 1 S3, 44 transacciones).
 
 ---
 
@@ -320,7 +339,7 @@ docs/                    especificaciones, planes y runbooks
 | Perfil / Mi taller | `/profile` | Implementado (Fase 0): cuenta, contraseña y datos del taller |
 | Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
 | Clientes | `/clients`, `/clients/[id]` | Implementado (Fase 1): lista con búsqueda sin tildes, alta rápida y ficha con saldo |
-| Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Implementado `/orders/new` (Fase 1); listado y ficha planificados (Fase 1) |
+| Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Implementado (Fase 1): alta rápida, listado con filtros y atrasados, ficha y estados |
 | Dinero | `/money` | Planificado (Fase 1) |
 | Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
 | Catálogo y cotizador | `/products` (lista de precios mínima, Fase 1); `/products/new`, `/products/[id]`, `/quote` | Implementado `/products` (Fase 1); cotizador planificado (Fase 2) |
@@ -580,7 +599,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.5 Crear pedidos.** **Incluye D4 (casilla Mercado Libre que cambia a precios ML y calcula comisión, envío y neto), D7 (sin cliente por defecto) y D12 (venta rápida que queda entregada y cobrada en un paso, o pedido por encargo).** `order-operation.ts` (`resolveNewOrderOperation`, como `new-purchase-operation`) y `order-service.createOrder`: valida con Zod, crea el cliente al vuelo si corresponde, bloquea el `Center`, asigna el número, calcula el total, sugiere la comisión ML y registra el evento `CREATED`. Pantalla `/orders/new`: cliente existente o nuevo, canal, piezas (descripción, cantidad, precio, colores y material), descuento, fecha de entrega, campos ML y resumen en vivo (total, neto ML); con borrador local (`FormDraft`) y cerrojo contra doble envío. *Pruebas reales:* el mismo `operationId` dos veces crea un solo pedido; dos pedidos simultáneos reciben números distintos y consecutivos.
 
-- [ ] **1.6 Listado, ficha y estados.** `order-queries.ts` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `order-service.changeOrderStatus(orderId, expectedVersion, to)`: `FOR UPDATE`, compara la versión, valida la transición, incrementa la versión, fija `deliveredAt` y escribe `OrderEvent`. Pantallas `/orders` (lista en tarjetas en celular y tabla en computador) y `/orders/[id]` (piezas, totales, neto ML, cobros, saldo, historial de estados y botones de avance). *Pruebas reales (concurrencia, AGENTS.md):* dos cambios con la misma versión → gana uno y queda exactamente un evento. Se describe la intercalación y se observa el fallo antes de corregir.
+- [x] **1.6 Listado, ficha y estados.** `order-queries.ts` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `order-service.changeOrderStatus(orderId, expectedVersion, to)`: `FOR UPDATE`, compara la versión, valida la transición, incrementa la versión, fija `deliveredAt` y escribe `OrderEvent`. Pantallas `/orders` (lista en tarjetas en celular y tabla en computador) y `/orders/[id]` (piezas, totales, neto ML, cobros, saldo, historial de estados y botones de avance). *Pruebas reales (concurrencia, AGENTS.md):* dos cambios con la misma versión → gana uno y queda exactamente un evento. Se describe la intercalación y se observa el fallo antes de corregir.
 
 - [ ] **1.7 Cobros y devoluciones.** `order-service.registerPayment` (idempotente por `operationId`; sugiere el saldo o el neto ML), `voidMoneyTransaction` (D5) y `returnOrder` (D6). *Pruebas reales:* pago repetido no se duplica; la devolución es atómica (si falla el gasto, el pedido no cambia de estado); anular dos veces se rechaza.
 
