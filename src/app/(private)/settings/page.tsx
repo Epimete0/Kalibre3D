@@ -6,7 +6,7 @@ import { SettingsForm } from "./SettingsForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
+export default async function SettingsPage(props: { searchParams?: Promise<{ bienvenida?: string }> }) {
   const auth = await requireAuthContext();
   if (!canManageCatalog(auth.role)) {
     return (
@@ -19,15 +19,20 @@ export default async function SettingsPage() {
   }
 
   const settings = await getCenterSettings();
+  const welcome = (props.searchParams ? await props.searchParams : {}).bienvenida === "1";
 
   return (
     <>
       <PageHeader
-        title="Ajustes del taller"
-        description="Configuración de moneda, zona horaria, comisión de Mercado Libre y parámetros de costos."
+        title={welcome ? "Prepara tu taller" : "Ajustes del taller"}
+        description={
+          welcome
+            ? "Paso 1 de 3 · Tus costos. Después agregas tu primera bobina y registras tu primera venta."
+            : "Tus costos, comisiones, IVA, margen mínimo y datos del taller."
+        }
       />
-      <div className="max-w-4xl">
-        <SettingsForm settings={settings} />
+      <div className="max-w-3xl">
+        <SettingsForm settings={settings} welcome={welcome} />
       </div>
     </>
   );

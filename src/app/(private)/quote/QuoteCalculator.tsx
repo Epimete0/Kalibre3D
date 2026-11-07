@@ -11,8 +11,10 @@ import {
 } from "@/lib/catalog-presentation";
 import {
   computePieceCost,
-  suggestMlPriceForTargetNet,
-  suggestPrice,
+  directSaleBreakdown,
+  suggestDirectPrice,
+  suggestMlPriceKeeping,
+  vatIncluded,
 } from "@/lib/costing";
 import { formatMoney, toMinorUnits, type Currency } from "@/lib/money-format";
 import { CHANNEL_LABEL } from "@/lib/order-presentation";
@@ -40,6 +42,9 @@ export function QuoteCalculator({
   defaultPurgeGrams,
   mlCommissionPercent,
   mlDefaultShippingCost,
+  vatPercent = 0,
+  extraCommissionPercent = 0,
+  defaultMarginPercent = 60,
   materialRates,
   customers,
   canEditCatalog,
@@ -50,6 +55,12 @@ export function QuoteCalculator({
   defaultPurgeGrams: number;
   mlCommissionPercent: number;
   mlDefaultShippingCost: number;
+  /** IVA incluido en los precios (0 = no se considera). */
+  vatPercent?: number;
+  /** Comisión adicional por venta directa (p. ej. Mercado Pago). */
+  extraCommissionPercent?: number;
+  /** Margen mínimo del taller: punto de partida del cotizador. */
+  defaultMarginPercent?: number;
   materialRates: Record<Material, MaterialRateInfo>;
   customers: CustomerOption[];
   canEditCatalog: boolean;
@@ -68,7 +79,7 @@ export function QuoteCalculator({
   const [colorsCount, setColorsCount] = useState("1");
   const [purgeGrams, setPurgeGrams] = useState(String(defaultPurgeGrams));
   const [packagingInput, setPackagingInput] = useState(String(defaultPackagingMajor));
-  const [marginTarget, setMarginTarget] = useState(60);
+  const [marginTarget, setMarginTarget] = useState(defaultMarginPercent);
   const [qty, setQty] = useState("1");
   const [customUnitPriceInput, setCustomUnitPriceInput] = useState("");
 
@@ -112,7 +123,18 @@ export function QuoteCalculator({
     packagingCost: packagingMinor,
   });
 
-  const suggestedDirectMinor = suggestPrice(costBreakdown.totalCost, marginTarget / 100);
+  // Precio sugerido: el menor que deja el margen objetivo después del IVA y la comisión adicional.
+  let suggestedDirectMinor = 0;
+  try {
+    suggestedDirectMinor = suggestDirectPrice({
+      totalCost: costBreakdown.totalCost,
+      marginPercent: marginTarget,
+      vatPercent,
+      extraCommissionPercent,
+    });
+  } catch {
+    suggestedDirectMinor = 0;
+  }
 
   // Si el usuario escribió un precio manual, usamos ese; si no, usamos el sugerido
   let activeUnitPriceMinor = suggestedDirectMinor;
@@ -127,17 +149,28 @@ export function QuoteCalculator({
     }
   }
 
-  const unitProfitDirect = activeUnitPriceMinor - costBreakdown.totalCost;
-  const effectiveMarginPct =
-    activeUnitPriceMinor > 0
-      ? Math.round((unitProfitDirect / activeUnitPriceMinor) * 100)
-      : 0;
-
-  const suggestedMlMinor = suggestMlPriceForTargetNet({
-    targetNet: activeUnitPriceMinor,
-    commissionPct: mlCommissionPercent,
-    sellerShippingCost: mlDefaultShippingCost,
+  const directSale = directSaleBreakdown({
+    price: activeUnitPriceMinor,
+    totalCost: costBreakdown.totalCost,
+    vatPercent,
+    extraCommissionPercent,
   });
+  const unitProfitDirect = directSale.profit;
+  const effectiveMarginPct = directSale.marginPercent;
+
+  // Mercado Libre: precio que conserva lo mismo que la venta directa después de comisión, envío e IVA.
+  let suggestedMlMinor = 0;
+  try {
+    suggestedMlMinor = suggestMlPriceKeeping({
+      keepAfterVat: activeUnitPriceMinor - directSale.vat - directSale.extraCommission,
+      commissionPct: mlCommissionPercent,
+      sellerShippingCost: mlDefaultShippingCost,
+      vatPercent,
+    });
+  } catch {
+    suggestedMlMinor = 0;
+  }
+  const mlVat = vatIncluded(suggestedMlMinor, vatPercent);
 
   const totalOrderMinor = activeUnitPriceMinor * parsedQty;
   const totalProfitMinor = unitProfitDirect * parsedQty;
@@ -445,7 +478,7 @@ export function QuoteCalculator({
 
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
-              {[40, 50, 60, 65, 70, 75, 80].map((m) => (
+              {Array.from(new Set([40, 50, 60, 70, 80, defaultMarginPercent])).sort((a, b) => a - b).map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -459,7 +492,7 @@ export function QuoteCalculator({
                       : "border-line bg-raised text-ink hover:border-line-strong hover:bg-canvas"
                   }`}
                 >
-                  {m}%
+                  {m}%{m === defaultMarginPercent ? " · tu mínimo" : ""}
                 </button>
               ))}
             </div>
@@ -558,6 +591,15 @@ export function QuoteCalculator({
                 </span>{" "}
                 / ud.
               </div>
+              {(directSale.vat > 0 || directSale.extraCommission > 0) && (
+                <div className="text-[11px] text-muted">
+                  {directSale.vat > 0 && <>Incluye IVA {formatMoney(directSale.vat, currency)}</>}
+                  {directSale.vat > 0 && directSale.extraCommission > 0 && " · "}
+                  {directSale.extraCommission > 0 && (
+                    <>Comisión {extraCommissionPercent}% {formatMoney(directSale.extraCommission, currency)}</>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-warn/30 bg-warn-soft p-3.5 space-y-1">
@@ -568,7 +610,8 @@ export function QuoteCalculator({
                 {formatMoney(suggestedMlMinor, currency)}
               </div>
               <div className="text-xs text-muted">
-                Conserva neto tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
+                Conserva tu ganancia tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
+                {mlVat > 0 && <> · incluye IVA {formatMoney(mlVat, currency)}</>}
               </div>
             </div>
           </div>

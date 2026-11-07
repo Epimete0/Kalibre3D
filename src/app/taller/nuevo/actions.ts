@@ -9,7 +9,7 @@ import { createCenter } from "@/lib/center-creation";
 
 export type CreateCenterState = { error?: string };
 
-/** Crea el taller propio de la persona, lo deja como taller activo y la lleva a Inicio (donde la guía de primeros pasos la espera). */
+/** Crea el taller propio de la persona, lo deja como taller activo y la lleva al primer paso del inicio guiado (sus costos). */
 export async function createCenterAction(_state: CreateCenterState, formData: FormData): Promise<CreateCenterState> {
   let centerId: string;
   try {
@@ -19,5 +19,6 @@ export async function createCenterAction(_state: CreateCenterState, formData: Fo
     return { error: actionFailure(error, "No fue posible crear el taller. Intenta nuevamente.").error };
   }
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  // Inicio guiado: primero los costos (opcionales), luego la primera bobina y la primera venta.
+  redirect("/settings?bienvenida=1");
 }

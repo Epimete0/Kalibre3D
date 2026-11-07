@@ -13,6 +13,8 @@ type SearchParams = Promise<{
   material?: string;
   inactive?: string;
   low?: string;
+  nueva?: string;
+  bienvenida?: string;
 }>;
 
 export default async function SpoolsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -34,7 +36,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-24 sm:pb-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Bobinas de filamento</h1>
           <p className="text-sm text-muted">
@@ -46,6 +48,8 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
           <SpoolCreateModal
             currency={view.currency}
             defaultCostPerKg={view.defaultCostPerKg}
+            initialOpen={params.nueva === "1"}
+            welcome={params.bienvenida === "1"}
           />
         )}
       </div>

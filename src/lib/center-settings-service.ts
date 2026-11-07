@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
 import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
 import { validateIanaTimeZone } from "@/lib/center-time-zone";
+import { electricityCostPerHourFromKwh } from "@/lib/costing";
 import { CURRENCIES, type Currency } from "@/lib/money-format";
 import { prisma } from "@/lib/prisma";
 
@@ -16,6 +17,11 @@ export type CenterSettingsView = {
   defaultCostPerKg: number;
   defaultPurgeGrams: number;
   lowSpoolThresholdGrams: number;
+  electricityKwhPrice: number;
+  printerWatts: number;
+  extraCommissionPercent: number;
+  vatPercent: number;
+  defaultMarginPercent: number;
   currencyLocked: boolean;
 };
 
@@ -50,7 +56,32 @@ const centerSettingsSchema = z.object({
     .number({ error: "El aviso de bobina baja no es válido." })
     .int("El aviso de bobina baja debe ser un número entero.")
     .min(0, "El aviso de bobina baja no puede ser negativo."),
+  electricityKwhPrice: z.coerce
+    .number({ error: "El precio del kWh no es válido." })
+    .int("El precio del kWh debe ser un número entero.")
+    .min(0, "El precio del kWh no puede ser negativo.")
+    .max(100_000, "El precio del kWh parece demasiado alto. Revísalo."),
+  printerWatts: z.coerce
+    .number({ error: "El consumo de la impresora no es válido." })
+    .int("El consumo de la impresora debe ser un número entero de watts.")
+    .min(0, "El consumo de la impresora no puede ser negativo.")
+    .max(10_000, "El consumo de la impresora no puede superar 10.000 W."),
+  extraCommissionPercent: z.coerce
+    .number({ error: "La comisión adicional no es válida." })
+    .min(0, "La comisión adicional no puede ser negativa.")
+    .max(50, "La comisión adicional no puede superar el 50%."),
+  vatPercent: z.coerce
+    .number({ error: "El IVA no es válido." })
+    .min(0, "El IVA no puede ser negativo.")
+    .max(50, "El IVA no puede superar el 50%."),
+  defaultMarginPercent: z.coerce
+    .number({ error: "El margen mínimo no es válido." })
+    .int("El margen mínimo debe ser un número entero.")
+    .min(0, "El margen mínimo no puede ser negativo.")
+    .max(95, "El margen mínimo no puede superar el 95%."),
 });
+
+const DEFAULT_GUIDED = { electricityKwhPrice: "0", printerWatts: "0", extraCommissionPercent: "0", vatPercent: "0", defaultMarginPercent: "60" };
 
 /** Obtiene la configuración del taller activo. Si no existe, crea los valores por defecto (CLP, 19%, etc.). */
 export async function getCenterSettings(): Promise<CenterSettingsView> {
@@ -82,6 +113,11 @@ export async function getCenterSettings(): Promise<CenterSettingsView> {
     defaultCostPerKg: settings.defaultCostPerKg,
     defaultPurgeGrams: settings.defaultPurgeGrams,
     lowSpoolThresholdGrams: settings.lowSpoolThresholdGrams,
+    electricityKwhPrice: settings.electricityKwhPrice,
+    printerWatts: settings.printerWatts,
+    extraCommissionPercent: Number(settings.extraCommissionPercent),
+    vatPercent: Number(settings.vatPercent),
+    defaultMarginPercent: settings.defaultMarginPercent,
     currencyLocked: txCount > 0,
   };
 }
@@ -103,6 +139,12 @@ export async function updateCenterSettings(formData: FormData) {
     defaultCostPerKg: formData.get("defaultCostPerKg"),
     defaultPurgeGrams: formData.get("defaultPurgeGrams"),
     lowSpoolThresholdGrams: formData.get("lowSpoolThresholdGrams"),
+    // Campos del inicio guiado: si un formulario antiguo no los envía, se usan los valores por defecto.
+    electricityKwhPrice: formData.get("electricityKwhPrice") ?? DEFAULT_GUIDED.electricityKwhPrice,
+    printerWatts: formData.get("printerWatts") ?? DEFAULT_GUIDED.printerWatts,
+    extraCommissionPercent: formData.get("extraCommissionPercent") ?? DEFAULT_GUIDED.extraCommissionPercent,
+    vatPercent: formData.get("vatPercent") ?? DEFAULT_GUIDED.vatPercent,
+    defaultMarginPercent: formData.get("defaultMarginPercent") ?? DEFAULT_GUIDED.defaultMarginPercent,
   };
 
   const parsed = centerSettingsSchema.safeParse(raw);
@@ -133,6 +175,17 @@ export async function updateCenterSettings(formData: FormData) {
   }
 
   const roundedCommission = Math.round(parsed.data.mlCommissionPercent * 100) / 100;
+  const round2 = (value: number) => Math.round(value * 100) / 100;
+  // Con precio del kWh y watts, el costo por hora se calcula en el servidor; si no, se respeta el escrito a mano.
+  const fromKwh = electricityCostPerHourFromKwh(parsed.data.electricityKwhPrice, parsed.data.printerWatts);
+  const electricityCostPerHour = fromKwh > 0 ? fromKwh : parsed.data.electricityCostPerHour;
+  const guided = {
+    electricityKwhPrice: parsed.data.electricityKwhPrice,
+    printerWatts: parsed.data.printerWatts,
+    extraCommissionPercent: round2(parsed.data.extraCommissionPercent),
+    vatPercent: round2(parsed.data.vatPercent),
+    defaultMarginPercent: parsed.data.defaultMarginPercent,
+  };
 
   await prisma.$transaction([
     prisma.centerSettings.upsert({
@@ -140,23 +193,25 @@ export async function updateCenterSettings(formData: FormData) {
       create: {
         centerId,
         currency: parsed.data.currency,
-        electricityCostPerHour: parsed.data.electricityCostPerHour,
+        electricityCostPerHour,
         mlCommissionPercent: roundedCommission,
         mlDefaultShippingCost: parsed.data.mlDefaultShippingCost,
         defaultPackagingCost: parsed.data.defaultPackagingCost,
         defaultCostPerKg: parsed.data.defaultCostPerKg,
         defaultPurgeGrams: parsed.data.defaultPurgeGrams,
         lowSpoolThresholdGrams: parsed.data.lowSpoolThresholdGrams,
+        ...guided,
       },
       update: {
         currency: parsed.data.currency,
-        electricityCostPerHour: parsed.data.electricityCostPerHour,
+        electricityCostPerHour,
         mlCommissionPercent: roundedCommission,
         mlDefaultShippingCost: parsed.data.mlDefaultShippingCost,
         defaultPackagingCost: parsed.data.defaultPackagingCost,
         defaultCostPerKg: parsed.data.defaultCostPerKg,
         defaultPurgeGrams: parsed.data.defaultPurgeGrams,
         lowSpoolThresholdGrams: parsed.data.lowSpoolThresholdGrams,
+        ...guided,
       },
     }),
     prisma.center.updateMany({

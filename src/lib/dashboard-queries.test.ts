@@ -226,7 +226,7 @@ describe("dashboard-queries (Fase 3)", () => {
     expect(prisma.order.findFirst).toHaveBeenCalledWith({ where: { centerId: "center-1" }, select: { id: true } });
     expect(prisma.spool.findFirst).toHaveBeenCalledWith({ where: { centerId: "center-1" }, select: { id: true } });
     expect(view.gettingStarted?.completed).toBe(1);
-    expect(view.gettingStarted?.steps.map((step) => step.done)).toEqual([true, false, false]);
+    expect(view.gettingStarted?.steps.map((step) => step.done)).toEqual([false, false, true]);
   });
 
   it("los primeros pasos desaparecen cuando están todos hechos", async () => {

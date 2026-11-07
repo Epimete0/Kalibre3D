@@ -31,16 +31,62 @@ function ErrorMessage({ message }: { message: string }) {
   );
 }
 
+/** Pesos habituales de una bobina; 1 kg viene marcado porque es lo más común. */
+const SPOOL_WEIGHTS = [
+  { grams: 250, label: "250 g" },
+  { grams: 500, label: "500 g" },
+  { grams: 1000, label: "1 kg" },
+  { grams: 3000, label: "3 kg" },
+] as const;
+
+/** Colores frecuentes de filamento con su muestra; también se puede escribir otro. */
+const COMMON_COLORS = [
+  { name: "Negro", hex: "#111111" },
+  { name: "Blanco", hex: "#f5f5f5" },
+  { name: "Gris", hex: "#8a8f98" },
+  { name: "Rojo", hex: "#d32f2f" },
+  { name: "Azul", hex: "#1e5bd8" },
+  { name: "Verde", hex: "#2e7d32" },
+  { name: "Amarillo", hex: "#f4c20d" },
+  { name: "Naranja", hex: "#f57c00" },
+  { name: "Plata", hex: "#c0c4c8" },
+  { name: "Transparente", hex: "transparent" },
+] as const;
+
+const chipClass = (selected: boolean) =>
+  `inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
+    selected ? "border-primary bg-primary text-white font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
+  }`;
+
 export function SpoolCreateModal({
   currency,
   defaultCostPerKg,
+  initialOpen = false,
+  welcome = false,
 }: {
   currency: string;
   defaultCostPerKg: number;
+  /** Abre el formulario al entrar (por ejemplo desde los primeros pasos). */
+  initialOpen?: boolean;
+  /** Inicio guiado: al guardar sigue con la primera venta. */
+  welcome?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const [open, setOpen] = useState(initialOpen);
   const [operationId, setOperationId] = useState(() => crypto.randomUUID());
   const [recordExpense, setRecordExpense] = useState(true);
+  const [material, setMaterial] = useState<string>("PETG");
+  const [color, setColor] = useState("");
+  const [weightChoice, setWeightChoice] = useState<number | "OTHER">(1000);
+  const [customGrams, setCustomGrams] = useState("");
+  const [usedAlready, setUsedAlready] = useState(false);
+  const [remaining, setRemaining] = useState("");
+  const [price, setPrice] = useState(String(defaultCostPerKg));
+
+  const totalGrams = weightChoice === "OTHER" ? Math.max(0, Math.round(Number(customGrams) || 0)) : weightChoice;
+  const priceNumber = Number(price.replace(",", ".")) || 0;
+  const pricePerKg = totalGrams > 0 ? Math.round((priceNumber * 1000) / totalGrams) : 0;
+  const pricePerGram = totalGrams > 0 ? priceNumber / totalGrams : 0;
 
   const [state, formAction, isPending] = useActionState(
     async (prev: SpoolActionState, formData: FormData) => {
@@ -48,6 +94,7 @@ export function SpoolCreateModal({
       if (res.ok) {
         setOperationId(crypto.randomUUID());
         setOpen(false);
+        if (welcome) router.push("/orders/new");
       }
       return res;
     },
@@ -63,9 +110,9 @@ export function SpoolCreateModal({
   }
 
   return (
-    <Card className="p-4 sm:p-5 space-y-4 border-primary/30">
+    <Card className="w-full p-4 sm:p-5 space-y-4 border-primary/30">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-ink">Registrar nueva bobina</h2>
+        <h2 className="text-base font-semibold text-ink">{welcome ? "Tu primera bobina" : "Registrar nueva bobina"}</h2>
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -77,53 +124,149 @@ export function SpoolCreateModal({
 
       {state.error && <ErrorMessage message={state.error} />}
 
-      <form action={formAction} className="space-y-3">
+      <form action={formAction} className="space-y-4">
         <input type="hidden" name="operationId" value={operationId} />
         <input type="hidden" name="currency" value={currency} />
+        <input type="hidden" name="material" value={material} />
+        <input type="hidden" name="totalGrams" value={totalGrams || ""} />
+        <input type="hidden" name="remainingGrams" value={usedAlready ? remaining : String(totalGrams || "")} />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Field label="Material">
-            <select name="material" defaultValue="PETG" className={inputClass}>
-              {MATERIALS.map((m) => (
-                <option key={m} value={m}>
-                  {MATERIAL_LABEL[m]}
-                </option>
-              ))}
-            </select>
-          </Field>
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-ink">Material</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {MATERIALS.map((m) => (
+              <button key={m} type="button" aria-pressed={material === m} onClick={() => setMaterial(m)} className={chipClass(material === m)}>
+                {MATERIAL_LABEL[m]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-          <Field label="Color">
-            <input name="color" required placeholder="Ej. Negro, Blanco, Rojo" className={inputClass} />
-          </Field>
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-ink">Color</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {COMMON_COLORS.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                aria-pressed={color === c.name}
+                onClick={() => setColor(c.name)}
+                className={chipClass(color === c.name)}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 rounded-full border border-line-strong"
+                  style={{
+                    background:
+                      c.hex === "transparent"
+                        ? "repeating-conic-gradient(#cbd5e1 0% 25%, #ffffff 0% 50%) 50% / 6px 6px"
+                        : c.hex,
+                  }}
+                />
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <label htmlFor="spool-color" className="sr-only">
+            Color del filamento
+          </label>
+          <input
+            id="spool-color"
+            name="color"
+            required
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            placeholder="U otro: Azul petróleo, Seda dorado…"
+            className={`${inputClass} mt-2`}
+          />
+        </fieldset>
 
-          <Field label="Marca (opcional)">
-            <input name="brand" placeholder="Ej. eSUN, Sunlu, Creality" className={inputClass} />
-          </Field>
-        </div>
+        <Field label="Marca (opcional)" htmlFor="spool-brand">
+          <input id="spool-brand" name="brand" placeholder="Ej. eSUN, Sunlu, Creality" className={inputClass} />
+        </Field>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Field label="Peso total (g)">
-            <input name="totalGrams" type="number" min={1} max={50000} defaultValue={1000} required className={inputClass} />
-          </Field>
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-ink">¿Cuánto trae la bobina?</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {SPOOL_WEIGHTS.map((w) => (
+              <button
+                key={w.grams}
+                type="button"
+                aria-pressed={weightChoice === w.grams}
+                onClick={() => setWeightChoice(w.grams)}
+                className={chipClass(weightChoice === w.grams)}
+              >
+                {w.label}
+              </button>
+            ))}
+            <button type="button" aria-pressed={weightChoice === "OTHER"} onClick={() => setWeightChoice("OTHER")} className={chipClass(weightChoice === "OTHER")}>
+              Otro
+            </button>
+          </div>
+          {weightChoice === "OTHER" && (
+            <div className="mt-2 max-w-xs">
+              <Field label="Gramos de la bobina" htmlFor="spool-custom-grams">
+                <input
+                  id="spool-custom-grams"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={50000}
+                  required
+                  value={customGrams}
+                  onChange={(e) => setCustomGrams(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          )}
+          <label className="mt-2 flex min-h-9 items-center gap-2 text-xs text-ink cursor-pointer">
+            <input type="checkbox" checked={usedAlready} onChange={(e) => setUsedAlready(e.target.checked)} className="h-4 w-4 rounded border-line" />
+            <span>Ya la empecé a usar</span>
+          </label>
+          {usedAlready && (
+            <div className="mt-1 max-w-xs">
+              <Field label="Gramos que le quedan (aprox.)" htmlFor="spool-remaining">
+                <input
+                  id="spool-remaining"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={totalGrams || 50000}
+                  required
+                  value={remaining}
+                  onChange={(e) => setRemaining(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          )}
+        </fieldset>
 
-          <Field label="Gramos actuales (g)">
-            <input name="remainingGrams" type="number" min={0} max={50000} defaultValue={1000} className={inputClass} />
-          </Field>
-
-          <Field label={`Precio pagado (${currency})`}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label={`¿Cuánto pagaste? (${currency})`} htmlFor="spool-price">
             <input
+              id="spool-price"
               name="pricePaid"
               inputMode="decimal"
-              defaultValue={String(defaultCostPerKg)}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               required
               className={inputClass}
             />
           </Field>
-
-          <Field label="Fecha de compra">
-            <input name="purchasedOn" type="date" className={inputClass} />
+          <Field label="Fecha de compra (opcional)" htmlFor="spool-date">
+            <input id="spool-date" name="purchasedOn" type="date" className={inputClass} />
           </Field>
         </div>
+
+        {totalGrams > 0 && priceNumber > 0 && (
+          <p className="rounded-lg border border-ok/30 bg-ok-soft px-3 py-2 text-sm text-ink">
+            Te cuesta <strong>{formatMoney(pricePerKg, currency)} por kilo</strong> (
+            {pricePerGram < 1 ? pricePerGram.toFixed(2) : pricePerGram.toFixed(1)} por gramo). El cotizador usará este costo
+            para {MATERIAL_LABEL[material as keyof typeof MATERIAL_LABEL] ?? material}.
+          </p>
+        )}
 
         <div className="rounded-lg border border-line bg-raised/50 p-3 space-y-2.5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-ink cursor-pointer">
@@ -134,13 +277,13 @@ export function SpoolCreateModal({
               onChange={(e) => setRecordExpense(e.target.checked)}
               className="h-4 w-4 rounded border-line"
             />
-            <span>Registrar automáticamente este monto como gasto de filamento en Dinero</span>
+            <span>Anotar esta compra como gasto de filamento en Dinero</span>
           </label>
 
           {recordExpense && (
             <div className="max-w-xs">
-              <Field label="Método de pago del gasto">
-                <select name="paymentMethod" defaultValue="TRANSFER" className={inputClass}>
+              <Field label="¿Cómo la pagaste?" htmlFor="spool-payment">
+                <select id="spool-payment" name="paymentMethod" defaultValue="TRANSFER" className={inputClass}>
                   {PAYMENT_METHODS.map((m) => (
                     <option key={m} value={m}>
                       {METHOD_LABEL[m]}
@@ -152,16 +295,22 @@ export function SpoolCreateModal({
           )}
         </div>
 
-        <Field label="Notas (opcional)">
-          <input name="notes" maxLength={500} placeholder="Lote, temperatura recomendada, etc." className={inputClass} />
+        <Field label="Notas (opcional)" htmlFor="spool-notes">
+          <input id="spool-notes" name="notes" maxLength={500} placeholder="Lote, temperatura recomendada, etc." className={inputClass} />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" className={secondaryBtn} onClick={() => setOpen(false)}>
-            Cancelar
-          </button>
-          <button type="submit" disabled={isPending} className={primaryBtn}>
-            {isPending ? "Guardando…" : "Guardar bobina"}
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
+          {welcome ? (
+            <Link href="/orders/new" className={secondaryBtn}>
+              Lo agrego después
+            </Link>
+          ) : (
+            <button type="button" className={secondaryBtn} onClick={() => setOpen(false)}>
+              Cancelar
+            </button>
+          )}
+          <button type="submit" disabled={isPending || totalGrams <= 0} className={primaryBtn}>
+            {isPending ? "Guardando…" : welcome ? "Guardar y seguir" : "Guardar bobina"}
           </button>
         </div>
       </form>

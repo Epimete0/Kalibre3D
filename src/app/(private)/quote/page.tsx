@@ -70,6 +70,9 @@ export default async function QuotePage() {
         defaultPurgeGrams={settings.defaultPurgeGrams}
         mlCommissionPercent={settings.mlCommissionPercent}
         mlDefaultShippingCost={settings.mlDefaultShippingCost}
+        vatPercent={settings.vatPercent}
+        extraCommissionPercent={settings.extraCommissionPercent}
+        defaultMarginPercent={settings.defaultMarginPercent}
         materialRates={materialRates}
         customers={customers.map((c) => ({
           id: c.id,

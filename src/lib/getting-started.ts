@@ -1,6 +1,7 @@
 /**
  * Primeros pasos de un taller nuevo (panel de inicio). Módulo puro: recibe hechos y arma la lista.
- * La lista se muestra al Dueño/Administrador hasta que los tres pasos están hechos.
+ * Orden: costos → primera bobina → primera venta, porque cada venta tiene costos detrás y así la primera
+ * venta ya muestra la ganancia real. Se muestra al Dueño/Administrador hasta que los tres pasos están hechos.
  */
 
 export type GettingStartedFacts = {
@@ -10,7 +11,7 @@ export type GettingStartedFacts = {
 };
 
 export type GettingStartedStep = {
-  key: "first-sale" | "costs" | "first-spool";
+  key: "costs" | "first-spool" | "first-sale";
   title: string;
   description: string;
   href: string;
@@ -36,28 +37,28 @@ export function settingsWereSaved(settings: { createdAt: Date; updatedAt: Date }
 export function buildGettingStarted(facts: GettingStartedFacts): GettingStarted {
   const steps: GettingStartedStep[] = [
     {
+      key: "costs",
+      title: "Revisa tus costos",
+      description: "Luz, comisiones, IVA y tu margen mínimo. Todo es opcional: activa solo lo que quieras considerar.",
+      href: "/settings",
+      action: "Revisar costos",
+      done: facts.settingsConfigured,
+    },
+    {
+      key: "first-spool",
+      title: "Agrega tu primera bobina",
+      description: "Material, color y cuánto pagaste. Así sabes cuánto te cuesta cada gramo y te avisamos cuando se acabe.",
+      href: "/spools?nueva=1",
+      action: "Agregar bobina",
+      done: facts.hasSpool,
+    },
+    {
       key: "first-sale",
       title: "Registra tu primera venta",
       description: "Anota qué vendiste y en cuánto. Toma menos de un minuto.",
       href: "/orders/new",
       action: "Registrar venta",
       done: facts.hasOrder,
-    },
-    {
-      key: "costs",
-      title: "Configura tus costos",
-      description: "Luz por hora, comisión y envío de Mercado Libre. Así el cotizador calcula tu ganancia real.",
-      href: "/settings",
-      action: "Configurar costos",
-      done: facts.settingsConfigured,
-    },
-    {
-      key: "first-spool",
-      title: "Agrega tu primera bobina",
-      description: "Te avisamos cuando se esté acabando y el costo del filamento sale de lo que pagaste.",
-      href: "/spools",
-      action: "Agregar bobina",
-      done: facts.hasSpool,
     },
   ];
   const completed = steps.filter((step) => step.done).length;

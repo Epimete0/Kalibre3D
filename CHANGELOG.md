@@ -6,6 +6,10 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Inicio guiado "Prepara tu taller":** al crear el taller, primero los costos (opcionales, con ayudas), luego la primera bobina y después la primera venta.
+- **Costos nuevos en Ajustes:** luz calculada desde el precio del kWh y los watts de la impresora, comisión adicional por venta, IVA incluido en los precios y margen mínimo de ganancia.
+- **Bobina guiada:** material y peso en botones (1 kg marcado), colores comunes con muestra y costo por kilo y por gramo al instante.
+- **Cotizador:** parte de tu margen mínimo y muestra la ganancia real descontando IVA y comisión adicional.
 - **Primeros pasos en el panel:** un taller nuevo ve tres pasos (primera venta, costos y primera bobina) que se marcan solos y desaparecen al completarlos.
 - **Nueva venta más simple:** primero se anota qué vendiste y en cuánto; el canal queda recordado para la próxima venta; descuento y notas pasan a "Más opciones".
 

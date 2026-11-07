@@ -107,6 +107,46 @@ describe("center-settings-service", () => {
       expect(prisma.$transaction).toHaveBeenCalled();
     });
 
+    it("calcula la luz por hora desde el kWh y los watts, y guarda los costos del inicio guiado", async () => {
+      const f = validForm();
+      f.set("electricityCostPerHour", "999");
+      f.set("electricityKwhPrice", "200");
+      f.set("printerWatts", "350");
+      f.set("extraCommissionPercent", "3.5");
+      f.set("vatPercent", "19");
+      f.set("defaultMarginPercent", "55");
+
+      await updateCenterSettings(f);
+
+      const upsert = prisma.centerSettings.upsert.mock.calls[0][0];
+      expect(upsert.update).toMatchObject({
+        electricityCostPerHour: 70,
+        electricityKwhPrice: 200,
+        printerWatts: 350,
+        extraCommissionPercent: 3.5,
+        vatPercent: 19,
+        defaultMarginPercent: 55,
+      });
+    });
+
+    it("sin kWh respeta el costo por hora escrito, y un formulario antiguo usa los valores por defecto", async () => {
+      await updateCenterSettings(validForm());
+      const upsert = prisma.centerSettings.upsert.mock.calls[0][0];
+      expect(upsert.update).toMatchObject({ electricityCostPerHour: 150, vatPercent: 0, extraCommissionPercent: 0, defaultMarginPercent: 60 });
+    });
+
+    it("rechaza IVA, comisión adicional o margen fuera de rango", async () => {
+      const f = validForm();
+      f.set("vatPercent", "60");
+      await expect(updateCenterSettings(f)).rejects.toThrow("El IVA no puede superar el 50%.");
+      const f2 = validForm();
+      f2.set("defaultMarginPercent", "99");
+      await expect(updateCenterSettings(f2)).rejects.toThrow("El margen mínimo no puede superar el 95%.");
+      const f3 = validForm();
+      f3.set("extraCommissionPercent", "-1");
+      await expect(updateCenterSettings(f3)).rejects.toThrow("La comisión adicional no puede ser negativa.");
+    });
+
     it("rechaza una moneda no soportada", async () => {
       const f = validForm();
       f.set("currency", "BTC");

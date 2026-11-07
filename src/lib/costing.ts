@@ -117,3 +117,87 @@ export function suggestMlPriceForTargetNet(input: {
   }
   return candidate;
 }
+
+/** Costo de luz por hora de impresión a partir del precio del kWh y el consumo de la impresora en watts. */
+export function electricityCostPerHourFromKwh(kwhPrice: number, printerWatts: number): number {
+  if (!(kwhPrice > 0 && printerWatts > 0)) return 0;
+  return Math.round((kwhPrice * printerWatts) / 1000);
+}
+
+/** Parte de IVA contenida en un precio que ya lo incluye (0 si no se considera IVA). */
+export function vatIncluded(priceWithVat: number, vatPercent: number): number {
+  if (!(vatPercent > 0) || priceWithVat <= 0) return 0;
+  return Math.round((priceWithVat * vatPercent) / (100 + vatPercent));
+}
+
+export type DirectSaleBreakdown = {
+  vat: number;
+  extraCommission: number;
+  profit: number;
+  /** Ganancia sobre el precio sin IVA, en porcentaje entero. */
+  marginPercent: number;
+};
+
+/** Desglose de una venta directa: IVA incluido, comisión adicional y ganancia real sobre el costo. */
+export function directSaleBreakdown(input: {
+  price: number;
+  totalCost: number;
+  vatPercent: number;
+  extraCommissionPercent: number;
+}): DirectSaleBreakdown {
+  const vat = vatIncluded(input.price, input.vatPercent);
+  const extraCommission = Math.round((input.price * input.extraCommissionPercent) / 100);
+  const profit = input.price - vat - extraCommission - input.totalCost;
+  const netOfVat = input.price - vat;
+  return { vat, extraCommission, profit, marginPercent: netOfVat > 0 ? Math.round((profit / netOfVat) * 100) : 0 };
+}
+
+/**
+ * Menor precio entero (con IVA incluido) que deja al menos `marginPercent` de ganancia sobre el precio sin IVA,
+ * después de la comisión adicional. Sin IVA ni comisión equivale a `suggestPrice`.
+ */
+export function suggestDirectPrice(input: {
+  totalCost: number;
+  marginPercent: number;
+  vatPercent: number;
+  extraCommissionPercent: number;
+}): number {
+  const { totalCost, marginPercent, vatPercent, extraCommissionPercent } = input;
+  if (!(marginPercent >= 0 && marginPercent < 100)) throw new RangeError("El margen debe estar entre 0% y menos de 100%.");
+  const factor = (100 * (1 - marginPercent / 100)) / (100 + vatPercent) - extraCommissionPercent / 100;
+  if (!(factor > 0)) throw new RangeError("El margen, el IVA y la comisión no dejan un precio posible.");
+  if (totalCost <= 0) return 0;
+  const reaches = (price: number) => {
+    const { profit } = directSaleBreakdown({ price, totalCost, vatPercent, extraCommissionPercent });
+    const netOfVat = price - vatIncluded(price, vatPercent);
+    return netOfVat > 0 && profit >= (netOfVat * marginPercent) / 100;
+  };
+  let price = Math.max(1, Math.ceil(totalCost / factor));
+  while (price > 1 && reaches(price - 1)) price -= 1;
+  while (!reaches(price)) price += 1;
+  return price;
+}
+
+/**
+ * Precio a publicar en Mercado Libre para conservar lo mismo que deja la venta directa
+ * (neto tras comisión y envío, menos el IVA incluido en el precio publicado).
+ */
+export function suggestMlPriceKeeping(input: {
+  keepAfterVat: number;
+  commissionPct: number;
+  sellerShippingCost: number;
+  vatPercent: number;
+}): number {
+  const { keepAfterVat, commissionPct, sellerShippingCost, vatPercent } = input;
+  if (vatPercent <= 0) {
+    return suggestMlPriceForTargetNet({ targetNet: keepAfterVat, commissionPct, sellerShippingCost });
+  }
+  const kept = (price: number) =>
+    mercadoLibreNet({ salePrice: price, commissionPct, sellerShippingCost }).net - vatIncluded(price, vatPercent);
+  const factor = 1 - commissionPct / 100 - vatPercent / (100 + vatPercent);
+  if (!(factor > 0)) throw new RangeError("La comisión y el IVA no dejan un precio posible en Mercado Libre.");
+  let price = Math.max(1, Math.ceil((Math.max(0, keepAfterVat) + sellerShippingCost) / factor));
+  while (price > 1 && kept(price - 1) >= keepAfterVat) price -= 1;
+  while (kept(price) < keepAfterVat) price += 1;
+  return price;
+}

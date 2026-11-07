@@ -6,6 +6,31 @@
 
 ---
 
+## Inicio guiado: costos primero, bobina guiada y cotizador con IVA — 2026-11-08
+
+- **Decisión del dueño (Surko):** el orden de los primeros pasos es **costos → primera bobina → primera venta**, porque toda venta tiene costos detrás y así la primera venta ya muestra la ganancia real. Los costos son opcionales y se explican con ayudas.
+- **Migración `20261110000000_guided_setup_costs`:** agrega a `CenterSettings` las columnas `electricityKwhPrice`, `printerWatts`, `extraCommissionPercent` (comisión adicional por venta, p. ej. Mercado Pago), `vatPercent` (IVA incluido en los precios; 0 = no se considera) y `defaultMarginPercent` (margen mínimo, 60 por defecto), con `CHECK` de rangos en PostgreSQL. Solo columnas con valor por defecto: sin cambios de datos, RLS ni grants.
+- **IVA (decisión D-IVA):** solo para calcular. El cotizador separa la parte de IVA de cada precio y muestra la ganancia sin él; **no** emite documentos ni se integra con el SII (sigue fuera de alcance según `AGENTS.md`).
+- **Reglas puras (`src/lib/costing.ts`):** `electricityCostPerHourFromKwh` (kWh × W ÷ 1000), `vatIncluded`, `directSaleBreakdown`, `suggestDirectPrice` (menor precio que deja el margen mínimo sobre el precio sin IVA después de la comisión adicional; sin IVA ni comisión equivale a `suggestPrice`) y `suggestMlPriceKeeping` (precio de Mercado Libre que conserva lo mismo que la venta directa después de comisión, envío e IVA).
+- **Ajustes guiados (`settings/SettingsForm.tsx`):** cada costo es un interruptor "¿Quieres considerar…?" que despliega sus campos; un costo apagado se guarda en 0. Luz: precio del kWh + consumo de la impresora con consumos típicos (60/150/250/400 W) → costo por hora calculado en vivo y **recalculado en el servidor** (`updateCenterSettings`). Ayudas 💡 desplegables: cómo leer el kWh en la boleta, cuántos watts consume la impresora, dónde ver la comisión de Mercado Libre, qué hace Kalibre con el IVA y qué margen conviene. Moneda, zona horaria y filamento quedan en una sección plegable.
+- **Flujo de bienvenida:** al crear el taller se va a `/settings?bienvenida=1` ("Prepara tu taller · Paso 1 de 3", con "Lo configuro después"); al guardar redirige (destino fijo en la Server Action) a `/spools?nueva=1&bienvenida=1` con el formulario abierto; al guardar la bobina sigue a `/orders/new`.
+- **Bobina guiada (`spools/SpoolControls.tsx`):** material en botones, 10 colores comunes con muestra más campo libre, peso en botones (250 g, 500 g, **1 kg preseleccionado**, 3 kg, Otro), "Ya la empecé a usar" para los gramos restantes, y el costo por kilo y por gramo calculado al tiro.
+- **Cotizador:** parte del margen mínimo del taller (marcado "tu mínimo"), descuenta IVA y comisión adicional en la ganancia y en el precio sugerido, y muestra el IVA incluido en el precio directo y en el de Mercado Libre.
+- **Primeros pasos del panel:** nuevo orden costos → bobina → venta; el paso de bobina abre el formulario directamente.
+- **Producción:** paquete `scripts/production/20261110-apply-guided-setup-costs.sql` (preflight, transacción única, registro en `_prisma_migrations` con checksum, verificación) y runbook `docs/runbooks/2026-11-10-migracion-inicio-guiado.md`. **Aplicar la migración antes de desplegar el código.** Probado en `saas3d-local`: aplica, al reintentar se detiene sin cambios y `prisma migrate` lo reconoce.
+- **Verificación:** recorrido completo en local a 375 px (ajustes con kWh $200 × 150 W = $30/h, IVA 19 %, margen 50 % → bobina PETG negro 1 kg a $15.000 → Nueva venta; la tarjeta del panel desaparece). Cotizador: costo $555, venta directa $1.321 (IVA $211, ganancia $555 = 50 % de $1.110) y Mercado Libre $1.706 (conserva $1.110 tras comisión e IVA $272). Pruebas nuevas en `costing.test.ts`, `center-settings-service.test.ts` y `scripts/production/package-20261110.test.ts`. Quality gate PASSED (353 unitarias, 13 RLS, 3 S1, 1 S3, 56 transacciones).
+
+### Próxima etapa propuesta: insumos
+
+Pedido del dueño: piezas que llevan insumos extra (tag NFC, argolla de llavero, imán, clicker). Propuesta:
+- Lista de insumos del taller con costo unitario y stock opcional.
+- Insumos asignados a una pieza del catálogo, que suman su costo solo.
+- "+ Agregar insumo" en el cotizador y en Nueva venta.
+
+Va después del inicio guiado y requiere diseño y aprobación (modelo de datos nuevo).
+
+---
+
 ## Primeros pasos guiados en el panel y Nueva venta más corta — 2026-11-08
 
 - **Primeros pasos (`src/lib/getting-started.ts`, `dashboard/GettingStartedCard.tsx`):** el panel del Dueño/Administrador muestra una lista de 3 pasos que se marcan solos: registrar la primera venta (existe algún `Order`), configurar costos (`CenterSettings.updatedAt` posterior a `createdAt` por más de 1 s, es decir, alguien guardó los ajustes) y agregar la primera bobina (existe algún `Spool`). Muestra "N de 3", una barra de avance y un botón directo en cada paso pendiente; desaparece cuando están los tres. Las consultas (`getGettingStartedFacts` en `dashboard-queries.ts`) filtran por `centerId` y no se ejecutan para Ayudante ni Lector. Sin migraciones.
