@@ -6,7 +6,7 @@ import { listOrders } from "@/lib/order-queries";
 import { OrderListControls } from "./OrderListControls";
 
 export const metadata = {
-  title: "Pedidos y Ventas | saas3d",
+  title: "Pedidos y Ventas | Kalibre",
 };
 
 export default async function OrdersPage() {

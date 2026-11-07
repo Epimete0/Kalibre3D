@@ -6,6 +6,9 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Corregido
+- **Primer ingreso:** el panel de un taller recién creado ya no muestra "No pudimos cargar esta sección" la primera vez.
+- **Nueva venta:** las piezas escritas a mano ya no se guardan como PLA si no se eligió material.
+- **Marca:** las pestañas de Pedidos, Clientes y Dinero dicen "Kalibre", y el cotizador ya no muestra el código interno "(QUOTED)".
 - **Cobros y devoluciones:** reutilizar el identificador de una operación ya usada para otro movimiento ahora muestra un error, en vez de dar la devolución o el cobro por hecho sin registrarlo.
 - **Landing:** las cifras del ejemplo del Pedido #42 ahora coinciden con el cotizador (filamento $960, costo total $1.105, ganancia +$5.395 en venta directa y +$5.378 en Mercado Libre), y el texto principal ya no se corta en celulares de 375 px.
 

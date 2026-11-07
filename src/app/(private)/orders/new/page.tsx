@@ -8,7 +8,7 @@ import { listProducts } from "@/lib/product-queries";
 import { NewOrderForm } from "./NewOrderForm";
 
 export const metadata = {
-  title: "Nueva venta / pedido | saas3d",
+  title: "Nueva venta / pedido | Kalibre",
 };
 
 export default async function NewOrderPage(props: {

@@ -5,7 +5,7 @@ import { listCustomers } from "@/lib/customer-queries";
 import { CreateCustomerBar, CustomerListTable, CustomerSearchAndFilters } from "./ClientControls";
 
 export const metadata = {
-  title: "Clientes | saas3d",
+  title: "Clientes | Kalibre",
 };
 
 export default async function ClientsPage(props: {

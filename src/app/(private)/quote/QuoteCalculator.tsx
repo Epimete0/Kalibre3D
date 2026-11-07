@@ -619,7 +619,7 @@ export function QuoteCalculator({
             >
               {showOrderPanel
                 ? "Ocultar datos del pedido cotizado"
-                : "1. Crear pedido cotizado (QUOTED)"}
+                : "1. Crear pedido cotizado"}
             </button>
 
             {canEditCatalog && (

@@ -6,7 +6,7 @@ import { getMonthlyMoneyView } from "@/lib/money-queries";
 import { MoneyControls } from "./MoneyControls";
 
 export const metadata = {
-  title: "Dinero | saas3d",
+  title: "Dinero | Kalibre",
 };
 
 export default async function MoneyPage(props: {

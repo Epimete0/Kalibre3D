@@ -3,7 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Client } from "pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { updateCenterSettings } from "@/lib/center-settings-service";
+import { getCenterSettings, updateCenterSettings } from "@/lib/center-settings-service";
 import { applyPostgresMigrations, cleanupPostgresFixture } from "./postgres-test-harness";
 
 const run = process.env.RUN_TRANSACTION_INTEGRATION === "1";
@@ -59,6 +59,28 @@ suite("Ajustes del taller en PostgreSQL", () => {
   afterAll(async () => {
     await prisma?.$disconnect();
     await db?.end();
+  });
+
+  it("leer la configuración de un taller nuevo en paralelo no falla y crea una sola fila (primer ingreso al panel)", async () => {
+    // Intercalación real del panel: getDashboardOverview y listSpools llaman a getCenterSettings a la vez.
+    // Ambas ven que no hay fila e intentan crearla; la segunda chocaba con CenterSettings_pkey (P2002).
+    const authModule = await import("@/lib/auth");
+    vi.spyOn(authModule, "requireOperationalContext").mockResolvedValue({
+      userId: userA,
+      centerId: centerA,
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    });
+
+    const results = await Promise.allSettled(Array.from({ length: 8 }, () => getCenterSettings()));
+    const rejected = results.filter((result) => result.status === "rejected");
+    expect(rejected.map((result) => String((result as PromiseRejectedResult).reason).slice(0, 120))).toEqual([]);
+    for (const result of results) {
+      if (result.status === "fulfilled") expect(result.value).toMatchObject({ centerId: centerA, currency: "CLP" });
+    }
+
+    const rows = await db.query('SELECT count(*)::int AS n FROM "CenterSettings" WHERE "centerId" = $1', [centerA]);
+    expect(rows.rows[0].n).toBe(1);
   });
 
   it("un taller tiene un solo registro de configuración (PRIMARY KEY centerId)", async () => {

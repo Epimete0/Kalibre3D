@@ -16,7 +16,7 @@ import { OrderDetailStatusControls } from "./OrderDetailStatusControls";
 import { OrderMoneyControls } from "./OrderMoneyControls";
 
 export const metadata = {
-  title: "Detalle de pedido | saas3d",
+  title: "Detalle de pedido | Kalibre",
 };
 
 function statusTone(status: OrderStatus): "neutral" | "ok" | "warn" | "danger" | "accent" {

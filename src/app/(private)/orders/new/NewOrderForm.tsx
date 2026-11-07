@@ -87,7 +87,7 @@ export function NewOrderForm({
       description: "",
       qty: 1,
       unitPrice: 0,
-      material: "PLA",
+      material: "",
       colorsCount: 1,
     },
   ]);
@@ -175,7 +175,7 @@ export function NewOrderForm({
         description: "",
         qty: 1,
         unitPrice: 0,
-        material: "PLA",
+        material: "",
         colorsCount: 1,
       },
     ]);

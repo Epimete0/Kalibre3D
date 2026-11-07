@@ -6,6 +6,16 @@
 
 ---
 
+## Revisión de simplicidad y primer ingreso de talleres nuevos — 2026-11-08
+
+- **Panel caído en el primer ingreso de cada taller nuevo:** `getCenterSettings` creaba la fila por defecto con `upsert` de Prisma; el panel lo llama varias veces en paralelo (`getDashboardOverview` y `listSpools`), y en un taller sin `CenterSettings` las llamadas chocaban con `CenterSettings_pkey` (P2002) → "No pudimos cargar esta sección". Intercalación: A y B leen "no existe" → A inserta → B inserta y falla. Prueba real nueva en `tests/center-settings.integration.test.ts` (8 lecturas en paralelo): falló 7/8 antes de la corrección y pasa después. **Corrección:** `createMany({ skipDuplicates: true })` (`INSERT … ON CONFLICT DO NOTHING`, atómico) seguido de `findUniqueOrThrow`.
+- **Material por defecto en Nueva venta:** las piezas escritas a mano se guardaban como `PLA` sin que la persona eligiera material (`NewOrderForm.tsx`); ahora quedan con material vacío (`null`).
+- **Marca y jerga:** títulos de Pedidos, Clientes, Dinero y detalle con "| Kalibre" (antes "| saas3d"); el botón del cotizador ya no muestra "(QUOTED)".
+- **Informe y propuestas:** `docs/ux/2026-11-07-revision-simplicidad.md` (primeros pasos guiados en el panel, Nueva venta más corta, lenguaje más cercano, material desde el catálogo, etiquetas accesibles).
+- **Cuenta QA local:** el seed actual ya no fija contraseña; se creó `qa-maker@saas3d.local` desde `/registro` en `saas3d-local` con el "Taller Prueba" vacío. Credenciales en `.env.qa.local` (ignorado por Git).
+
+---
+
 ## Quality gate completo con PostgreSQL real e idempotencia de cobros y devoluciones — 2026-11-08
 
 - **Primera ejecución completa del quality gate tras el despliegue:** fallaba la prueba real `tests/orders-payments-returns.integration.test.ts` (devolución atómica D6). Causa: el commit `bd4497d` agregó en `returnOrder` una revalidación de idempotencia que aceptaba **cualquier** `MoneyTransaction` con el mismo `operationId` (por ejemplo, un cobro) y respondía como si la devolución se hubiera hecho, sin cambiar el pedido.

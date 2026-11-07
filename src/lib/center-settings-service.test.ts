@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prisma, requireCatalogContext, requireOperationalContext } = vi.hoisted(() => ({
   prisma: {
-    centerSettings: { upsert: vi.fn(), findUnique: vi.fn() },
+    centerSettings: { upsert: vi.fn(), findUnique: vi.fn(), createMany: vi.fn(), findUniqueOrThrow: vi.fn() },
     center: { findUnique: vi.fn(), updateMany: vi.fn() },
     moneyTransaction: { count: vi.fn() },
     $transaction: vi.fn(),
@@ -38,7 +38,8 @@ const validForm = () =>
 describe("center-settings-service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prisma.centerSettings.upsert.mockResolvedValue({
+    prisma.centerSettings.createMany.mockResolvedValue({ count: 1 });
+    prisma.centerSettings.findUniqueOrThrow.mockResolvedValue({
       centerId: "center-a",
       currency: "CLP",
       electricityCostPerHour: 0,
@@ -58,14 +59,11 @@ describe("center-settings-service", () => {
   });
 
   describe("getCenterSettings", () => {
-    it("crea los valores por defecto con upsert y devuelve el estado de bloqueo de moneda", async () => {
+    it("crea los valores por defecto sin chocar en paralelo (ON CONFLICT DO NOTHING) y devuelve el estado de bloqueo de moneda", async () => {
       const settings = await getCenterSettings();
       expect(requireOperationalContext).toHaveBeenCalled();
-      expect(prisma.centerSettings.upsert).toHaveBeenCalledWith({
-        where: { centerId: "center-a" },
-        create: { centerId: "center-a" },
-        update: {},
-      });
+      expect(prisma.centerSettings.createMany).toHaveBeenCalledWith({ data: [{ centerId: "center-a" }], skipDuplicates: true });
+      expect(prisma.centerSettings.findUniqueOrThrow).toHaveBeenCalledWith({ where: { centerId: "center-a" } });
       expect(settings.currency).toBe("CLP");
       expect(settings.timeZone).toBe("America/Santiago");
       expect(settings.currencyLocked).toBe(false);

@@ -56,12 +56,12 @@ const centerSettingsSchema = z.object({
 export async function getCenterSettings(): Promise<CenterSettingsView> {
   const { centerId } = await requireOperationalContext();
 
+  // Crear la fila por defecto con INSERT … ON CONFLICT DO NOTHING (atómico en PostgreSQL). Un upsert de Prisma
+  // aquí fallaba con P2002 cuando el panel pedía la configuración varias veces en paralelo en un taller nuevo.
+  await prisma.centerSettings.createMany({ data: [{ centerId }], skipDuplicates: true });
+
   const [settings, center, txCount] = await Promise.all([
-    prisma.centerSettings.upsert({
-      where: { centerId },
-      create: { centerId },
-      update: {},
-    }),
+    prisma.centerSettings.findUniqueOrThrow({ where: { centerId } }),
     prisma.center.findUnique({
       where: { id: centerId },
       select: { timeZone: true },

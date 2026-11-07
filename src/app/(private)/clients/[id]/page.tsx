@@ -5,7 +5,7 @@ import { getCustomerDetail } from "@/lib/customer-queries";
 import { CustomerDetailHeader, CustomerOrdersTable } from "./ClientDetailControls";
 
 export const metadata = {
-  title: "Ficha del cliente | saas3d",
+  title: "Ficha del cliente | Kalibre",
 };
 
 export default async function ClientDetailPage(props: {
