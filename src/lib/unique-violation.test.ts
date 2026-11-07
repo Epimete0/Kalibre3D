@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { uniqueViolationMessage } from "./unique-violation";
+import { isUniqueViolation, uniqueViolationMessage } from "./unique-violation";
 
 // Forma real del error, capturada de Prisma 7 + driver adapter contra PostgreSQL local.
 const real = (index: string) => ({ name: "PrismaClientKnownRequestError", code: "P2002", meta: { driverAdapterError: { cause: { originalCode: "23505", constraint: { index } } }, modelName: "Supplier" }, message: `Unique constraint failed on the constraint: \`${index}\`` });
@@ -26,5 +26,12 @@ describe("uniqueViolationMessage", () => {
     expect(uniqueViolationMessage(new Error("boom"))).toBeNull();
     expect(uniqueViolationMessage(null)).toBeNull();
     expect(uniqueViolationMessage("texto")).toBeNull();
+  });
+
+  it("detecta violaciones de índice único con isUniqueViolation", () => {
+    expect(isUniqueViolation(real("MoneyTransaction_centerId_operationId_key"), "MoneyTransaction_centerId_operationId_key")).toBe(true);
+    expect(isUniqueViolation(real("MoneyTransaction_centerId_operationId_key"), "Other_key")).toBe(false);
+    expect(isUniqueViolation(real("MoneyTransaction_centerId_operationId_key"))).toBe(true);
+    expect(isUniqueViolation(new Error("boom"))).toBe(false);
   });
 });

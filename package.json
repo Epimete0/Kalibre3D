@@ -18,7 +18,8 @@
     "test:transactions": "tsx scripts/run-transaction-tests.ts",
     "quality:gate": "tsx scripts/quality-gate.ts",
     "dev:migrate": "tsx scripts/migrate-dev.ts",
-    "dev:db": "supabase start --workdir supabase-local -x studio,imgproxy,storage-api,realtime,inbucket,logflare,vector,postgres-meta,edge-runtime,mailpit,supavisor"
+    "dev:db": "supabase start --workdir supabase-local -x studio,imgproxy,storage-api,realtime,inbucket,logflare,vector,postgres-meta,edge-runtime,mailpit,supavisor",
+    "local:demo": "tsx scripts/seed-local-demo.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

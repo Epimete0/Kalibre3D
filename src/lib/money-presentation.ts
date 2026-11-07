@@ -13,6 +13,9 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const MANUAL_INCOME_CATEGORIES = ["DIGITAL_SALE", "OTHER_INCOME"] as const;
 export const MANUAL_EXPENSE_CATEGORIES = ["FILAMENT", "PARTS", "SHIPPING", "ADVERTISING", "FEES", "UNEXPECTED", "OTHER_EXPENSE"] as const;
 
+export type ManualIncomeCategory = (typeof MANUAL_INCOME_CATEGORIES)[number];
+export type ManualExpenseCategory = (typeof MANUAL_EXPENSE_CATEGORIES)[number];
+
 export const CATEGORY_LABEL: Record<MoneyCategory, string> = {
   ORDER_PAYMENT: "Cobro de venta",
   DIGITAL_SALE: "Venta de archivos",

@@ -6,6 +6,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Navegación móvil, Inicio operativo y Datos Demo (`MobileNav`, `/dashboard`, `npm run local:demo`) (Tareas 1.9 y 1.10 — Cierre Fase 1):**
+  - Barra inferior móvil (`MobileNav`) optimizada para pantallas de 390 px con accesos principales (**Inicio, Pedidos, Clientes y Dinero**) y cajón desplegable **Más** con Lista de piezas, Ajustes del taller y Mi taller.
+  - Barra lateral de computador (`Sidebar`) sincronizada con acceso a Dinero (`/money`) restringido a `OWNER` y `ADMIN`.
+  - Pantalla de Inicio (`/dashboard`) operativa con acciones rápidas en un toque (`+ Nueva venta`, `+ Registrar gasto`), tarjetas del mes en curso (Ingresos, Gastos y Ganancia neta para `OWNER`/`ADMIN`), sección destacada de **Pedidos atrasados** y listado de **Por fabricar / entregar**.
+  - Comando `npm run local:demo` (`scripts/seed-local-demo.ts`) para poblar de forma determinista el taller `"Taller QA"` en `saas3d-local` con piezas, clientes, 7 pedidos en todos los estados (incluyendo el caso real de Mercado Libre de $8.990 con neto $6.483), devolución, gasto de filamento y venta digital en Cults3D.
 - **Módulo de Dinero y Resumen Mensual (`/money`) (Tarea 1.8):**
   - Panel mensual exclusivo para dueños y administradores del taller (`OWNER`/`ADMIN`) con cálculo exacto en la zona horaria del taller (`America/Santiago`).
   - Indicadores principales del mes: ingresos totales, gastos totales y ganancia neta real (excluyendo movimientos anulados).

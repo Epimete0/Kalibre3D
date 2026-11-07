@@ -35,3 +35,13 @@ export function uniqueViolationMessage(error: unknown): string | null {
   if (!index) return null;
   return MESSAGES.find((entry) => entry.index.test(index))?.message ?? null;
 }
+
+/** Indica si el error corresponde a una violación de índice único (P2002), opcionalmente filtrada por el nombre del índice. */
+export function isUniqueViolation(error: unknown, indexName?: string): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as PrismaLikeError;
+  if (candidate.code !== "P2002") return false;
+  if (!indexName) return true;
+  const index = violatedIndex(candidate);
+  return index === indexName;
+}

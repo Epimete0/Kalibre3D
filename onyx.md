@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4, 1.5, 1.6, 1.7 y 1.8 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.9 Navegación, inicio y datos demo y 1.10 Cierre.**
+**Estado:** Fase 0 cerrada (quality gate PASSED). **Fase 1 cerrada (1.0 a 1.10 hechas, quality gate PASSED)** — ver las entradas fechadas abajo y las casillas en la sección 18.2. **Siguiente: Fase 2 (Catálogo de piezas, cotizador, bobinas y movimientos de stock y filamento, sección 18.3).**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -18,11 +18,39 @@
 5. Al terminar cada tarea: pruebas en verde, commit propio, casilla marcada en 18.2 y entrada fechada aquí arriba (sección 17).
 
 **Cómo retomar:**
-- `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
-- App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/money.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` + `npm run local:demo` (desarrollo `saas3d-local`, 5444x, con el taller "Taller QA").
+- App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (`qa-local@saas3d.local`, creada o actualizada por `npm run local:demo`).
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions`, `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
 ---
+
+## Fase 1 cerrada — Navegación, inicio, datos demo y quality gate (tareas 1.9 y 1.10), 2026-11-08
+
+- **Navegación (`src/components/Sidebar.tsx` y `src/components/MobileNav.tsx`):**
+  - En computador (`Sidebar`): Inicio (`/dashboard`), Pedidos (`/orders`), Clientes (`/clients`), Dinero (`/money`, solo `OWNER`/`ADMIN`), Lista de piezas (`/products`, solo `OWNER`/`ADMIN`), Ajustes (`/settings`, solo `OWNER`/`ADMIN`) y Mi taller (`/profile`).
+  - En celular (`MobileNav`): barra fija inferior con **Inicio, Pedidos, Clientes, Dinero** (solo `OWNER`/`ADMIN`) y botón **Más** que despliega un cajón táctil con Lista de piezas, Ajustes del taller y Mi taller.
+- **Inicio operativo (`src/app/(private)/dashboard/page.tsx`):**
+  - Conserva el flujo de bienvenida sin taller (`getSessionMembershipState` → Crear mi taller / Tengo un código de invitación).
+  - Con taller activo: accesos rápidos táctiles (`+ Nueva venta`, `+ Registrar gasto`, `Ver pedidos`), tarjetas del mes en curso (Ingresos, Gastos y Ganancia neta, visibles solo para `OWNER`/`ADMIN`), bloque prioritario de **Pedidos atrasados** y listado de **Por fabricar / entregar** con enlace directo a cada ficha.
+- **Datos demo locales (`scripts/seed-local-demo.ts` y `npm run local:demo`):**
+  - Protegido por `assertLocalDevelopmentDatabaseConfig` (solo acepta loopback `saas3d-local` en 5444x, jamás nube).
+  - Crea o actualiza la cuenta `qa-local@saas3d.local` y el taller **"Taller QA"** (`America/Santiago`, `CLP`) con:
+    - 4 piezas en la lista de precios (Emblema Toyota 13x9 cm con precio ML $8.990, Emblema Hilux Negro Mate, Letras Tacoma Parrilla y Llavero Personalizado 3D).
+    - 4 clientes de prueba con WhatsApp e Instagram.
+    - 7 pedidos en todos los estados (`QUOTED`, `CONFIRMED` atrasado, `PRINTING`, `READY`, `DELIVERED` de Mercado Libre a $8.990 con comisión $1.708, envío $799 y neto **$6.483**, `RETURNED` con reembolso y `CANCELED`), con sus `OrderEvent`s y cobros.
+    - Gasto manual de filamento PETG ($30.000) y venta de archivo STL en Cults3D (`DIGITAL_SALE`, $7.500).
+- **Revisión de seguridad de la Fase 1 (tarea 1.10):**
+  - Las 7 tablas nuevas (`CenterSettings`, `Product`, `Customer`, `Order`, `OrderItem`, `OrderEvent`, `MoneyTransaction`) son `SERVER_ONLY` (RLS habilitado, 0 políticas, sin privilegios para `anon` ni `authenticated`, verificado en `tests/rls.integration.test.ts` 13/13).
+  - Toda función exportada de `center-settings-service.ts`, `product-service.ts`, `customer-service.ts`, `order-service.ts` y `money-service.ts` abre con `requireCatalogContext` o `requireOperationalContext` (verificado por `src/lib/auth-boundaries.test.ts`).
+  - Ninguna `actions.ts` importa Prisma.
+  - Permisos por rol (D1): `money-service`, `money-queries`, `registerPayment`, `voidMoneyTransaction`, `returnOrder`, `product-service` y `center-settings-service` exigen `OWNER`/`ADMIN` (`requireCatalogContext`). `VIEWER` no puede mutar y recibe montos enmascarados en consultas de clientes y pedidos; `/money`, `/products` y `/settings` renderizan `<NoPermission />` para `PROFESSIONAL` y `VIEWER`.
+  - Concurrencia e integridad probadas contra PostgreSQL real (`tests/phase1-integrity.integration.test.ts`, `tests/orders-creation.integration.test.ts`, `tests/orders-status.integration.test.ts`, `tests/orders-payments-returns.integration.test.ts`, `tests/money.integration.test.ts`).
+- **Quality gate (`npm run quality:gate`) → PASSED:**
+  - Unitarias: **311/311** (48 archivos).
+  - Lint: 0 errores, 0 advertencias.
+  - Build de producción Next.js 16: exitoso (todas las rutas de Fase 0 y Fase 1).
+  - Migraciones: 3 migraciones aplicadas, esquema al día.
+  - Integración real PostgreSQL: `test:rls` **13/13**, `test:s1` **3/3**, `test:s3` **1/1**, `test:transactions` **48/48** (10 suites).
 
 ## Fase 1 — Dinero (tarea 1.8), 2026-11-08
 
@@ -292,6 +320,15 @@ Funciona como SaaS multi-taller: cada persona tiene su cuenta, un taller activo 
   - Registro, inicio de sesión, recuperación de contraseña, unirse por invitación y crear taller (`/taller/nuevo`).
   - Inicio provisional, Mi taller (`/profile`), Equipo (`/team`, oculto en la navegación), términos y privacidad (pendientes de revisión), portada provisional.
   - `npm run quality:gate` en verde.
+- **Fase 1 (2026-11-08):**
+  - Instancia de desarrollo independiente `saas3d-local` (5444x) y comando `npm run local:demo` con el taller "Taller QA".
+  - Ajustes del taller (`/settings`): moneda configurable (bloqueada tras el primer movimiento de dinero), zona horaria, comisión y envío ML, electricidad, embalaje, costo por kilo y purga.
+  - Lista de precios mínima (`/products`): piezas con precio normal y precio de Mercado Libre opcional.
+  - Clientes (`/clients`, `/clients/[id]`): directorio con búsqueda sin tildes, alta rápida y ficha con historial y saldo.
+  - Pedidos y ventas rápidas (`/orders`, `/orders/new`, `/orders/[id]`): numeración consecutiva automática por taller, modalidad venta rápida o pedido por encargo, casilla Mercado Libre con cálculo de comisión y neto real, control de concurrencia en estados (`FOR UPDATE` + `version`), cobros idempotentes, anulaciones con motivo y devoluciones atómicas.
+  - Dinero (`/money`): resumen mensual en la zona horaria del taller, ingresos por canal, gastos por categoría y registro manual de gastos e ingresos sueltos.
+  - Inicio operativo (`/dashboard`) y navegación móvil (`MobileNav` con cajón "Más") y de escritorio (`Sidebar`).
+  - `npm run quality:gate` en verde (311 unitarias, 13 RLS, 3 S1, 1 S3, 48 transacciones).
 
 ### MVP planificado (Fases 0 a 3)
 
@@ -364,7 +401,7 @@ docs/                    especificaciones, planes y runbooks
 | Acceso | `/login`, `/registro`, `/join`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/taller/nuevo` | Implementado (Fase 0), heredado de Kurova |
 | Legal | `/terminos`, `/privacidad` | Implementado (Fase 0); textos pendientes de revisión |
 | Perfil / Mi taller | `/profile` | Implementado (Fase 0): cuenta, contraseña y datos del taller |
-| Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
+| Inicio | `/dashboard` | Implementado (Fase 1): accesos rápidos, resumen mensual (`OWNER`/`ADMIN`), pedidos atrasados y por entregar. Fase 3: panel completo con alertas |
 | Clientes | `/clients`, `/clients/[id]` | Implementado (Fase 1): lista con búsqueda sin tildes, alta rápida y ficha con saldo |
 | Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Implementado (Fase 1): alta rápida, listado con filtros y atrasados, ficha y estados |
 | Dinero | `/money` | Implementado (Fase 1): resumen mensual, ingresos/gastos manuales y anulación |
@@ -632,12 +669,12 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.8 Dinero.** `money-service.ts` (ingresos sueltos como `DIGITAL_SALE`/`OTHER_INCOME` y gastos por categoría; solo `OWNER`/`ADMIN`) y `money-queries.ts` (mes en la zona del taller). Pantalla `/money`: selector de mes, ingresos, gastos y ganancia, por canal y por categoría, lista de movimientos con anulación y alta rápida de gasto o ingreso. *Pruebas:* unitarias del resumen (incluye anulados) y una real de que el mes respeta `America/Santiago` en los bordes del día.
 
-- [ ] **1.9 Navegación, inicio y datos demo.**
+- [x] **1.9 Navegación, inicio y datos demo.**
   - Menú: **Inicio, Pedidos, Clientes y Dinero**, con Ajustes y Mi taller en "Más" en el celular. Dinero solo para `OWNER`/`ADMIN`.
   - Inicio provisional con "Nuevo pedido", "Registrar gasto", pedidos atrasados y por entregar.
   - `npm run local:demo` (solo en `saas3d-local`, con la guarda local): crea "Taller QA" con clientes y pedidos en todos los estados, uno de ML de $8.990 con neto $6.483, cobros, una devolución, gastos de filamento y una venta de archivo de Cults.
 
-- [ ] **1.10 Cierre.** `npm run quality:gate` en verde, revisión de seguridad (permisos por rol en servicios y páginas, sin dinero para `PROFESSIONAL`/`VIEWER`), revisión en el navegador a 390 px y en computador con el panel visible, y entrada fechada en onyx.md.
+- [x] **1.10 Cierre.** `npm run quality:gate` en verde, revisión de seguridad (permisos por rol en servicios y páginas, sin dinero para `PROFESSIONAL`/`VIEWER`), revisión en el navegador a 390 px y en computador con el panel visible, y entrada fechada en onyx.md.
 
 #### Orden y puntos de aprobación
 

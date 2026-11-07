@@ -50,6 +50,9 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
           <PlainLink item={{ href: "/orders", label: "Pedidos", icon: icons.orders }} active={isActive("/orders")} />
           <PlainLink item={{ href: "/clients", label: "Clientes", icon: icons.people }} active={isActive("/clients")} />
           {isManager ? (
+            <PlainLink item={{ href: "/money", label: "Dinero", icon: icons.chart }} active={isActive("/money")} />
+          ) : null}
+          {isManager ? (
             <PlainLink item={{ href: "/products", label: "Lista de piezas", icon: icons.cube }} active={isActive("/products")} />
           ) : null}
           {isManager ? (
