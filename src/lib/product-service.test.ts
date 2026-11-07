@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prisma, requireCatalogContext } = vi.hoisted(() => ({
+const { prisma, requireCatalogContext, requireOperationalContext } = vi.hoisted(() => ({
   prisma: {
     product: {
       findFirst: vi.fn(),
@@ -8,17 +8,25 @@ const { prisma, requireCatalogContext } = vi.hoisted(() => ({
       updateMany: vi.fn(),
       deleteMany: vi.fn(),
     },
+    productMovement: {
+      count: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
     orderItem: {
       count: vi.fn(),
     },
+    $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   },
   requireCatalogContext: vi.fn().mockResolvedValue({ userId: "user-a", centerId: "center-a", role: "OWNER" }),
+  requireOperationalContext: vi.fn().mockResolvedValue({ userId: "user-a", centerId: "center-a", role: "OWNER" }),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma }));
-vi.mock("@/lib/auth", () => ({ requireCatalogContext }));
+vi.mock("@/lib/auth", () => ({ requireCatalogContext, requireOperationalContext }));
 
-import { createProduct, deleteProduct, setProductActive, updateProduct } from "./product-service";
+import { createProduct, deleteProduct, recordProductMovement, setProductActive, updateProduct } from "./product-service";
 
 const form = (fields: Record<string, string>) => {
   const data = new FormData();
@@ -34,10 +42,13 @@ describe("product-service", () => {
     prisma.product.updateMany.mockResolvedValue({ count: 1 });
     prisma.product.deleteMany.mockResolvedValue({ count: 1 });
     prisma.orderItem.count.mockResolvedValue(0);
+    prisma.productMovement.count.mockResolvedValue(0);
+    prisma.productMovement.findUnique.mockResolvedValue(null);
+    prisma.$transaction.mockImplementation(async (cb: (tx: typeof prisma) => Promise<unknown>) => cb(prisma));
   });
 
   describe("createProduct", () => {
-    it("crea una pieza con precio normal y precio ML opcional", async () => {
+    it("crea una pieza con precio normal, precio ML opcional y parámetros técnicos por defecto", async () => {
       const result = await createProduct(form({ name: " Emblema Hilux ", salePrice: "8990", mlPrice: "10990" }));
       expect(requireCatalogContext).toHaveBeenCalled();
       expect(prisma.product.create).toHaveBeenCalledWith({
@@ -46,12 +57,44 @@ describe("product-service", () => {
           name: "Emblema Hilux",
           salePrice: 8990,
           mlPrice: 10990,
+          category: null,
+          material: "PETG",
+          grams: 0,
+          printMinutes: 0,
+          colorsCount: 1,
+          purgeGrams: 0,
+          currentStock: 0,
+          minStock: 0,
           createdByUserId: "user-a",
         },
       });
       expect(result.name).toBe("Emblema Hilux");
       expect(result.salePrice).toBe(8990);
       expect(result.mlPrice).toBe(10990);
+    });
+
+    it("registra un ProductMovement INITIAL si initialStock > 0", async () => {
+      await createProduct(
+        form({
+          name: "Emblema Toyota",
+          salePrice: "8990",
+          grams: "50",
+          printMinutes: "90",
+          colorsCount: "2",
+          purgeGrams: "15",
+          initialStock: "4",
+          minStock: "2",
+        })
+      );
+      expect(prisma.productMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            kind: "INITIAL",
+            delta: 4,
+            resultingStock: 4,
+          }),
+        })
+      );
     });
 
     it("permite omitir el precio de Mercado Libre", async () => {
@@ -93,15 +136,22 @@ describe("product-service", () => {
   });
 
   describe("updateProduct", () => {
-    it("actualiza los datos de la pieza", async () => {
+    it("actualiza los datos de la pieza sin tocar currentStock", async () => {
       const id = "550e8400-e29b-41d4-a716-446655440000";
-      await updateProduct(form({ id, name: "Emblema Pro", salePrice: "9990", mlPrice: "11990" }));
+      await updateProduct(form({ id, name: "Emblema Pro", salePrice: "9990", mlPrice: "11990", grams: "60" }));
       expect(prisma.product.updateMany).toHaveBeenCalledWith({
         where: { id, centerId: "center-a" },
         data: {
           name: "Emblema Pro",
           salePrice: 9990,
           mlPrice: 11990,
+          category: null,
+          material: "PETG",
+          grams: 60,
+          printMinutes: 0,
+          colorsCount: 1,
+          purgeGrams: 0,
+          minStock: 0,
         },
       });
     });
@@ -128,20 +178,61 @@ describe("product-service", () => {
   describe("deleteProduct", () => {
     const id = "550e8400-e29b-41d4-a716-446655440000";
 
-    it("elimina físicamente la pieza si nunca ha tenido pedidos", async () => {
+    it("elimina físicamente la pieza si nunca ha tenido pedidos ni movimientos reales", async () => {
       prisma.orderItem.count.mockResolvedValue(0);
+      prisma.productMovement.count.mockResolvedValue(0);
       await deleteProduct(form({ id }));
       expect(prisma.product.deleteMany).toHaveBeenCalledWith({
         where: { id, centerId: "center-a" },
       });
     });
 
-    it("rechaza eliminar si ya tiene pedidos registrados y sugiere desactivar", async () => {
+    it("rechaza eliminar si ya tiene pedidos o movimientos reales registrados", async () => {
       prisma.orderItem.count.mockResolvedValue(2);
       await expect(deleteProduct(form({ id }))).rejects.toThrow(
         "No se puede eliminar la pieza porque ya tiene pedidos registrados. Puedes desactivarla para ocultarla."
       );
       expect(prisma.product.deleteMany).not.toHaveBeenCalled();
+
+      prisma.orderItem.count.mockResolvedValue(0);
+      prisma.productMovement.count.mockResolvedValue(1);
+      await expect(deleteProduct(form({ id }))).rejects.toThrow(
+        "No se puede eliminar la pieza porque ya tiene pedidos registrados. Puedes desactivarla para ocultarla."
+      );
+    });
+  });
+
+  describe("recordProductMovement", () => {
+    const id = "550e8400-e29b-41d4-a716-446655440000";
+    const opId = "660e8400-e29b-41d4-a716-446655440000";
+
+    it("suma o resta stock bloqueando con FOR UPDATE y rechaza si quedaría en negativo", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id, currentStock: 3 }]);
+      prisma.productMovement.create.mockResolvedValueOnce({
+        id: "pm-1",
+        productId: id,
+        delta: 2,
+        resultingStock: 5,
+      });
+
+      const res = await recordProductMovement({
+        operationId: opId,
+        productId: id,
+        kind: "ENTRY",
+        delta: 2,
+      });
+      expect(requireOperationalContext).toHaveBeenCalled();
+      expect(res.resultingStock).toBe(5);
+
+      prisma.$queryRaw.mockResolvedValueOnce([{ id, currentStock: 1 }]);
+      await expect(
+        recordProductMovement({
+          operationId: "770e8400-e29b-41d4-a716-446655440000",
+          productId: id,
+          kind: "EXIT",
+          delta: 2,
+        })
+      ).rejects.toThrow(/No hay suficiente stock/);
     });
   });
 });

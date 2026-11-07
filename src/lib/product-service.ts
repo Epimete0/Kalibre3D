@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
-import { requireCatalogContext } from "@/lib/auth";
+import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
+import { MATERIALS } from "@/lib/catalog-presentation";
 import { persistedEntityId } from "@/lib/persisted-entity-id";
 import { prisma } from "@/lib/prisma";
-import { uniqueViolationMessage } from "@/lib/unique-violation";
+import { isUniqueViolation, uniqueViolationMessage } from "@/lib/unique-violation";
 
 export const PRODUCT_NAME_MAX = 160;
 
@@ -23,17 +25,67 @@ const optionalMlPriceSchema = z.preprocess(
   priceSchema.nullable()
 );
 
+const optionalCategorySchema = z.preprocess(
+  (val) => {
+    if (typeof val !== "string") return null;
+    const trimmed = val.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  },
+  z.string().max(80, "La categoría no puede superar 80 caracteres.").nullable()
+);
+
+const nonNegativeIntSchema = (label: string) =>
+  z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? 0 : val),
+    z.coerce
+      .number({ error: `${label} debe ser un número entero mayor o igual a 0.` })
+      .int(`${label} debe ser un número entero.`)
+      .min(0, `${label} debe ser mayor o igual a 0.`)
+  );
+
+const colorsCountSchema = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? 1 : val),
+  z.coerce
+    .number({ error: "La cantidad de colores debe estar entre 1 y 16." })
+    .int("La cantidad de colores debe ser un número entero.")
+    .min(1, "La cantidad de colores debe ser al menos 1.")
+    .max(16, "La cantidad de colores no puede superar 16.")
+);
+
+const materialSchema = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? "PETG" : val),
+  z.enum(MATERIALS, { error: "Selecciona un material válido." })
+);
+
 const createProductSchema = z.object({
   name: productNameSchema,
   salePrice: priceSchema,
   mlPrice: optionalMlPriceSchema,
+  category: optionalCategorySchema,
+  material: materialSchema,
+  grams: nonNegativeIntSchema("Los gramos"),
+  printMinutes: nonNegativeIntSchema("Los minutos de impresión"),
+  colorsCount: colorsCountSchema,
+  purgeGrams: nonNegativeIntSchema("Los gramos de purga"),
+  initialStock: nonNegativeIntSchema("El stock inicial"),
+  minStock: nonNegativeIntSchema("El stock mínimo"),
 });
 
-const updateProductSchema = createProductSchema.extend({
+const updateProductSchema = z.object({
   id: persistedEntityId,
+  name: productNameSchema,
+  salePrice: priceSchema,
+  mlPrice: optionalMlPriceSchema,
+  category: optionalCategorySchema,
+  material: materialSchema,
+  grams: nonNegativeIntSchema("Los gramos"),
+  printMinutes: nonNegativeIntSchema("Los minutos de impresión"),
+  colorsCount: colorsCountSchema,
+  purgeGrams: nonNegativeIntSchema("Los gramos de purga"),
+  minStock: nonNegativeIntSchema("El stock mínimo"),
 });
 
-/** Crea una nueva pieza en la lista de precios del taller. Solo OWNER y ADMIN. */
+/** Crea una nueva pieza en el catálogo del taller. Solo OWNER y ADMIN. */
 export async function createProduct(formData: FormData) {
   const { centerId, userId } = await requireCatalogContext();
 
@@ -41,6 +93,14 @@ export async function createProduct(formData: FormData) {
     name: formData.get("name"),
     salePrice: formData.get("salePrice"),
     mlPrice: formData.get("mlPrice"),
+    category: formData.get("category"),
+    material: formData.get("material"),
+    grams: formData.get("grams"),
+    printMinutes: formData.get("printMinutes"),
+    colorsCount: formData.get("colorsCount"),
+    purgeGrams: formData.get("purgeGrams"),
+    initialStock: formData.get("initialStock"),
+    minStock: formData.get("minStock"),
   };
 
   const parsed = createProductSchema.safeParse(raw);
@@ -63,15 +123,40 @@ export async function createProduct(formData: FormData) {
   }
 
   try {
-    return await prisma.product.create({
+    const product = await prisma.product.create({
       data: {
         centerId,
         name: normalized,
         salePrice: parsed.data.salePrice,
         mlPrice: parsed.data.mlPrice,
+        category: parsed.data.category,
+        material: parsed.data.material,
+        grams: parsed.data.grams,
+        printMinutes: parsed.data.printMinutes,
+        colorsCount: parsed.data.colorsCount,
+        purgeGrams: parsed.data.purgeGrams,
+        currentStock: parsed.data.initialStock,
+        minStock: parsed.data.minStock,
         createdByUserId: userId,
       },
     });
+
+    if (parsed.data.initialStock > 0) {
+      await prisma.productMovement.create({
+        data: {
+          centerId,
+          operationId: randomUUID(),
+          productId: product.id,
+          kind: "INITIAL",
+          delta: parsed.data.initialStock,
+          resultingStock: parsed.data.initialStock,
+          notes: "Stock inicial al crear pieza",
+          actorUserId: userId,
+        },
+      });
+    }
+
+    return product;
   } catch (error) {
     const violation = uniqueViolationMessage(error);
     if (violation) throw new DomainError(violation);
@@ -79,7 +164,7 @@ export async function createProduct(formData: FormData) {
   }
 }
 
-/** Modifica los datos de una pieza existente. Solo OWNER y ADMIN. */
+/** Modifica los datos de una pieza existente (nunca modifica currentStock directo). Solo OWNER y ADMIN. */
 export async function updateProduct(formData: FormData) {
   const { centerId } = await requireCatalogContext();
 
@@ -88,6 +173,13 @@ export async function updateProduct(formData: FormData) {
     name: formData.get("name"),
     salePrice: formData.get("salePrice"),
     mlPrice: formData.get("mlPrice"),
+    category: formData.get("category"),
+    material: formData.get("material"),
+    grams: formData.get("grams"),
+    printMinutes: formData.get("printMinutes"),
+    colorsCount: formData.get("colorsCount"),
+    purgeGrams: formData.get("purgeGrams"),
+    minStock: formData.get("minStock"),
   };
 
   const parsed = updateProductSchema.safeParse(raw);
@@ -117,6 +209,13 @@ export async function updateProduct(formData: FormData) {
         name: normalized,
         salePrice: parsed.data.salePrice,
         mlPrice: parsed.data.mlPrice,
+        category: parsed.data.category,
+        material: parsed.data.material,
+        grams: parsed.data.grams,
+        printMinutes: parsed.data.printMinutes,
+        colorsCount: parsed.data.colorsCount,
+        purgeGrams: parsed.data.purgeGrams,
+        minStock: parsed.data.minStock,
       },
     });
 
@@ -157,9 +256,9 @@ export async function setProductActive(formData: FormData) {
 
 /**
  * Elimina físicamente una pieza.
- * Regla de oro de ciclo de vida (AGENTS.md):
- * Solo se permite la eliminación física si la pieza NUNCA ha sido utilizada en ningún pedido.
- * Si ya tiene pedidos vinculados, debe desactivarse para preservar la trazabilidad histórica.
+ * Regla de oro de ciclo de vida (AGENTS.md y D16):
+ * Solo se permite la eliminación física si la pieza NUNCA ha sido utilizada en ningún pedido
+ * ni tiene movimientos reales de stock (el movimiento INITIAL no cuenta como uso real).
  */
 export async function deleteProduct(formData: FormData) {
   const { centerId } = await requireCatalogContext();
@@ -168,11 +267,20 @@ export async function deleteProduct(formData: FormData) {
   const idParsed = persistedEntityId.safeParse(id);
   if (!idParsed.success) throw new DomainError("Identificador inválido.");
 
-  const ordersCount = await prisma.orderItem.count({
-    where: { centerId, productId: idParsed.data },
-  });
+  const [ordersCount, realMovementsCount] = await Promise.all([
+    prisma.orderItem.count({
+      where: { centerId, productId: idParsed.data },
+    }),
+    prisma.productMovement.count({
+      where: {
+        centerId,
+        productId: idParsed.data,
+        kind: { not: "INITIAL" },
+      },
+    }),
+  ]);
 
-  if (ordersCount > 0) {
+  if (ordersCount > 0 || realMovementsCount > 0) {
     throw new DomainError(
       "No se puede eliminar la pieza porque ya tiene pedidos registrados. Puedes desactivarla para ocultarla."
     );
@@ -187,4 +295,115 @@ export async function deleteProduct(formData: FormData) {
   }
 
   return { id: idParsed.data, deleted: true };
+}
+
+export const recordProductMovementSchema = z.object({
+  operationId: z.string({ error: "Identificador de operación inválido." }).uuid("Identificador de operación inválido."),
+  productId: persistedEntityId,
+  kind: z.enum(["ENTRY", "EXIT", "ADJUST"], {
+    error: "El tipo de movimiento de stock no es válido.",
+  }),
+  delta: z.coerce
+    .number({ error: "Indica la cantidad de unidades." })
+    .int("La cantidad debe ser un número entero.")
+    .refine((n) => n !== 0, "La variación de stock no puede ser 0."),
+  orderId: z.string().uuid().nullable().optional().default(null),
+  notes: z
+    .string()
+    .trim()
+    .max(500, "Las notas no pueden superar 500 caracteres.")
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+});
+
+export type RecordProductMovementInput = z.input<typeof recordProductMovementSchema>;
+
+/** Registra un movimiento inmutable de stock de una pieza (D15). */
+export async function recordProductMovement(
+  input: RecordProductMovementInput
+): Promise<{ id: string; productId: string; delta: number; resultingStock: number }> {
+  const { centerId, userId } = await requireOperationalContext();
+  const parsed = recordProductMovementSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError(parsed.error.issues[0]?.message ?? "Revisa los datos del movimiento de stock.");
+  }
+
+  const data = parsed.data;
+  const delta =
+    data.kind === "ENTRY"
+      ? Math.abs(data.delta)
+      : data.kind === "EXIT"
+        ? -Math.abs(data.delta)
+        : data.delta;
+
+  const existing = await prisma.productMovement.findUnique({
+    where: { centerId_operationId: { centerId, operationId: data.operationId } },
+    select: { id: true, productId: true, delta: true, resultingStock: true },
+  });
+  if (existing) {
+    return existing;
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<Array<{ id: string; currentStock: number }>>`
+        SELECT id, "currentStock"
+        FROM "Product"
+        WHERE "centerId" = ${centerId}::uuid AND id = ${data.productId}::uuid
+        FOR UPDATE
+      `;
+
+      const product = rows[0];
+      if (!product) {
+        throw new DomainError("La pieza no existe o no pertenece a este taller.");
+      }
+
+      const inTxExisting = await tx.productMovement.findUnique({
+        where: { centerId_operationId: { centerId, operationId: data.operationId } },
+        select: { id: true, productId: true, delta: true, resultingStock: true },
+      });
+      if (inTxExisting) {
+        return inTxExisting;
+      }
+
+      const resultingStock = product.currentStock + delta;
+      if (resultingStock < 0) {
+        throw new DomainError(
+          `No hay suficiente stock de la pieza (disponible: ${product.currentStock}).`
+        );
+      }
+
+      await tx.product.updateMany({
+        where: { id: data.productId, centerId },
+        data: { currentStock: resultingStock },
+      });
+
+      const movement = await tx.productMovement.create({
+        data: {
+          centerId,
+          operationId: data.operationId,
+          productId: data.productId,
+          kind: data.kind,
+          delta,
+          resultingStock,
+          orderId: data.orderId,
+          notes: data.notes ?? null,
+          actorUserId: userId,
+        },
+        select: { id: true, productId: true, delta: true, resultingStock: true },
+      });
+
+      return movement;
+    });
+  } catch (error) {
+    if (isUniqueViolation(error, "ProductMovement_centerId_operationId_key")) {
+      const winner = await prisma.productMovement.findUnique({
+        where: { centerId_operationId: { centerId, operationId: data.operationId } },
+        select: { id: true, productId: true, delta: true, resultingStock: true },
+      });
+      if (winner) return winner;
+    }
+    throw error;
+  }
 }

@@ -3,7 +3,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Client } from "pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createProduct, deleteProduct, setProductActive } from "@/lib/product-service";
+import { DomainError } from "@/lib/action-errors";
+import { createProduct, deleteProduct, recordProductMovement, setProductActive } from "@/lib/product-service";
 import { listProducts } from "@/lib/product-queries";
 import { applyPostgresMigrations, cleanupPostgresFixture } from "./postgres-test-harness";
 
@@ -161,6 +162,72 @@ suite("Lista de precios (Product) en PostgreSQL", () => {
 
       const allList = await listProducts({ includeInactive: true });
       expect(allList.find((p) => p.id === p2.id)?.active).toBe(false);
+    } finally {
+      catalogSpy.mockRestore();
+      operationalSpy.mockRestore();
+    }
+  });
+
+  it("stock concurrente de piezas (D15): tres salidas simultáneas de 6 unidades con stock 10 solo permiten una (quedan 4) y rechazan las otras dos con DomainError", async () => {
+    const authModule = await import("@/lib/auth");
+    const catalogSpy = vi.spyOn(authModule, "requireCatalogContext").mockResolvedValue({
+      userId: userA,
+      centerId: centerA,
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    });
+    const operationalSpy = vi.spyOn(authModule, "requireOperationalContext").mockResolvedValue({
+      userId: userA,
+      centerId: centerA,
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    });
+
+    try {
+      const p = await createProduct(
+        form({
+          name: "Emblema Stock Concurrente",
+          salePrice: "8990",
+          initialStock: "10",
+          minStock: "2",
+        })
+      );
+
+      const results = await Promise.allSettled([
+        recordProductMovement({
+          operationId: randomUUID(),
+          productId: p.id,
+          kind: "EXIT",
+          delta: 6,
+          notes: "Salida 1",
+        }),
+        recordProductMovement({
+          operationId: randomUUID(),
+          productId: p.id,
+          kind: "EXIT",
+          delta: 6,
+          notes: "Salida 2",
+        }),
+        recordProductMovement({
+          operationId: randomUUID(),
+          productId: p.id,
+          kind: "EXIT",
+          delta: 6,
+          notes: "Salida 3",
+        }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(2);
+      for (const r of rejected) {
+        expect(r.reason).toBeInstanceOf(DomainError);
+      }
+
+      const row = (await db.query('SELECT "currentStock" FROM "Product" WHERE id = $1', [p.id])).rows[0];
+      expect(row.currentStock).toBe(4);
     } finally {
       catalogSpy.mockRestore();
       operationalSpy.mockRestore();

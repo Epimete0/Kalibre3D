@@ -1,8 +1,9 @@
+import { NoPermission } from "@/components/NoPermission";
+import { LinkButton, PageHeader } from "@/components/ui";
 import { canManageCatalog, requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listProducts } from "@/lib/product-queries";
-import { PageHeader } from "@/components/ui";
-import { NoPermission } from "@/components/NoPermission";
+import { listSpools } from "@/lib/spool-queries";
 import { CreateProductBar, ProductList } from "./ProductControls";
 
 export const dynamic = "force-dynamic";
@@ -12,27 +13,47 @@ export default async function ProductsPage() {
   if (!canManageCatalog(auth.role)) {
     return (
       <NoPermission
-        action="administrar la lista de precios"
+        action="administrar el catálogo de piezas"
         backHref="/dashboard"
         backLabel="Volver al inicio"
       />
     );
   }
 
-  const [settings, products] = await Promise.all([
+  const [settings, products, spoolsView] = await Promise.all([
     getCenterSettings(),
     listProducts({ includeInactive: true }),
+    listSpools({ includeInactive: false }),
   ]);
 
   return (
     <>
       <PageHeader
-        title="Lista de precios"
-        description="Piezas habituales y precios de venta directos y en Mercado Libre para agilizar tus pedidos."
-      />
-      <div className="max-w-5xl">
-        <CreateProductBar currency={settings.currency} />
-        <ProductList products={products} currency={settings.currency} />
+        title="Catálogo de piezas y stock"
+        description="Piezas habituales, costos reales de fabricación, precios directos y de Mercado Libre, y stock disponible."
+      >
+        <LinkButton href="/quote" variant="ghost">
+          Cotizador 3D
+        </LinkButton>
+      </PageHeader>
+      <div className="max-w-5xl pb-20 sm:pb-8">
+        <CreateProductBar
+          currency={settings.currency}
+          defaultPurgeGrams={settings.defaultPurgeGrams}
+        />
+        <ProductList
+          products={products}
+          currency={settings.currency}
+          costSummary={{
+            currency: settings.currency,
+            electricityCostPerHour: settings.electricityCostPerHour,
+            defaultPackagingCost: settings.defaultPackagingCost,
+            defaultPurgeGrams: settings.defaultPurgeGrams,
+            mlCommissionPercent: Number(settings.mlCommissionPercent),
+            mlDefaultShippingCost: settings.mlDefaultShippingCost,
+            materialCostPerGram: spoolsView.materialCostPerGram,
+          }}
+        />
       </div>
     </>
   );
