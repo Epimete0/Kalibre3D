@@ -11,6 +11,17 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
   const items = [
     { href: "/dashboard", label: "Inicio", icon: <path d="M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5" /> },
     {
+      href: "/orders",
+      label: "Pedidos",
+      icon: (
+        <>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" />
+          <path d="m9 14 2 2 4-4" />
+        </>
+      ),
+    },
+    {
       href: "/clients",
       label: "Clientes",
       icon: (

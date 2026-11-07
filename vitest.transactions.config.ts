@@ -11,6 +11,7 @@ export default defineConfig({
       "tests/center-settings.integration.test.ts",
       "tests/products.integration.test.ts",
       "tests/customers.integration.test.ts",
+      "tests/orders-creation.integration.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 60_000,

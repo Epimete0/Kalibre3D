@@ -1,0 +1,271 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { prisma, requireOperationalContext } = vi.hoisted(() => {
+  const tx = {
+    $executeRaw: vi.fn(),
+    $queryRaw: vi.fn(),
+    order: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    orderItem: {
+      createMany: vi.fn(),
+    },
+    orderEvent: {
+      create: vi.fn(),
+    },
+    customer: {
+      create: vi.fn(),
+    },
+    moneyTransaction: {
+      create: vi.fn(),
+    },
+  };
+
+  return {
+    prisma: {
+      $transaction: vi.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
+      ...tx,
+    },
+    requireOperationalContext: vi.fn().mockResolvedValue({
+      userId: "user-1",
+      centerId: "center-1",
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    }),
+  };
+});
+
+vi.mock("@/lib/prisma", () => ({ prisma }));
+vi.mock("@/lib/auth", () => ({ requireOperationalContext }));
+
+import { createOrder } from "./order-service";
+
+const VALID_OP_ID = "22222222-2222-4222-8222-222222222222";
+
+describe("order-service", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.$queryRaw.mockResolvedValue([{ max: 0 }]);
+    prisma.order.findUnique.mockResolvedValue(null);
+    prisma.order.create.mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ id: "order-1", number: 1, ...(args.data as object) })
+    );
+    prisma.customer.create.mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ id: "cust-new-1", ...(args.data as object) })
+    );
+  });
+
+  describe("createOrder", () => {
+    it("crea una venta rápida entregada con número correlativo y evento CREATED", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ max: 4 }]);
+
+      const result = await createOrder({
+        operationId: VALID_OP_ID,
+        kind: "QUICK_SALE",
+        channel: "IN_PERSON",
+        items: [
+          {
+            description: "Emblema Hilux",
+            qty: 2,
+            unitPrice: 5000,
+            material: "PLA",
+            colorsCount: 1,
+          },
+        ],
+        discount: 1000,
+        initialPayment: {
+          amount: 9000,
+          method: "CASH",
+        },
+      });
+
+      expect(requireOperationalContext).toHaveBeenCalled();
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+      expect(prisma.order.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-1",
+          number: 5,
+          operationId: VALID_OP_ID,
+          kind: "QUICK_SALE",
+          channel: "IN_PERSON",
+          status: "DELIVERED",
+          version: 1,
+          discount: 1000,
+          total: 9000,
+          deliveredAt: expect.any(Date),
+          createdByUserId: "user-1",
+        }),
+      });
+
+      expect(prisma.orderItem.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            centerId: "center-1",
+            orderId: "order-1",
+            position: 1,
+            productId: null,
+            description: "Emblema Hilux",
+            qty: 2,
+            unitPrice: 5000,
+            material: "PLA",
+            grams: null,
+            colorsCount: 1,
+          },
+        ],
+      });
+
+      expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-1",
+          orderId: "order-1",
+          version: 1,
+          fromStatus: null,
+          toStatus: "DELIVERED",
+          actorUserId: "user-1",
+        }),
+      });
+
+      expect(prisma.moneyTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-1",
+          type: "INCOME",
+          category: "ORDER_PAYMENT",
+          amount: 9000,
+          method: "CASH",
+          orderId: "order-1",
+          recordedByUserId: "user-1",
+        }),
+      });
+
+      expect(result).toEqual({ id: "order-1", number: 5 });
+    });
+
+    it("crea un pedido por encargo con cliente al vuelo (D7) y fecha de entrega", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ max: 0 }]);
+
+      const result = await createOrder({
+        operationId: VALID_OP_ID,
+        kind: "ORDER",
+        channel: "WHATSAPP",
+        status: "CONFIRMED",
+        dueDate: "2026-11-15",
+        newCustomerName: "Juan Pérez",
+        newCustomerPhone: "+56911223344",
+        items: [
+          {
+            description: "Letrero LED",
+            qty: 1,
+            unitPrice: 25000,
+            colorsCount: 2,
+          },
+        ],
+      });
+
+      expect(prisma.customer.create).toHaveBeenCalledWith({
+        data: {
+          centerId: "center-1",
+          createdByUserId: "user-1",
+          name: "Juan Pérez",
+          phone: "+56911223344",
+          instagram: null,
+          notes: null,
+          active: true,
+        },
+      });
+
+      expect(prisma.order.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          customerId: "cust-new-1",
+          kind: "ORDER",
+          status: "CONFIRMED",
+          deliveredAt: null,
+          dueDate: new Date("2026-11-15T00:00:00.000Z"),
+          total: 25000,
+        }),
+      });
+
+      expect(result).toEqual({ id: "order-1", number: 1 });
+    });
+
+    it("soporta ventas de Mercado Libre con comisión y envío (D4)", async () => {
+      await createOrder({
+        operationId: VALID_OP_ID,
+        kind: "QUICK_SALE",
+        channel: "MERCADOLIBRE",
+        mlOrderRef: "MLB-987654321",
+        mlCommission: 1708,
+        mlShippingCost: 799,
+        items: [
+          {
+            description: "Pieza ML",
+            qty: 1,
+            unitPrice: 8990,
+          },
+        ],
+        initialPayment: {
+          amount: 6483, // Neto ML: 8990 - 1708 - 799 = 6483
+          method: "MERCADOLIBRE",
+        },
+      });
+
+      expect(prisma.order.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          channel: "MERCADOLIBRE",
+          total: 8990,
+          mlCommission: 1708,
+          mlShippingCost: 799,
+          mlOrderRef: "MLB-987654321",
+        }),
+      });
+
+      expect(prisma.moneyTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          amount: 6483,
+          method: "MERCADOLIBRE",
+        }),
+      });
+    });
+
+    it("es idempotente: si el operationId ya existe, retorna el pedido existente", async () => {
+      prisma.order.findUnique.mockResolvedValueOnce({
+        id: "existing-order-id",
+        number: 8,
+      });
+
+      const result = await createOrder({
+        operationId: VALID_OP_ID,
+        kind: "QUICK_SALE",
+        channel: "IN_PERSON",
+        items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }],
+      });
+
+      expect(prisma.order.findUnique).toHaveBeenCalled();
+      expect(prisma.order.create).not.toHaveBeenCalled();
+      expect(result).toEqual({ id: "existing-order-id", number: 8 });
+    });
+
+    it("rechaza pedidos sin piezas", async () => {
+      await expect(
+        createOrder({
+          operationId: VALID_OP_ID,
+          kind: "QUICK_SALE",
+          channel: "IN_PERSON",
+          items: [],
+        })
+      ).rejects.toThrow("El pedido debe contener al menos una pieza.");
+    });
+
+    it("rechaza descuento negativo", async () => {
+      await expect(
+        createOrder({
+          operationId: VALID_OP_ID,
+          kind: "QUICK_SALE",
+          channel: "IN_PERSON",
+          discount: -500,
+          items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }],
+        })
+      ).rejects.toThrow("El descuento debe ser mayor o igual a 0.");
+    });
+  });
+});

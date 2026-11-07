@@ -6,6 +6,14 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Creación de pedidos y ventas rápidas (`/orders/new`) (Tarea 1.5):**
+  - Formulario de alta rápida de pedidos diseñado para teléfonos móviles (390 px) para registrar ventas en menos de 30 segundos.
+  - Soporte de dos modalidades operativas: **Venta rápida** (se entrega y cobra en el acto en un solo paso, con registro de ingreso inmediato) y **Pedido por encargo** (pasa por el ciclo de fabricación y entrega con anticipo opcional).
+  - Casilla de **Mercado Libre**: activa precios ML de la lista de piezas, calcula comisión porcentual y costo de envío, y exhibe el monto neto real en vivo.
+  - Selección de cliente existente con búsqueda o creación de cliente al vuelo en el mismo formulario.
+  - Numeración consecutiva automática por taller (`#1`, `#2`…) con bloqueo determinístico en PostgreSQL para evitar colisiones bajo concurrencia.
+  - Idempotencia garantizada por `operationId` para prevenir cobros y pedidos duplicados por doble envío en mala conexión.
+  - Enlace de acceso directo a Pedidos en barra lateral y navegación móvil.
 - **Módulo de Clientes (`/clients` y `/clients/[id]`) (Tarea 1.4):**
   - Directorio y gestión de clientes del taller con nombre, teléfono/WhatsApp, Instagram y notas internas.
   - Búsqueda en vivo insensible a tildes, diacríticos y mayúsculas.

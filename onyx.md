@@ -8,7 +8,7 @@
 
 ## ▶ Traspaso para continuar (otro agente, p. ej. Gemini en Antigravity) — 2026-11-08
 
-**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b y 1.4 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.5 Crear pedidos (D4, D7, D12).**
+**Estado:** Fase 0 cerrada (quality gate PASSED). Fase 1: **1.0, 1.1, 1.2, 1.3, 1.3b, 1.4 y 1.5 hechas** (ver sus entradas abajo y las casillas en la sección 18.2). **Siguiente: 1.6 Listado, ficha y estados.**
 
 **Reglas que NO se negocian:**
 1. **KurovaV2 (`../KurovaV2`) es SOLO LECTURA** (está en producción con usuarios). Se puede leer y copiar desde ella; jamás escribir, instalar, migrar, hacer git ni levantar o detener sus contenedores `*_kurova-local`.
@@ -20,11 +20,32 @@
 **Cómo retomar:**
 - `npx supabase start` (instancia de pruebas `saas3d-test`, puertos 5445x) y `npm run dev:db` + `npm run dev:migrate` (desarrollo `saas3d-local`, 5444x).
 - App: `npx next dev --webpack -p 3100`. Cuenta QA local en `.env.qa.local` (debe recrearse en `saas3d-local`: registrarse en `/registro`).
-- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/phase1-integrity.integration.test.ts`, `tests/center-settings.integration.test.ts`, `tests/products.integration.test.ts` y `tests/customers.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
+- Verificación: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run test:transactions` (incluye `tests/orders-creation.integration.test.ts`), `npm run test:rls` y, al cerrar, `npm run quality:gate`.
 
-**Qué hay para la 1.5 (Crear pedidos):**
-- Tablas aplicadas en local: `Order`, `OrderItem`, `OrderEvent` con `UNIQUE (centerId, id)` y `UNIQUE (centerId, operationId)`.
-- Requisitos: `order-operation.ts` (`resolveNewOrderOperation`), `order-service.createOrder` (valida con Zod, cliente al vuelo opcional, asigna número bloqueando `Center`, calcula total, sugiere comisión ML y registra evento `CREATED`), pantalla `/orders/new`.
+**Qué hay para la 1.6 (Listado, ficha y estados):**
+- Consultas `order-queries.ts`: `listOrders` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `getOrderDetail` (pedido con cliente, piezas, eventos y cobros).
+- Servicio `order-service.ts`: `changeOrderStatus(orderId, expectedVersion, to)` con `FOR UPDATE`, validación de versión actual, validación de transición de estado (`canTransition`), incremento de `version`, fijación de `deliveredAt` (en `DELIVERED` o `RETURNED`) y creación de `OrderEvent`.
+- Pantallas `/orders` (tarjetas responsivas en móvil ~390px y tabla en escritorio) y `/orders/[id]` (ficha completa, piezas, cobros, saldo, eventos y botones de cambio de estado).
+- Concurrencia obligatoria (`AGENTS.md`): prueba real de carrera con la misma versión donde solo uno gana y queda exactamente un evento.
+
+---
+
+## Fase 1 — Crear pedidos (tarea 1.5), 2026-11-08
+
+- **Operación e Idempotencia (`src/lib/order-operation.ts`):**
+  - `resolveNewOrderOperation`: genera `operationId` determinístico o único, preserva el borrador en caso de fallo y protege contra dobles envíos.
+- **Servicio y consultas (`src/lib/order-service.ts` y `src/lib/order-queries.ts`):**
+  - `createOrder`: valida con Zod (`CreateOrderInputSchema`), soporte de cliente opcional existente o al vuelo (`createNewCustomer`), asignación de consecutivo automático por taller bloqueando `Center` con `FOR UPDATE` (`UNIQUE (centerId, number)`), cálculo en servidor de total y neto de Mercado Libre, creación atómica de `Order`, `OrderItem`s y `OrderEvent` (`CREATED`).
+  - Modalidades D12: `QUICK_SALE` queda automáticamente en `DELIVERED`, registra un `OrderEvent` adicional (`STATUS_CHANGED`), y si se especifica monto pagado, registra de inmediato la transacción de ingreso `MoneyTransaction` (`INCOME`, categoría `ORDER_PAYMENT`). `ORDER` queda en `QUOTED` o `CONFIRMED` y registra abono inicial opcional.
+  - Mercado Libre (D4): calcula automáticamente la comisión con el porcentaje del taller y descuenta el envío acordado para el neto real.
+  - `getOrderCreationDefaults`: obtiene la lista de productos activos y ajustes del taller (moneda, comisión ML y envío ML) para precargar el formulario.
+- **Interfaz (`/orders/new` y navegación):**
+  - Formulario adaptado a pantallas móviles (390 px): botones táctiles grandes (mínimo 44 px), selectores de canal en chips, alternancia entre Venta rápida y Pedido por encargo, selector de cliente con opción de alta al vuelo, selector de piezas de la lista o ingreso manual, control táctil de cantidad (`+`/`-`), fecha de entrega y resumen inferior pegajoso (*sticky*) con cálculo en vivo de total y neto de Mercado Libre.
+  - Enlaces a `/orders` en `Sidebar.tsx` y `MobileNav.tsx`.
+- **Pruebas:**
+  - Unitarias en `order-operation.test.ts` (4/4), `order-service.test.ts` (6/6), `order-queries.test.ts` (2/2). Total suite unitaria: 286/286.
+  - Integración real contra PostgreSQL en `tests/orders-creation.integration.test.ts` (2/2): dos pedidos simultáneos en hilos concurrentes obtienen números estrictamente consecutivos sin colisión, y un reintento con el mismo `operationId` no duplica el pedido ni sus ítems.
+- **Resultados:** `quality:gate` PASSED (286 unitarias, 0 lint warnings, build exitoso, 13 RLS, 3 S1, 1 S3, 42 transacciones).
 
 ---
 
@@ -299,7 +320,7 @@ docs/                    especificaciones, planes y runbooks
 | Perfil / Mi taller | `/profile` | Implementado (Fase 0): cuenta, contraseña y datos del taller |
 | Inicio | `/dashboard` | Implementado (provisional): estado sin taller y bienvenida. Fase 3: panel del mes |
 | Clientes | `/clients`, `/clients/[id]` | Implementado (Fase 1): lista con búsqueda sin tildes, alta rápida y ficha con saldo |
-| Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Planificado (Fase 1) |
+| Pedidos | `/orders`, `/orders/new`, `/orders/[id]` | Implementado `/orders/new` (Fase 1); listado y ficha planificados (Fase 1) |
 | Dinero | `/money` | Planificado (Fase 1) |
 | Ajustes del taller | `/settings` | Implementado (Fase 1): moneda, zona horaria, comisión y envío ML, luz, embalaje, costo por kilo y purga |
 | Catálogo y cotizador | `/products` (lista de precios mínima, Fase 1); `/products/new`, `/products/[id]`, `/quote` | Implementado `/products` (Fase 1); cotizador planificado (Fase 2) |
@@ -557,7 +578,7 @@ Se heredan los controles de Kurova: control de acceso en el servidor por membres
 
 - [x] **1.4 Clientes (opcionales, D7).** `customer-service.ts` (crear, editar, desactivar y reactivar) y `customer-queries.ts` (búsqueda sin acentos, ficha con sus ventas y saldo). Pantallas `/clients` y `/clients/[id]`; el alta normal ocurre al vuelo desde la venta. *Pruebas:* unitarias, fronteras y aislamiento entre talleres.
 
-- [ ] **1.5 Crear pedidos.** **Incluye D4 (casilla Mercado Libre que cambia a precios ML y calcula comisión, envío y neto), D7 (sin cliente por defecto) y D12 (venta rápida que queda entregada y cobrada en un paso, o pedido por encargo).** `order-operation.ts` (`resolveNewOrderOperation`, como `new-purchase-operation`) y `order-service.createOrder`: valida con Zod, crea el cliente al vuelo si corresponde, bloquea el `Center`, asigna el número, calcula el total, sugiere la comisión ML y registra el evento `CREATED`. Pantalla `/orders/new`: cliente existente o nuevo, canal, piezas (descripción, cantidad, precio, colores y material), descuento, fecha de entrega, campos ML y resumen en vivo (total, neto ML); con borrador local (`FormDraft`) y cerrojo contra doble envío. *Pruebas reales:* el mismo `operationId` dos veces crea un solo pedido; dos pedidos simultáneos reciben números distintos y consecutivos.
+- [x] **1.5 Crear pedidos.** **Incluye D4 (casilla Mercado Libre que cambia a precios ML y calcula comisión, envío y neto), D7 (sin cliente por defecto) y D12 (venta rápida que queda entregada y cobrada en un paso, o pedido por encargo).** `order-operation.ts` (`resolveNewOrderOperation`, como `new-purchase-operation`) y `order-service.createOrder`: valida con Zod, crea el cliente al vuelo si corresponde, bloquea el `Center`, asigna el número, calcula el total, sugiere la comisión ML y registra el evento `CREATED`. Pantalla `/orders/new`: cliente existente o nuevo, canal, piezas (descripción, cantidad, precio, colores y material), descuento, fecha de entrega, campos ML y resumen en vivo (total, neto ML); con borrador local (`FormDraft`) y cerrojo contra doble envío. *Pruebas reales:* el mismo `operationId` dos veces crea un solo pedido; dos pedidos simultáneos reciben números distintos y consecutivos.
 
 - [ ] **1.6 Listado, ficha y estados.** `order-queries.ts` (filtros por estado y canal, atrasados primero, búsqueda por número o cliente) y `order-service.changeOrderStatus(orderId, expectedVersion, to)`: `FOR UPDATE`, compara la versión, valida la transición, incrementa la versión, fija `deliveredAt` y escribe `OrderEvent`. Pantallas `/orders` (lista en tarjetas en celular y tabla en computador) y `/orders/[id]` (piezas, totales, neto ML, cobros, saldo, historial de estados y botones de avance). *Pruebas reales (concurrencia, AGENTS.md):* dos cambios con la misma versión → gana uno y queda exactamente un evento. Se describe la intercalación y se observa el fallo antes de corregir.
 
