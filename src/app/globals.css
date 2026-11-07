@@ -43,6 +43,11 @@
   --color-ok: #15803d;
   --color-ok-soft: #f0fdf4;
 
+  /* Alias semánticos para utilidades estándar */
+  --color-foreground: var(--color-ink);
+  --color-border: var(--color-line);
+  --color-primary-foreground: #ffffff;
+
   --radius-lg: 1rem;
 }
 

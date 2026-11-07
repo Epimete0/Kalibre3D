@@ -246,7 +246,7 @@ export function QuoteCalculator({
       <div className="lg:col-span-7 space-y-4">
         <Card className="p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-zinc-100">
+            <h2 className="text-base font-semibold text-ink">
               1. Parámetros de impresión
             </h2>
             <Badge tone="neutral">En vivo</Badge>
@@ -279,7 +279,7 @@ export function QuoteCalculator({
 
           {/* Selección táctil de material */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-zinc-300">
+            <label className="block text-sm font-medium text-ink">
               Material
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -293,23 +293,23 @@ export function QuoteCalculator({
                     onClick={() => setMaterial(mat)}
                     className={`min-h-11 rounded-xl border px-2.5 py-2 text-center transition ${
                       selected
-                        ? "border-amber-400 bg-amber-500/15 text-amber-200 font-semibold"
-                        : "border-zinc-800 bg-zinc-900/70 text-zinc-300 hover:border-zinc-700"
+                        ? "border-primary bg-primary-soft text-primary-ink font-semibold"
+                        : "border-line bg-raised text-ink hover:border-line-strong hover:bg-canvas"
                     }`}
                   >
                     <div className="text-xs">{MATERIAL_LABEL[mat]}</div>
-                    <div className="text-[10px] text-zinc-400">
+                    <div className="text-[10px] text-muted">
                       {formatMoney(Math.round(info.costPerGram), currency)}/g
                     </div>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] text-muted">
               {currentMaterialRate.activeSpoolsCount > 0 ? (
                 <>
                   Promedio real de{" "}
-                  <span className="text-zinc-200 font-medium">
+                  <span className="text-ink font-medium">
                     {currentMaterialRate.activeSpoolsCount} bobina(s) activa(s)
                   </span>{" "}
                   de {MATERIAL_LABEL[material]} ({currentMaterialRate.totalRemainingGrams} g disponibles).
@@ -323,7 +323,7 @@ export function QuoteCalculator({
           </div>
 
           {/* Gramos y Minutos */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Peso de la pieza (g)">
               <input
                 type="number"
@@ -348,7 +348,7 @@ export function QuoteCalculator({
 
           {/* Atajos de tiempo */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-zinc-400 mr-1">Tiempo rápido:</span>
+            <span className="text-[11px] text-muted mr-1">Tiempo rápido:</span>
             {[30, 45, 60, 90, 120, 180, 240].map((mins) => (
               <button
                 key={mins}
@@ -356,8 +356,8 @@ export function QuoteCalculator({
                 onClick={() => setPrintMinutes(String(mins))}
                 className={`min-h-9 px-2.5 rounded-lg text-xs border transition ${
                   parsedMinutes === mins
-                    ? "border-amber-400/60 bg-amber-500/15 text-amber-200 font-medium"
-                    : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700"
+                    ? "border-primary bg-primary-soft text-primary-ink font-semibold"
+                    : "border-line bg-raised text-ink hover:border-line-strong hover:bg-canvas"
                 }`}
               >
                 {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
@@ -368,10 +368,10 @@ export function QuoteCalculator({
           {/* Colores y Purga */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-zinc-300">
+              <label className="block text-sm font-medium text-ink">
                 Cantidad de colores (AMS / cambio)
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map((c) => (
                   <button
                     key={c}
@@ -379,8 +379,8 @@ export function QuoteCalculator({
                     onClick={() => handleColorsSelect(c)}
                     className={`min-h-11 rounded-xl border text-xs font-medium transition ${
                       parsedColors === c
-                        ? "border-amber-400 bg-amber-500/15 text-amber-200"
-                        : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700"
+                        ? "border-primary bg-primary-soft text-primary-ink font-semibold"
+                        : "border-line bg-raised text-ink hover:border-line-strong hover:bg-canvas"
                     }`}
                   >
                     {c} {c === 1 ? "color" : "colores"}
@@ -410,7 +410,7 @@ export function QuoteCalculator({
           </div>
 
           {/* Embalaje y Cantidad */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <Field label={`Embalaje unitario (${currency})`}>
               <input
                 type="number"
@@ -436,8 +436,8 @@ export function QuoteCalculator({
 
         {/* Tarjeta 2: Margen objetivo y ajuste de precio */}
         <Card className="p-4 sm:p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-100">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-ink">
               2. Margen objetivo y precio comercial
             </h2>
             <Badge tone="accent">Margen {marginTarget}%</Badge>
@@ -455,8 +455,8 @@ export function QuoteCalculator({
                   }}
                   className={`min-h-10 px-3 rounded-xl border text-xs font-medium transition ${
                     marginTarget === m && customUnitPriceInput === ""
-                      ? "border-amber-400 bg-amber-500/15 text-amber-200"
-                      : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700"
+                      ? "border-primary bg-primary-soft text-primary-ink font-semibold"
+                      : "border-line bg-raised text-ink hover:border-line-strong hover:bg-canvas"
                   }`}
                 >
                   {m}%
@@ -490,7 +490,7 @@ export function QuoteCalculator({
                 <button
                   type="button"
                   onClick={() => setCustomUnitPriceInput("")}
-                  className="min-h-11 rounded-xl border border-zinc-700 bg-zinc-800/70 px-3 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+                  className="min-h-11 rounded-xl border border-line bg-raised px-3 text-xs font-medium text-ink hover:bg-canvas"
                 >
                   Volver al precio sugerido ({formatMoney(suggestedDirectMinor, currency)})
                 </button>
@@ -502,9 +502,9 @@ export function QuoteCalculator({
 
       {/* Columna derecha: Desglose en vivo y acciones en 1 toque */}
       <div className="lg:col-span-5 space-y-4">
-        <Card className="p-4 sm:p-5 space-y-4 border-amber-500/30 bg-zinc-900/90">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-100">
+        <Card className="p-4 sm:p-5 space-y-4 border-primary/35">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-ink">
               Resultado de la cotización
             </h2>
             <Badge tone={effectiveMarginPct >= 50 ? "ok" : effectiveMarginPct >= 25 ? "warn" : "danger"}>
@@ -513,30 +513,30 @@ export function QuoteCalculator({
           </div>
 
           {/* Desglose de costo unitario */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3.5 space-y-2 text-xs">
-            <div className="flex justify-between text-zinc-400">
+          <div className="rounded-xl border border-line bg-raised p-3.5 space-y-2 text-xs">
+            <div className="flex justify-between gap-2 text-muted">
               <span>
                 Filamento ({costBreakdown.totalGrams} g de {MATERIAL_LABEL[material]})
               </span>
-              <span className="text-zinc-200 font-medium">
+              <span className="text-ink font-medium tabular-nums">
                 {formatMoney(costBreakdown.materialCost, currency)}
               </span>
             </div>
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between gap-2 text-muted">
               <span>Electricidad ({parsedMinutes} min)</span>
-              <span className="text-zinc-200 font-medium">
+              <span className="text-ink font-medium tabular-nums">
                 {formatMoney(costBreakdown.electricityCost, currency)}
               </span>
             </div>
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between gap-2 text-muted">
               <span>Embalaje unitario</span>
-              <span className="text-zinc-200 font-medium">
+              <span className="text-ink font-medium tabular-nums">
                 {formatMoney(costBreakdown.packagingCost, currency)}
               </span>
             </div>
-            <div className="border-t border-zinc-800 pt-2 flex justify-between text-sm font-semibold">
-              <span className="text-zinc-200">Costo total unitario</span>
-              <span className="text-zinc-100">
+            <div className="border-t border-line pt-2 flex justify-between gap-2 text-sm font-semibold">
+              <span className="text-ink">Costo total unitario</span>
+              <span className="text-ink tabular-nums">
                 {formatMoney(costBreakdown.totalCost, currency)}
               </span>
             </div>
@@ -544,45 +544,45 @@ export function QuoteCalculator({
 
           {/* Precios sugeridos: Directo vs Mercado Libre */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1">
-              <div className="text-[11px] uppercase tracking-wider text-emerald-300 font-semibold">
+            <div className="rounded-xl border border-ok/30 bg-ok-soft p-3.5 space-y-1">
+              <div className="text-[11px] uppercase tracking-wider text-ok font-semibold">
                 Venta directa
               </div>
-              <div className="text-xl font-bold text-zinc-50">
+              <div className="text-xl font-bold text-ink tabular-nums">
                 {formatMoney(activeUnitPriceMinor, currency)}
               </div>
-              <div className="text-xs text-emerald-200/90">
+              <div className="text-xs text-muted">
                 Ganancia:{" "}
-                <span className="font-semibold">
+                <span className="font-semibold text-ok tabular-nums">
                   {formatMoney(unitProfitDirect, currency)}
                 </span>{" "}
                 / ud.
               </div>
             </div>
 
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-1">
-              <div className="text-[11px] uppercase tracking-wider text-amber-300 font-semibold">
+            <div className="rounded-xl border border-warn/30 bg-warn-soft p-3.5 space-y-1">
+              <div className="text-[11px] uppercase tracking-wider text-warn font-semibold">
                 Mercado Libre ({mlCommissionPercent}%)
               </div>
-              <div className="text-xl font-bold text-zinc-50">
+              <div className="text-xl font-bold text-ink tabular-nums">
                 {formatMoney(suggestedMlMinor, currency)}
               </div>
-              <div className="text-xs text-amber-200/90">
+              <div className="text-xs text-muted">
                 Conserva neto tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
               </div>
             </div>
           </div>
 
           {parsedQty > 1 && (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 flex items-center justify-between text-xs">
-              <span className="text-zinc-300">
-                Total por <strong>{parsedQty} unidades</strong> (venta directa):
+            <div className="rounded-xl border border-line bg-raised p-3 flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted">
+                Total por <strong className="text-ink">{parsedQty} unidades</strong> (venta directa):
               </span>
-              <div className="text-right">
-                <div className="text-sm font-bold text-zinc-100">
+              <div className="text-right shrink-0">
+                <div className="text-sm font-bold text-ink tabular-nums">
                   {formatMoney(totalOrderMinor, currency)}
                 </div>
-                <div className="text-[11px] text-emerald-400">
+                <div className="text-[11px] text-ok font-medium tabular-nums">
                   Ganancia total: {formatMoney(totalProfitMinor, currency)}
                 </div>
               </div>
@@ -593,8 +593,8 @@ export function QuoteCalculator({
             <div
               className={`rounded-xl border p-3 text-xs ${
                 feedback.tone === "ok"
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                  : "border-rose-500/40 bg-rose-500/10 text-rose-200"
+                  ? "border-ok/35 bg-ok-soft text-ok"
+                  : "border-danger/35 bg-danger-soft text-danger"
               }`}
             >
               <p>{feedback.message}</p>
@@ -615,7 +615,7 @@ export function QuoteCalculator({
               type="button"
               disabled={isPending}
               onClick={() => setShowOrderPanel((prev) => !prev)}
-              className="w-full min-h-12 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-sm px-4 py-2.5 transition disabled:opacity-50"
+              className="w-full min-h-12 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-4 py-2.5 transition disabled:opacity-50"
             >
               {showOrderPanel
                 ? "Ocultar datos del pedido cotizado"
@@ -627,7 +627,7 @@ export function QuoteCalculator({
                 type="button"
                 disabled={isPending}
                 onClick={handleSaveToCatalog}
-                className="w-full min-h-11 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium text-sm px-4 py-2.5 transition disabled:opacity-50"
+                className="w-full min-h-11 rounded-xl border border-line bg-raised hover:bg-canvas text-ink font-medium text-sm px-4 py-2.5 transition disabled:opacity-50"
               >
                 {isPending ? "Guardando…" : "2. Guardar como pieza en el catálogo"}
               </button>
@@ -638,9 +638,9 @@ export function QuoteCalculator({
           {showOrderPanel && (
             <form
               onSubmit={handleCreateQuotedOrder}
-              className="mt-3 pt-3 border-t border-zinc-800 space-y-3"
+              className="mt-3 pt-3 border-t border-line space-y-3"
             >
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-primary">
                 Datos del pedido cotizado
               </h3>
 
@@ -719,7 +719,7 @@ export function QuoteCalculator({
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm px-4 py-2.5 transition disabled:opacity-50"
+                className="w-full min-h-11 rounded-xl bg-ok hover:opacity-90 text-white font-semibold text-sm px-4 py-2.5 transition disabled:opacity-50"
               >
                 {isPending
                   ? "Guardando…"

@@ -127,8 +127,8 @@ export function CreateProductBar({
       </div>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-12">
-          <div className="sm:col-span-5">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="sm:col-span-2 lg:col-span-5">
             <Field label="Nombre de la pieza" htmlFor={nameId}>
               <input
                 id={nameId}
@@ -141,7 +141,7 @@ export function CreateProductBar({
             </Field>
           </div>
 
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-1 lg:col-span-3">
             <Field label={`Precio venta (${currency})`} htmlFor={salePriceId}>
               <input
                 id={salePriceId}
@@ -157,7 +157,7 @@ export function CreateProductBar({
             </Field>
           </div>
 
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-1 lg:col-span-2">
             <Field label="Precio ML (opcional)" htmlFor={mlPriceId}>
               <input
                 id={mlPriceId}
@@ -172,7 +172,7 @@ export function CreateProductBar({
             </Field>
           </div>
 
-          <div className="sm:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-2">
             <button type="submit" disabled={pending || !name.trim() || !salePrice} className={`${primaryBtn} w-full`}>
               {pending ? "…" : "Agregar"}
             </button>
@@ -583,11 +583,11 @@ export function ProductList({
   return (
     <Card className="mt-6 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setFilter("active")}
-            className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               filter === "active" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
             }`}
           >
@@ -596,7 +596,7 @@ export function ProductList({
           <button
             type="button"
             onClick={() => setFilter("inactive")}
-            className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               filter === "inactive" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
             }`}
           >
@@ -605,7 +605,7 @@ export function ProductList({
           <button
             type="button"
             onClick={() => setFilter("all")}
-            className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               filter === "all" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
             }`}
           >
@@ -618,12 +618,12 @@ export function ProductList({
           placeholder="Buscar pieza…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className={`${inputClass} max-w-xs`}
+          className={`${inputClass} sm:max-w-xs`}
         />
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[680px] text-left border-collapse">
           <thead>
             <tr className="border-b border-line text-xs font-semibold text-muted">
               <th className="p-3">Pieza y fabricación</th>

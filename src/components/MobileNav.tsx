@@ -200,7 +200,7 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
         aria-label="Navegación principal"
         className={`fixed inset-x-0 bottom-0 z-20 grid ${
           totalCols === 5 ? "grid-cols-5" : "grid-cols-4"
-        } border-t border-line bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(67,17,38,0.1)] backdrop-blur-xl lg:hidden`}
+        } border-t border-line bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden`}
       >
         {mainItems.map((item) => {
           const active =

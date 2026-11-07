@@ -16,7 +16,7 @@ export default async function QuotePage() {
           title="Cotizador de piezas"
           description="Cálculo de costos de impresión 3D, márgenes y precios sugeridos."
         />
-        <Card className="p-5 text-sm text-zinc-300">
+        <Card className="p-5 text-sm text-muted">
           Tu perfil de solo lectura no tiene acceso al cotizador de costos y márgenes del taller.
         </Card>
       </div>

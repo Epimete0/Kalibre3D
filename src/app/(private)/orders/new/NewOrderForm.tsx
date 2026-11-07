@@ -649,26 +649,26 @@ export function NewOrderForm({
         )}
       </Card>
 
-      {/* 7. Barra Inferior Fija para Móvil y Escritorio */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line p-3 sm:p-4 shadow-xl">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
-          <div>
+      {/* 7. Barra Inferior Pegajosa para Móvil y Escritorio (sin pisar MobileNav ni Sidebar) */}
+      <div className="sticky bottom-20 lg:bottom-4 z-10 rounded-2xl bg-surface/95 backdrop-blur-md border border-line p-3 sm:p-4 shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
             <span className="text-[11px] uppercase tracking-wider text-muted block">
               {isML ? "Neto ML a recibir" : "Total a cobrar"}
             </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl sm:text-2xl font-bold text-ink">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-xl sm:text-2xl font-bold tabular-nums text-ink">
                 {formatMoney(expectedReceivable, settings.currency)}
               </span>
               {isML && (
-                <span className="text-xs text-muted line-through">
+                <span className="text-xs text-muted line-through tabular-nums">
                   {formatMoney(total, settings.currency)}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <Link
               href="/dashboard"
               className="px-3 py-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
@@ -678,7 +678,7 @@ export function NewOrderForm({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-5 sm:px-6 text-sm font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60"
             >
               {pending ? "Guardando…" : kind === "QUICK_SALE" ? "Guardar venta" : "Crear pedido"}
             </button>

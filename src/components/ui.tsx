@@ -16,14 +16,14 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-start justify-between gap-4 sm:items-end">
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
       <div className="min-w-0">
-        <h1 className="text-3xl tracking-[-0.03em] text-ink">{title}</h1>
+        <h1 className="text-2xl sm:text-3xl tracking-[-0.03em] text-ink">{title}</h1>
         {description ? (
           <p className="mt-1 max-w-xl text-sm text-muted">{description}</p>
         ) : null}
       </div>
-      {children ? <div className="flex flex-wrap items-center justify-end gap-2">{children}</div> : null}
+      {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
     </div>
   );
 }
@@ -39,7 +39,7 @@ export function Card({
   return (
     <div
       {...rest}
-      className={`rounded-[var(--radius-lg)] border border-line/90 bg-surface shadow-[0_8px_22px_rgba(91,37,56,0.032)] ${className}`}
+      className={`rounded-[var(--radius-lg)] border border-line/90 bg-surface shadow-[0_8px_22px_rgba(15,23,42,0.035)] ${className}`}
     >
       {children}
     </div>
@@ -82,7 +82,7 @@ type LinkButtonProps = {
 export function LinkButton({ href, variant = "primary", children }: LinkButtonProps) {
   const styles =
     variant === "primary"
-      ? "bg-primary text-white hover:bg-primary-hover shadow-[0_10px_22px_rgba(107,31,64,0.16)]"
+      ? "bg-primary text-white hover:bg-primary-hover shadow-[0_10px_22px_rgba(217,83,30,0.2)]"
       : "border border-line bg-raised text-ink hover:bg-canvas";
   return (
     <Link
@@ -114,11 +114,11 @@ export function Badge({
     ok: "bg-ok-soft text-ok border-ok/20",
     warn: "bg-warn-soft text-warn border-warn/20",
     danger: "bg-danger-soft text-danger border-danger/20",
-    accent: "bg-accent-soft text-[#8a6d24] border-accent/30",
+    accent: "bg-accent-soft text-accent border-accent/30",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${tones[tone]}`}
     >
       {children}
     </span>

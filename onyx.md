@@ -6,6 +6,26 @@
 
 ---
 
+## Despliegue en vivo (`kalibre3d.vercel.app`), Conexión Supabase/Vercel y Pulido Responsivo — 2026-11-08
+
+- **Despliegue en producción y variables de entorno de la integración Vercel ↔ Supabase:**
+  - `src/lib/prisma.ts`: soporte para `DATABASE_URL ?? POSTGRES_PRISMA_URL ?? POSTGRES_URL`.
+  - `src/lib/supabase/client.ts` y `src/lib/supabase/server.ts`: soporte para `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+  - `src/lib/postgres-tls.ts`: compatibilidad con `sslmode=require` (formato inyectado por la integración oficial de Supabase en Vercel) cuando no se define `SUPABASE_DB_CA_CERT`, conservando verificación estricta cuando se provee certificado CA o `verify-full`.
+  - Se aplicaron las 4 migraciones iniciales en el proyecto Supabase de producción (`umgxxtpekcjknhclojzo`) mediante `scripts/production/20261108-02-apply-initial-schema.sql`, quedando activo el primer taller real (**Surko**).
+- **Experiencia de registro y autenticación (`AuthForm.tsx`, `PasswordForms.tsx`, `CreateCenterForm.tsx`):**
+  - Botón interactivo para mostrar/ocultar contraseña (`aria-label` y `aria-pressed`) en inicio de sesión, registro y cambio/restablecimiento de contraseña.
+  - Aclaración explícita en el campo `"Tu nombre"` (`"Tu nombre y apellido personal. El nombre de tu taller lo configurarás en el siguiente paso."`) y ejemplo `"Ej: Taller Fusión 3D"` al crear el taller.
+- **Auditoría y corrección responsiva y de temas (`dashboard`, `quote`, `spools`, `products`, `orders/new`, `ui.tsx`):**
+  - `/dashboard`: se rediseñaron las 4 tarjetas de carga operativa (`Cotizado`, `Confirmado`, `Imprimiendo`, `Listo`) en `grid-cols-2 lg:grid-cols-4` eliminando la duplicación lateral texto+badge que desbordaba en pantallas intermedias, y se ajustaron las tarjetas financieras mensuales a `grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`.
+  - `/quote` (`QuoteCalculator.tsx` y `quote/page.tsx`): se reemplazaron todas las clases oscuras fijas (`zinc-*`) por tokens semánticos del tema (`text-ink`, `text-muted`, `bg-raised`, `border-line`, `bg-primary-soft`) para garantizar contraste completo tanto en modo claro como oscuro.
+  - `/spools` (`spools/page.tsx` y `spools/[id]/page.tsx`) y `globals.css`: se normalizaron los tokens de borde y texto activo en filtros y se añadieron alias semánticos en `@theme`.
+  - `/products` (`ProductControls.tsx`): se corrigió la grilla de creación rápida (`sm:grid-cols-2 lg:grid-cols-12` con `lg:col-span-2` para el botón `"Agregar"`) y el desplazamiento horizontal limpio de la tabla en móvil.
+  - `/orders/new` (`NewOrderForm.tsx`): la barra inferior de cobro pasó a ser `sticky bottom-20 lg:bottom-4` dentro del formulario para no superponerse con `MobileNav` ni con `Sidebar`.
+  - `src/components/ui.tsx` y `src/components/MobileNav.tsx`: se reemplazó el color heredado `#8a6d24` del `Badge` `accent` por `text-accent` y se limpiaron las sombras vino/rosa residuales.
+
+---
+
 ## Definición de marca comercial: Kalibre (Kalibre3D) y Paquetes SQL de Producción — 2026-11-08
 
 - **Investigación de nombres y verificación de colisiones:** Se verificaron múltiples opciones vía búsqueda web descartando colisiones reales en herramientas 3D (`Trama 3D`, `Estratos 3D`, `Brami3D`, `Infill: 3D Print Cost Calc`, etc.).

@@ -21,7 +21,7 @@ export default async function SpoolDetailPage({ params }: { params: Params }) {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-24 sm:pb-10">
       <div className="flex items-center justify-between gap-2">
-        <Link href="/spools" className="text-xs font-semibold text-muted hover:text-foreground">
+        <Link href="/spools" className="text-xs font-semibold text-muted hover:text-ink">
           ← Volver a bobinas
         </Link>
         <span className="text-xs text-muted">Comprada el {spool.purchasedOn}</span>
@@ -57,7 +57,7 @@ export default async function SpoolDetailPage({ params }: { params: Params }) {
         {spool.movements.length === 0 ? (
           <p className="text-sm text-muted">Sin movimientos registrados.</p>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-line">
             {spool.movements.map((mov) => (
               <div key={mov.id} className="py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">

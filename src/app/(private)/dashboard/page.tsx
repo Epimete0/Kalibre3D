@@ -233,29 +233,34 @@ export default async function DashboardPage({
       )}
 
       {/* Carga operativa por etapa del taller */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(
           [
-            { status: "QUOTED" as const, count: statusCounts.QUOTED },
-            { status: "CONFIRMED" as const, count: statusCounts.CONFIRMED },
-            { status: "PRINTING" as const, count: statusCounts.PRINTING },
-            { status: "READY" as const, count: statusCounts.READY },
+            { status: "QUOTED" as const, count: statusCounts.QUOTED, hint: "Por confirmar" },
+            { status: "CONFIRMED" as const, count: statusCounts.CONFIRMED, hint: "En cola" },
+            { status: "PRINTING" as const, count: statusCounts.PRINTING, hint: "En máquina" },
+            { status: "READY" as const, count: statusCounts.READY, hint: "Para entrega" },
           ] as const
         ).map((item) => (
           <Link
             key={item.status}
             href={`/orders?status=${item.status}`}
-            className="rounded-2xl border border-line bg-surface p-3.5 hover:border-primary/40 transition-colors flex items-center justify-between gap-2"
+            className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 sm:p-4 hover:border-primary/40 transition-colors flex flex-col justify-between gap-2.5"
           >
-            <div>
-              <span className="block text-xs font-semibold text-muted">
-                {STATUS_LABEL[item.status]}
-              </span>
-              <span className="mt-0.5 block text-xl font-bold text-ink">
-                {item.count}
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <Badge tone={statusTone(item.status)}>{STATUS_LABEL[item.status]}</Badge>
+              <span className="truncate text-[11px] font-medium text-faint">
+                {item.hint}
               </span>
             </div>
-            <Badge tone={statusTone(item.status)}>{STATUS_LABEL[item.status]}</Badge>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-2xl sm:text-3xl font-bold tabular-nums text-ink">
+                {item.count}
+              </span>
+              <span className="text-xs font-semibold text-primary">
+                Ver →
+              </span>
+            </div>
           </Link>
         ))}
       </div>
@@ -264,7 +269,7 @@ export default async function DashboardPage({
       {isManager && moneyView && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-ink">
                 Resumen del mes ({moneyView.month})
               </h2>
@@ -276,50 +281,50 @@ export default async function DashboardPage({
               </Link>
             </div>
 
-            <div className="inline-flex items-center gap-1 rounded-xl border border-line bg-surface p-1">
+            <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
               <Link
                 href={`/dashboard?month=${moneyView.previousMonth}`}
-                className="min-h-9 px-2.5 inline-flex items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+                className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
                 ← {moneyView.previousMonth}
               </Link>
-              <span className="px-2.5 text-xs font-bold text-ink">
+              <span className="px-2.5 shrink-0 text-xs font-bold text-ink">
                 {moneyView.month}
               </span>
               <Link
                 href={`/dashboard?month=${moneyView.nextMonth}`}
-                className="min-h-9 px-2.5 inline-flex items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+                className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
                 {moneyView.nextMonth} →
               </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <Card className="p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+            <Card className="p-4 min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                 Ingresos ({moneyView.month})
               </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold text-ok">
+              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
                 {formatMoney(moneyView.summary.income, currency)}
               </span>
             </Card>
 
-            <Card className="p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+            <Card className="p-4 min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                 Gastos ({moneyView.month})
               </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold text-danger">
+              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-danger truncate">
                 {formatMoney(moneyView.summary.expense, currency)}
               </span>
             </Card>
 
-            <Card className="p-4 border-primary/25">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+            <Card className="p-4 min-w-0 border-primary/25">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                 Ganancia neta
               </span>
               <span
-                className={`mt-1 block text-xl sm:text-2xl font-bold ${
+                className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
                   moneyView.summary.profit >= 0 ? "text-ink" : "text-danger"
                 }`}
               >
@@ -327,11 +332,11 @@ export default async function DashboardPage({
               </span>
             </Card>
 
-            <Card className="p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+            <Card className="p-4 min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                 Por cobrar (pedidos activos)
               </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold text-warn">
+              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-warn truncate">
                 {formatMoney(pendingReceivableTotal ?? 0, currency)}
               </span>
             </Card>

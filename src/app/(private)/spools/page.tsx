@@ -86,13 +86,13 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
 
       {/* Filtros táctiles */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
           <Link
             href={`/spools?material=ALL${includeInactive ? "&inactive=1" : ""}${onlyLow ? "&low=1" : ""}`}
-            className={`min-h-[36px] inline-flex items-center rounded-full px-3 text-xs font-semibold ${
+            className={`min-h-[36px] shrink-0 inline-flex items-center rounded-full px-3 text-xs font-semibold ${
               materialFilter === "ALL"
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-surface text-muted hover:text-foreground"
+                ? "bg-primary text-white"
+                : "border border-line bg-surface text-muted hover:text-ink"
             }`}
           >
             Todos
@@ -101,10 +101,10 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
             <Link
               key={mat}
               href={`/spools?material=${mat}${includeInactive ? "&inactive=1" : ""}${onlyLow ? "&low=1" : ""}`}
-              className={`min-h-[36px] inline-flex items-center rounded-full px-3 text-xs font-semibold ${
+              className={`min-h-[36px] shrink-0 inline-flex items-center rounded-full px-3 text-xs font-semibold ${
                 materialFilter === mat
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border bg-surface text-muted hover:text-foreground"
+                  ? "bg-primary text-white"
+                  : "border border-line bg-surface text-muted hover:text-ink"
               }`}
             >
               {MATERIAL_LABEL[mat]}
@@ -112,11 +112,11 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
           ))}
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <Link
             href={`/spools?material=${materialFilter}&low=${onlyLow ? "0" : "1"}${includeInactive ? "&inactive=1" : ""}`}
             className={`min-h-[36px] inline-flex items-center rounded-lg border px-2.5 font-medium ${
-              onlyLow ? "border-amber-500/50 bg-amber-500/10 text-amber-700" : "border-border text-muted hover:text-foreground"
+              onlyLow ? "border-warn/40 bg-warn-soft text-warn" : "border-line text-muted hover:text-ink"
             }`}
           >
             Solo poco filamento
@@ -124,7 +124,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
           <Link
             href={`/spools?material=${materialFilter}&inactive=${includeInactive ? "0" : "1"}${onlyLow ? "&low=1" : ""}`}
             className={`min-h-[36px] inline-flex items-center rounded-lg border px-2.5 font-medium ${
-              includeInactive ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted hover:text-foreground"
+              includeInactive ? "border-primary/40 bg-primary-soft text-primary-ink" : "border-line text-muted hover:text-ink"
             }`}
           >
             {includeInactive ? "Ocultar inactivas" : "Ver inactivas"}
@@ -135,7 +135,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
       {/* Lista de bobinas */}
       {view.spools.length === 0 ? (
         <Card className="p-8 text-center space-y-2">
-          <p className="text-sm font-medium text-foreground">No hay bobinas para este filtro.</p>
+          <p className="text-sm font-medium text-ink">No hay bobinas para este filtro.</p>
           <p className="text-xs text-muted">
             Registra tus bobinas para controlar cuántos gramos quedan y calcular el costo real por material.
           </p>
