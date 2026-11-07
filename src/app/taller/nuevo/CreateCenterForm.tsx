@@ -14,7 +14,7 @@ export function CreateCenterForm({ centerId }: { centerId: string }) {
       <input type="hidden" name="centerId" value={centerId} />
       {state.error ? <p role="alert" className="rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger">{state.error}</p> : null}
       <Field label="Nombre del taller" htmlFor="center-name" required hint="Es el nombre que verá tu equipo. Puedes cambiarlo después.">
-        <input id="center-name" name="name" className={inputClass} autoComplete="organization" maxLength={CENTER_NAME_MAX} placeholder="Ej: Estética Aurora" required autoFocus />
+        <input id="center-name" name="name" className={inputClass} autoComplete="organization" maxLength={CENTER_NAME_MAX} placeholder="Ej: Taller Fusión 3D" required autoFocus />
       </Field>
       <Field label="Zona horaria" htmlFor="center-timezone" required hint="Define el día y la hora con que se registran tus pedidos y movimientos.">
         <select id="center-timezone" name="timeZone" className={inputClass} defaultValue={DEFAULT_CENTER_TIME_ZONE} required>
