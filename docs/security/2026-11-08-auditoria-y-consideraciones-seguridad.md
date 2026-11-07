@@ -89,9 +89,38 @@
 2. **Certificado TLS de PostgreSQL (`SUPABASE_DB_CA_CERT`):**
    - Actualmente `src/lib/postgres-tls.ts` permite `sslmode=require` (cifrado TLS activo sin fijación de CA local) para funcionar con las variables automáticas de la integración Vercel ↔ Supabase (`POSTGRES_PRISMA_URL`).
    - Para activar `sslmode=verify-full` estricto contra MITM en producción, basta con cargar el certificado raíz de Supabase en la variable de entorno `SUPABASE_DB_CA_CERT` en Vercel; `createPostgresTlsConfig` activará automáticamente `rejectUnauthorized: true` con esa CA.
-3. **Comandos de verificación al retomar:**
-   ```bash
-   npm test -- --run
-   npm run lint
-   npm run build
-   ```
+---
+
+## 4. Segunda Pasada de Auditoría OWASP Top 10 (2026-11-08)
+
+Revisión profunda línea por línea de los servicios de dominio (`order-service.ts`, `money-service.ts`, `customer-service.ts`, `product-service.ts`, `spool-service.ts`), enlaces dinámicos (`href`) y dependencias de producción (`npm audit --omit=dev`).
+
+### [OWASP-A06 / VULN-004] Dependencia `next@16.3.3` con avisos de seguridad publicados (**High**)
+- **Ubicación:** `package.json` (`next: "16.3.3"`)
+- **Problema:** `npm audit --omit=dev` reporta avisos en `next` (`16.0.0 - 16.4.0`), incluyendo denegación de servicio en Server Actions (`GHSA-p3m5-59mp-jv5r`) y vulnerabilidades en optimización de imágenes / caché (`GHSA-2464-fhr4-w9xw`, `GHSA-cjq9-62q9-8jv4`).
+- **Remediación:** Actualizar `next` y `eslint-config-next` a `16.4.5` (o superior estable de la rama 16.x) y verificar `npm test` + `npm run build`.
+
+### [OWASP-A04 / VULN-005] Límites superiores de enteros (`INT32`) y validación de campos de cliente al vuelo en `createOrder` (**Medium**)
+- **Ubicación:** `src/lib/order-service.ts` (`createOrderSchema`, `orderItemInputSchema`, `registerPaymentSchema`, `returnOrderSchema`), `src/lib/money-service.ts` (`recordManualMoneySchema`) y `src/lib/customer-service.ts` (`cleanInstagramHandle`).
+- **Problema:**
+  1. En `createOrderSchema`, los campos `newCustomerName`, `newCustomerPhone` y `newCustomerInstagram` no tienen `.max(...)` en Zod (a diferencia de `createCustomerSchema`, que limita a 100, 40 y 50 caracteres respectivamente). Además, `cleanInstagramHandle` solo quita `@` inicial pero no restringe caracteres de ruta (`/` o `?`) que luego se interpolan en `https://instagram.com/${c.instagram}`.
+  2. Los campos numéricos `qty`, `unitPrice`, `discount`, `amount` y `refundAmount` validan `.int().min(...)` pero no definen un `.max(...)` compatible con `INT4` de PostgreSQL (`2.147.483.647`), permitiendo que un payload malicioso provoque un error SQL `22003` (integer out of range) al multiplicar `qty * unitPrice`.
+- **Remediación:**
+  - Añadir límites superiores razonables en Zod (`qty <= 10_000`, montos/precios `<= 1_000_000_000`) y validar que `orderTotal <= 1_000_000_000`.
+  - Aplicar en `createOrderSchema` las mismas cotas de longitud que en `createCustomerSchema` (`newCustomerName` máx. 100, `newCustomerPhone` máx. 40, `newCustomerInstagram` máx. 50) y normalizar `instagram` aceptando solo caracteres válidos de usuario (`^[a-zA-Z0-9._]{1,50}$`).
+
+### [OWASP-A04 / VULN-006] Idempotencia en reintentos de `returnOrder` (**Medium**)
+- **Ubicación:** `src/lib/order-service.ts:474-565`
+- **Problema:** `returnOrder` recibe `operationId` pero verifica `order.version !== data.expectedVersion` antes de comprobar si la transacción de reembolso `(centerId, operationId)` ya fue registrada. Si el cliente reintenta la misma operación tras un corte de red, recibe error de conflicto de versión en vez de respuesta idempotente.
+- **Remediación:** Consultar primero `tx.moneyTransaction.findUnique({ where: { centerId_operationId } })` dentro de `returnOrder` (igual que en `registerPayment`) y devolver el estado actual si la operación ya se aplicó.
+
+---
+
+## 5. Comandos de Verificación al Retomar
+
+```bash
+npm test -- --run
+npm run lint
+npm run build
+```
+

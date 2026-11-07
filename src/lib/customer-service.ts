@@ -3,10 +3,19 @@ import { DomainError } from "@/lib/action-errors";
 import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const cleanInstagramHandle = (val: string | null | undefined): string | null => {
+const INSTAGRAM_HANDLE_REGEX = /^[a-zA-Z0-9._]+$/;
+
+export const cleanInstagramHandle = (val: string | null | undefined): string | null => {
   if (!val) return null;
   const cleaned = val.trim().replace(/^@+/, "").trim();
-  return cleaned.length > 0 ? cleaned : null;
+  if (cleaned.length === 0) return null;
+  if (cleaned.length > 50) {
+    throw new DomainError("El usuario de Instagram no puede superar los 50 caracteres.");
+  }
+  if (!INSTAGRAM_HANDLE_REGEX.test(cleaned)) {
+    throw new DomainError("El usuario de Instagram solo puede contener letras, números, puntos y guiones bajos.");
+  }
+  return cleaned;
 };
 
 const cleanOptionalString = (val: string | null | undefined, max: number, maxMessage: string): string | null => {

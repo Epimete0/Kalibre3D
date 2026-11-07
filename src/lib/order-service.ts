@@ -9,6 +9,10 @@ import { canTransition, ORDER_STATUSES, type OrderStatus } from "@/lib/order-sta
 import { orderTotal } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
 
+export const MAX_ORDER_QTY = 10_000;
+export const MAX_MONEY_AMOUNT = 1_000_000_000;
+const INSTAGRAM_HANDLE_REGEX = /^[a-zA-Z0-9._]+$/;
+
 const orderItemInputSchema = z.object({
   productId: z.string().uuid().nullable().optional().default(null),
   description: z
@@ -19,17 +23,20 @@ const orderItemInputSchema = z.object({
   qty: z.coerce
     .number({ error: "La cantidad debe ser un número entero mayor a 0." })
     .int("La cantidad debe ser un número entero.")
-    .min(1, "La cantidad debe ser mayor a 0."),
+    .min(1, "La cantidad debe ser mayor a 0.")
+    .max(MAX_ORDER_QTY, "La cantidad por línea no puede superar 10.000 unidades."),
   unitPrice: z.coerce
     .number({ error: "El precio unitario debe ser mayor o igual a 0." })
     .int("El precio unitario debe ser un número entero.")
-    .min(0, "El precio unitario debe ser mayor o igual a 0."),
-  material: z.string().trim().nullable().optional().default(null),
-  grams: z.coerce.number().int().min(0).nullable().optional().default(null),
+    .min(0, "El precio unitario debe ser mayor o igual a 0.")
+    .max(MAX_MONEY_AMOUNT, "El precio unitario supera el máximo permitido."),
+  material: z.string().trim().max(40).nullable().optional().default(null),
+  grams: z.coerce.number().int().min(0).max(500_000).nullable().optional().default(null),
   colorsCount: z.coerce
     .number()
     .int()
     .min(1, "La cantidad de colores debe ser al menos 1.")
+    .max(16, "La cantidad de colores no puede superar 16.")
     .optional()
     .default(1),
 });
@@ -47,9 +54,13 @@ export const createOrderSchema = z.object({
     .enum(["QUOTED", "CONFIRMED", "PRINTING", "READY", "DELIVERED", "CANCELED", "RETURNED"])
     .optional(),
   customerId: z.string().uuid().nullable().optional().default(null),
-  newCustomerName: z.string().trim().optional(),
-  newCustomerPhone: z.string().trim().optional(),
-  newCustomerInstagram: z.string().trim().optional(),
+  newCustomerName: z.string().trim().max(100, "El nombre del cliente no puede superar los 100 caracteres.").optional(),
+  newCustomerPhone: z.string().trim().max(40, "El teléfono no puede superar los 40 caracteres.").optional(),
+  newCustomerInstagram: z
+    .string()
+    .trim()
+    .max(55, "El usuario de Instagram no puede superar los 50 caracteres.")
+    .optional(),
   dueDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha de entrega debe tener formato AAAA-MM-DD.")
@@ -59,25 +70,29 @@ export const createOrderSchema = z.object({
     .number({ error: "El descuento debe ser un número entero mayor o igual a 0." })
     .int("El descuento debe ser un número entero.")
     .min(0, "El descuento debe ser mayor o igual a 0.")
+    .max(MAX_MONEY_AMOUNT, "El descuento supera el máximo permitido.")
     .default(0),
-  mlOrderRef: z.string().trim().nullable().optional().default(null),
+  mlOrderRef: z.string().trim().max(120).nullable().optional().default(null),
   mlCommission: z.coerce
     .number()
     .int()
     .min(0, "La comisión de Mercado Libre debe ser mayor o igual a 0.")
+    .max(MAX_MONEY_AMOUNT, "La comisión supera el máximo permitido.")
     .default(0),
   mlShippingCost: z.coerce
     .number()
     .int()
     .min(0, "El costo de envío de Mercado Libre debe ser mayor o igual a 0.")
+    .max(MAX_MONEY_AMOUNT, "El costo de envío supera el máximo permitido.")
     .default(0),
   notes: z.string().trim().max(1000, "Las notas no pueden superar 1000 caracteres.").nullable().optional().default(null),
   items: z
     .array(orderItemInputSchema)
-    .min(1, "El pedido debe contener al menos una pieza."),
+    .min(1, "El pedido debe contener al menos una pieza.")
+    .max(100, "El pedido no puede contener más de 100 líneas."),
   initialPayment: z
     .object({
-      amount: z.coerce.number().int().min(0),
+      amount: z.coerce.number().int().min(0).max(MAX_MONEY_AMOUNT, "El monto supera el máximo permitido."),
       method: z.enum(["TRANSFER", "CASH", "MERCADOPAGO", "MERCADOLIBRE", "OTHER"]),
     })
     .optional(),
@@ -112,6 +127,9 @@ export async function createOrder(input: unknown) {
   }
 
   const total = orderTotal(data.items, data.discount);
+  if (total > MAX_MONEY_AMOUNT) {
+    throw new DomainError("El total del pedido supera el monto máximo permitido.");
+  }
 
   // Determinar estado inicial
   const status =
@@ -131,6 +149,14 @@ export async function createOrder(input: unknown) {
     let finalCustomerId = data.customerId;
     if (!finalCustomerId && data.newCustomerName && data.newCustomerName.trim().length > 0) {
       const cleanInsta = data.newCustomerInstagram?.replace(/^@+/, "").trim() || null;
+      if (cleanInsta) {
+        if (cleanInsta.length > 50) {
+          throw new DomainError("El usuario de Instagram no puede superar los 50 caracteres.");
+        }
+        if (!INSTAGRAM_HANDLE_REGEX.test(cleanInsta)) {
+          throw new DomainError("El usuario de Instagram solo puede contener letras, números, puntos y guiones bajos.");
+        }
+      }
       const createdCustomer = await tx.customer.create({
         data: {
           centerId,
@@ -321,7 +347,8 @@ export const registerPaymentSchema = z.object({
   amount: z.coerce
     .number({ error: "El monto del cobro debe ser mayor a 0." })
     .int("El monto del cobro debe ser un número entero.")
-    .min(1, "El monto del cobro debe ser mayor a 0."),
+    .min(1, "El monto del cobro debe ser mayor a 0.")
+    .max(MAX_MONEY_AMOUNT, "El monto del cobro supera el máximo permitido."),
   method: z.enum(PAYMENT_METHODS, { error: "El método de pago no es válido." }),
   occurredOn: z
     .string()
@@ -460,7 +487,8 @@ export const returnOrderSchema = z.object({
   refundAmount: z.coerce
     .number({ error: "El monto devuelto debe ser mayor a 0." })
     .int("El monto devuelto debe ser un número entero.")
-    .min(1, "El monto devuelto debe ser mayor a 0."),
+    .min(1, "El monto devuelto debe ser mayor a 0.")
+    .max(MAX_MONEY_AMOUNT, "El monto devuelto supera el máximo permitido."),
   method: z.enum(PAYMENT_METHODS, { error: "El método de reembolso no es válido." }),
   occurredOn: z
     .string()
@@ -502,6 +530,20 @@ export async function returnOrder(
     const order = rows[0];
     if (!order) {
       throw new DomainError("El pedido no existe o no pertenece a este taller.");
+    }
+
+    // Revalidar idempotencia dentro del bloqueo antes de verificar expectedVersion
+    const existingRefund = await tx.moneyTransaction?.findUnique?.({
+      where: { centerId_operationId: { centerId, operationId: data.operationId } },
+      select: { id: true },
+    });
+    if (existingRefund) {
+      return {
+        orderId: data.orderId,
+        status: order.status as OrderStatus,
+        version: order.version,
+        transactionId: existingRefund.id,
+      };
     }
 
     if (order.version !== data.expectedVersion) {

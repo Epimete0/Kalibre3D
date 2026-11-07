@@ -25,7 +25,8 @@ export const recordManualMoneySchema = z
     amount: z.coerce
       .number({ error: "El monto debe ser un número entero mayor a 0." })
       .int("El monto debe ser un número entero.")
-      .min(1, "El monto debe ser mayor a 0."),
+      .min(1, "El monto debe ser mayor a 0.")
+      .max(1_000_000_000, "El monto supera el máximo permitido."),
     method: z.enum(PAYMENT_METHODS, {
       error: "El método de pago no es válido.",
     }),
