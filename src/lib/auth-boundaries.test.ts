@@ -28,6 +28,7 @@ const coreServices = [
   "src/lib/money-service.ts",
   "src/lib/order-service.ts",
   "src/lib/product-service.ts",
+  "src/lib/spool-service.ts",
 ];
 
 describe("fronteras de autorización del núcleo", () => {
