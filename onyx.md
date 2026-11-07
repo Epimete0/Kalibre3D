@@ -6,6 +6,17 @@
 
 ---
 
+## Quality gate completo con PostgreSQL real e idempotencia de cobros y devoluciones — 2026-11-08
+
+- **Primera ejecución completa del quality gate tras el despliegue:** fallaba la prueba real `tests/orders-payments-returns.integration.test.ts` (devolución atómica D6). Causa: el commit `bd4497d` agregó en `returnOrder` una revalidación de idempotencia que aceptaba **cualquier** `MoneyTransaction` con el mismo `operationId` (por ejemplo, un cobro) y respondía como si la devolución se hubiera hecho, sin cambiar el pedido.
+- **Corrección (`src/lib/order-service.ts`):** `assertSameMoneyOperation` exige que el movimiento existente sea del mismo tipo, categoría y pedido (`EXPENSE/REFUNDS` para devoluciones, `INCOME/ORDER_PAYMENT` para cobros). Si no, se rechaza con `Esta operación ya se usó para otro movimiento. Recarga la página e intenta nuevamente.` Se aplicó también a `registerPayment`, que devolvía el movimiento de otro pedido si se reutilizaba un `operationId`.
+- **Pruebas:** la prueba real D6 ahora verifica además que reintentar la misma devolución devuelve el mismo `transactionId` sin duplicar el gasto, y que ese `operationId` no se puede reutilizar como cobro; prueba unitaria nueva para `registerPayment` con `operationId` de otro pedido.
+- **Resultado:** `npm run quality:gate` PASSED (332 unitarias, 13 RLS, 3 S1, 1 S3 y 55 de transacciones contra PostgreSQL real).
+- **`.env` con BOM:** el archivo tenía un BOM UTF-8 que impedía a la CLI de Supabase leer la configuración y hacía que el gate creyera que Docker no estaba disponible. Se quitó el BOM sin cambiar ningún valor. Guardar `.env` siempre como UTF-8 **sin** BOM.
+- **Certificado TLS en producción:** `SUPABASE_DB_CA_CERT` cargada en Vercel (Production) y redespliegue `dpl_9kyHQ2qMyYynG6iE2uLeUhf8K5q3`; el panel de Surko carga datos reales, así que la conexión ya verifica el certificado de Supabase (cadena hasta `Supabase Root 2021 CA`). Queda cerrado el pendiente de la entrada anterior.
+
+---
+
 ## Corrección de la landing: ejemplo de costeo y desborde en celular — 2026-11-08
 
 - **Ejemplo de costeo del Pedido #42 (`src/app/page.tsx`):** el texto mostraba "Filamento + Purga (64 g) $750", que en realidad eran solo los 50 g de pieza sin purga. Con `computePieceCost` (64 g × $15/g) el filamento cuesta **$960**, el costo total **$1.105**, la ganancia en venta directa **+$5.395** y en Mercado Libre **+$5.378** (antes $895, +$5.605 y +$5.588).

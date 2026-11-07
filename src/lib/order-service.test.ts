@@ -454,6 +454,9 @@ describe("order-service", () => {
       prisma.moneyTransaction.findUnique.mockResolvedValueOnce({
         id: "tx-existing",
         amount: 5000,
+        type: "INCOME",
+        category: "ORDER_PAYMENT",
+        orderId: ORDER_UUID,
       });
 
       const result = await registerPayment({
@@ -464,6 +467,21 @@ describe("order-service", () => {
       });
 
       expect(result).toEqual({ id: "tx-existing", amount: 5000 });
+      expect(prisma.moneyTransaction.create).not.toHaveBeenCalled();
+    });
+
+    it("rechaza un operationId ya usado en un movimiento de otro pedido", async () => {
+      prisma.moneyTransaction.findUnique.mockResolvedValueOnce({
+        id: "tx-otro",
+        amount: 5000,
+        type: "INCOME",
+        category: "ORDER_PAYMENT",
+        orderId: "00000000-0000-4000-8000-000000000999",
+      });
+
+      await expect(
+        registerPayment({ orderId: ORDER_UUID, operationId: VALID_OP_ID, amount: 5000, method: "TRANSFER" })
+      ).rejects.toThrow("Esta operación ya se usó para otro movimiento");
       expect(prisma.moneyTransaction.create).not.toHaveBeenCalled();
     });
 

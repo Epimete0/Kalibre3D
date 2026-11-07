@@ -359,6 +359,20 @@ export const registerPaymentSchema = z.object({
 
 export type RegisterPaymentInput = z.input<typeof registerPaymentSchema>;
 
+/**
+ * Un operationId repetido solo es un reintento legítimo si apunta al mismo tipo de movimiento del mismo pedido.
+ * Si ya se usó para otra cosa (otro pedido, un cobro en vez de una devolución…), se rechaza en vez de
+ * responder como si la operación se hubiera completado.
+ */
+function assertSameMoneyOperation(
+  existing: { type: string; category: string; orderId: string | null },
+  expected: { type: string; category: string; orderId: string }
+) {
+  if (existing.type !== expected.type || existing.category !== expected.category || existing.orderId !== expected.orderId) {
+    throw new DomainError("Esta operación ya se usó para otro movimiento. Recarga la página e intenta nuevamente.");
+  }
+}
+
 export async function registerPayment(
   input: RegisterPaymentInput
 ): Promise<{ id: string; amount: number }> {
@@ -374,10 +388,11 @@ export async function registerPayment(
   // Idempotencia previa fuera de la transacción si ya existe
   const existingPre = await prisma.moneyTransaction.findUnique({
     where: { centerId_operationId: { centerId, operationId: data.operationId } },
-    select: { id: true, amount: true },
+    select: { id: true, amount: true, type: true, category: true, orderId: true },
   });
   if (existingPre) {
-    return existingPre;
+    assertSameMoneyOperation(existingPre, { type: "INCOME", category: "ORDER_PAYMENT", orderId: data.orderId });
+    return { id: existingPre.id, amount: existingPre.amount };
   }
 
   return await prisma.$transaction(async (tx) => {
@@ -399,10 +414,11 @@ export async function registerPayment(
     // Revalidar idempotencia dentro del bloqueo
     const existingInTx = await tx.moneyTransaction.findUnique({
       where: { centerId_operationId: { centerId, operationId: data.operationId } },
-      select: { id: true, amount: true },
+      select: { id: true, amount: true, type: true, category: true, orderId: true },
     });
     if (existingInTx) {
-      return existingInTx;
+      assertSameMoneyOperation(existingInTx, { type: "INCOME", category: "ORDER_PAYMENT", orderId: data.orderId });
+      return { id: existingInTx.id, amount: existingInTx.amount };
     }
 
     const txRow = await tx.moneyTransaction.create({
@@ -533,11 +549,13 @@ export async function returnOrder(
     }
 
     // Revalidar idempotencia dentro del bloqueo antes de verificar expectedVersion
-    const existingRefund = await tx.moneyTransaction?.findUnique?.({
+    const existingRefund = await tx.moneyTransaction.findUnique({
       where: { centerId_operationId: { centerId, operationId: data.operationId } },
-      select: { id: true },
+      select: { id: true, type: true, category: true, orderId: true },
     });
     if (existingRefund) {
+      // Solo es un reintento si el movimiento existente es la devolución de este mismo pedido.
+      assertSameMoneyOperation(existingRefund, { type: "EXPENSE", category: "REFUNDS", orderId: data.orderId });
       return {
         orderId: data.orderId,
         status: order.status as OrderStatus,

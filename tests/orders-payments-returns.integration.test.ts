@@ -216,17 +216,33 @@ suite("Cobros, anulaciones y devoluciones atómicas (Tarea 1.7) en PostgreSQL", 
     expect(stillDelivered.rows[0].version).toBe(1);
 
     // Ahora ejecutar la devolución válida
-    const returned = await returnOrder({
+    const refundOpId = randomUUID();
+    const returnInput = {
       orderId: order.id,
       expectedVersion: 1,
-      operationId: randomUUID(),
+      operationId: refundOpId,
       refundAmount: 6483,
-      method: "MERCADOLIBRE",
+      method: "MERCADOLIBRE" as const,
       notes: "Devolución comprador ML",
-    });
+    };
+    const returned = await returnOrder(returnInput);
 
     expect(returned.status).toBe("RETURNED");
     expect(returned.version).toBe(2);
+
+    // Reintentar la misma devolución (doble clic o reenvío) devuelve el mismo resultado sin duplicar el gasto.
+    const retried = await returnOrder(returnInput);
+    expect(retried.transactionId).toBe(returned.transactionId);
+    const refundCount = await db.query(
+      'SELECT count(*)::int AS n FROM "MoneyTransaction" WHERE "centerId" = $1 AND "operationId" = $2',
+      [centerA, refundOpId]
+    );
+    expect(refundCount.rows[0].n).toBe(1);
+
+    // El operationId de la devolución no puede reutilizarse como cobro: se rechaza en vez de fingir éxito.
+    await expect(
+      registerPayment({ orderId: order.id, operationId: refundOpId, amount: 1000, method: "CASH" })
+    ).rejects.toThrow("Esta operación ya se usó para otro movimiento");
 
     const afterReturn = await db.query(
       'SELECT status, version, "deliveredAt" FROM "Order" WHERE "centerId" = $1 AND id = $2',
