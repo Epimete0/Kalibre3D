@@ -12,7 +12,11 @@
 - **Decisión de marca aprobada:** **Kalibre** (con K).
   - Hace referencia a la herramienta de medición más representativa de los makers (calibre / pie de rey).
   - La "K" diferencia la marca del software de libros electrónicos (*Calibre*) y le otorga un carácter SaaS moderno, técnico y ágil.
-- **Unificación de interfaz y metadata:** Se actualizó la interfaz visible (landing, sidebar, header móvil, vistas de autenticación, páginas de error, 404, títulos de metadatos y páginas de Términos y Privacidad) pasando de la provisional "Taller 3D" a **Kalibre**.
+- **Unificación de interfaz, identidad visual propia y Landing Page de Kalibre:**
+  - Se reemplazó por completo la paleta provisional heredada de Kurova en `src/app/globals.css` y `src/app/layout.tsx` por el sistema de diseño técnico de **Kalibre**: tipografías `Space Grotesk` (display geométrica), `Hanken Grotesk` (interfaz) y `JetBrains Mono` (lecturas de gramos, milímetros y montos); paleta clara en aluminio anodizado (`#f3f5f7`), primario en naranja cobre de boquilla térmica (`#d9531e`), acento azul cian de calibración láser (`#0284c7`) y modo oscuro inspirado en cama PEI de carbono (`#0b0f17`) con retícula milimétrica.
+  - Se construyó desde cero la **Landing Page de Kalibre (`src/app/page.tsx`)** con el instrumento en vivo del Pedido #42 (Emblema 13×9 PETG, 50 g + 14 g purga, desglose real de Mercado Libre $8.990 → neto $6.483 → ganancia +$5.588 y alerta de bobina baja), los 4 módulos operativos (`#pilares`), la comparativa Venta Directa vs. Mercado Libre (`#cotizador-real`) y el flujo de 3 pasos (`#flujo`).
+  - Se rediseñó **`src/components/AuthLayout.tsx`** (acceso a `/login`, `/registro`, `/forgot-password`, `/taller/nuevo`) con un panel técnico de cama PEI con escala vernier milimétrica y telemetría de taller 3D, eliminando por completo los textos e identidad de Kurova.
+  - Se actualizó el isotipo en `PublicShell.tsx` y `Sidebar.tsx` con un icono geométrico de calibre/boquilla y etiqueta `3D`.
 - Se preserva `saas3d` como identificador técnico en base de datos, carpetas y configuración según el contrato de `AGENTS.md`.
 - Se creó `README.md` completo para el repositorio en GitHub `https://github.com/Epimete0/Kalibre3D`.
 - **Preparación de Supabase y Vercel (`scripts/production/` y `.env`):**

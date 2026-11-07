@@ -24,7 +24,7 @@ function NavigationIcon({ children }: { children: React.ReactNode }) {
 }
 
 function FeatureLink({ item, helper, active }: { item: NavItem; helper?: string; active: boolean }) {
-  return <Link href={item.href} className={`flex items-center gap-3 rounded-[13px] px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "bg-primary-soft text-primary" : "text-ink hover:bg-accent-soft"}`}><span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] ${active ? "bg-surface shadow-[0_1px_2px_rgba(90,40,55,.04),0_8px_24px_-12px_rgba(90,40,55,.10)]" : item.href === "/inventory" ? "bg-warn-soft text-warn" : "bg-primary-soft text-primary"}`}><NavigationIcon>{item.icon}</NavigationIcon></span><span className="min-w-0"><span className="block text-[13.5px] font-semibold leading-[1.25]">{item.label}</span>{helper ? <span className="mt-0.5 block truncate text-[11px] font-normal text-muted">{helper}</span> : null}</span></Link>;
+  return <Link href={item.href} className={`flex items-center gap-3 rounded-[13px] px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "bg-primary-soft text-primary" : "text-ink hover:bg-accent-soft"}`}><span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] ${active ? "bg-surface shadow-[0_1px_2px_rgba(15,23,42,.06),0_8px_24px_-12px_rgba(15,23,42,.12)]" : "bg-primary-soft text-primary"}`}><NavigationIcon>{item.icon}</NavigationIcon></span><span className="min-w-0"><span className="block text-[13.5px] font-semibold leading-[1.25]">{item.label}</span>{helper ? <span className="mt-0.5 block truncate text-[11px] font-normal text-muted">{helper}</span> : null}</span></Link>;
 }
 
 function PlainLink({ item, active, compact = false }: { item: NavItem; active: boolean; compact?: boolean }) {
@@ -44,10 +44,18 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
       <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
         <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
-          <span className="font-display text-[27px] leading-none tracking-[-0.04em] text-ink">
-            Kalibre<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" />
+          <span className="inline-flex items-center gap-2 font-display text-[24px] font-bold leading-none tracking-[-0.03em] text-ink">
+            <span className="inline-grid h-7 w-7 place-items-center rounded-lg bg-slate-900 text-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M5 4v16" />
+                <path d="M5 6h10l3 3h-6" />
+                <path d="M5 14h8l2 2H5" />
+              </svg>
+            </span>
+            <span>Kalibre</span>
+            <span className="rounded bg-primary-soft px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">3D</span>
           </span>
-          <span className="mt-1 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span>
+          <span className="mt-1.5 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span>
         </Link>
       </div>
       <nav aria-label="Navegación principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto">

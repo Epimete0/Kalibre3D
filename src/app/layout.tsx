@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Hanken_Grotesk } from "next/font/google";
+import { Hanken_Grotesk, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeBootstrap } from "@/components/ThemeBootstrap";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], display: "swap" });
+const spaceGrotesk = Space_Grotesk({ variable: "--font-display-face", subsets: ["latin"], display: "swap" });
 const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"], display: "swap" });
+const jetbrainsMono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"], display: "swap" });
 
-const title = "Kalibre — Gestión para makers de impresión 3D";
-const description = "Pedidos, dinero, costos y filamento de tu taller de impresión 3D en un solo lugar.";
+const title = "Kalibre — Gestión para makers y talleres de impresión 3D";
+const description = "Pedidos, cotizador multicolor, neto de Mercado Libre, bobinas y ganancia real de tu taller de impresión 3D.";
 
 /** Se calcula por solicitud: la dirección base sale del entorno en uso y no de lo que había al compilar. */
 export function generateMetadata(): Metadata {
@@ -25,14 +26,14 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fffdfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#21171c" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f17" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" data-theme="light" suppressHydrationWarning className={`${fraunces.variable} ${hanken.variable} h-full`}>
+    <html lang="es" data-theme="light" suppressHydrationWarning className={`${spaceGrotesk.variable} ${hanken.variable} ${jetbrainsMono.variable} h-full`}>
       <body className="min-h-full">
         <ThemeBootstrap />
         {children}
