@@ -141,4 +141,53 @@ suite("Creación de pedidos (Order) y concurrencia en PostgreSQL", () => {
     );
     expect(eventCheck.rows[0].count).toBe(1);
   });
+  it("guarda el costo unitario de cada línea con las bobinas y ajustes del taller (rentabilidad por pieza)", async () => {
+    const authModule = await import("@/lib/auth");
+    vi.spyOn(authModule, "requireOperationalContext").mockResolvedValue({
+      userId: userA,
+      centerId: centerA,
+      role: "OWNER",
+      timeZone: "America/Santiago",
+    });
+
+    // Taller: luz $39/h y embalaje $100; bobina PETG de 1 kg a $15.000 ($15/g).
+    await db.query(
+      'INSERT INTO "CenterSettings" ("centerId","electricityCostPerHour","defaultPackagingCost") VALUES ($1,39,100)',
+      [centerA]
+    );
+    await db.query(
+      `INSERT INTO "Spool" (id,"centerId",material,color,"totalGrams","remainingGrams","pricePaid","purchasedOn","createdByUserId","updatedAt") VALUES ($1,$2,'PETG','Negro',1000,1000,15000,current_date,$3,now())`,
+      [randomUUID(), centerA, userA]
+    );
+    const productId = randomUUID();
+    await db.query(
+      `INSERT INTO "Product" (id,"centerId",name,material,grams,"printMinutes","salePrice","createdByUserId","updatedAt") VALUES ($1,$2,'Emblema Yaris','PETG',50,60,8990,$3,now())`,
+      [productId, centerA, userA]
+    );
+
+    const order = await createOrder({
+      operationId: randomUUID(),
+      kind: "QUICK_SALE",
+      channel: "WHATSAPP",
+      items: [
+        { productId, description: "Emblema Yaris", qty: 2, unitPrice: 8990 },
+        { description: "Pieza a mano sin gramos", qty: 1, unitPrice: 3000 },
+      ],
+    });
+
+    const rows = await db.query(
+      'SELECT position, "unitCost" FROM "OrderItem" WHERE "centerId" = $1 AND "orderId" = $2 ORDER BY position',
+      [centerA, order.id]
+    );
+    // 50 g × $15 + 1 h × $39 + $100 = $889 por unidad; la línea sin gramos queda sin calcular.
+    expect(rows.rows).toEqual([
+      { position: 1, unitCost: 889 },
+      { position: 2, unitCost: null },
+    ]);
+
+    // La base rechaza costos negativos aunque alguien salte la Server Action.
+    await expect(
+      db.query('UPDATE "OrderItem" SET "unitCost" = -1 WHERE "centerId" = $1 AND "orderId" = $2', [centerA, order.id])
+    ).rejects.toMatchObject({ code: "23514" });
+  });
 });

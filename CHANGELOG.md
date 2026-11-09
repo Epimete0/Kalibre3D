@@ -6,6 +6,8 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Compras:** nueva pestaña en Dinero con lo que gastaste en el mes por tipo y las bobinas que agregaste (kilos y precio promedio).
+- **Rentabilidad por pieza:** nueva pestaña en Dinero que muestra qué pieza te deja más ganancia, después de comisiones, envíos y costos. Cada venta guarda su costo del día.
 - **Navegación más directa en el celular:** botón central «Vender» y acceso a «Cotizar» en la barra inferior; el menú «Más» explica para qué sirve cada sección.
 - **Pedidos por encargo guiados:** se ve en qué etapa va cada pedido, qué significa y cuándo pasar a la siguiente.
 - **Pantallas vacías que orientan:** explican para qué sirve cada sección y qué hacer primero.
@@ -18,6 +20,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 - **Nueva venta más simple:** primero se anota qué vendiste y en cuánto; el canal queda recordado para la próxima venta; descuento y notas pasan a "Más opciones".
 
 ### Corregido
+- **Bobinas que ya tenías:** al agregarlas se pregunta si las compraste o ya las tenías; las que ya tenías no se anotan como gasto.
 - **Lenguaje:** fechas como «7 nov 2026» y meses con su nombre; «Mi cuenta» y «Mis costos» reemplazan nombres repetidos o confusos; el Catálogo no pide precio de Mercado Libre si no vendes por ahí.
 - **Mercado Libre en Nueva venta:** la comisión sugerida se recalcula con el total aunque el canal se elija antes de escribir el precio.
 - **Primer ingreso:** el panel de un taller recién creado ya no muestra "No pudimos cargar esta sección" la primera vez.

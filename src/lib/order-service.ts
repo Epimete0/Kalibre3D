@@ -8,6 +8,7 @@ import { STATUS_LABEL } from "@/lib/order-presentation";
 import { canTransition, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
 import { orderTotal } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
+import { estimateUnitCost, type CostRates } from "@/lib/sale-cost";
 
 export const MAX_ORDER_QTY = 10_000;
 export const MAX_MONEY_AMOUNT = 1_000_000_000;
@@ -136,6 +137,9 @@ export async function createOrder(input: unknown) {
     data.status ?? (data.kind === "QUICK_SALE" ? "DELIVERED" : "CONFIRMED");
   const deliveredAt = status === "DELIVERED" ? new Date() : null;
 
+  // Costo unitario de cada línea con las tarifas del taller de hoy (rentabilidad por pieza).
+  const unitCosts = await estimateOrderUnitCosts(centerId, data.items);
+
   const result = await prisma.$transaction(async (tx) => {
     // Cerrojo determinístico a nivel de taller para correlativo consecutivo
     await tx.$executeRaw`SELECT 1 FROM "Center" WHERE "id" = ${centerId}::uuid FOR UPDATE`;
@@ -208,6 +212,7 @@ export async function createOrder(input: unknown) {
         material: item.material,
         grams: item.grams,
         colorsCount: item.colorsCount,
+        unitCost: unitCosts[index] ?? null,
       })),
     });
 
@@ -358,6 +363,46 @@ export const registerPaymentSchema = z.object({
 });
 
 export type RegisterPaymentInput = z.input<typeof registerPaymentSchema>;
+
+/**
+ * Costo unitario estimado de cada línea al momento de vender. Las piezas del catálogo usan sus gramos,
+ * minutos, colores y purga; las escritas a mano solo si traen material y gramos. Todo filtrado por taller.
+ */
+async function estimateOrderUnitCosts(
+  centerId: string,
+  items: ReadonlyArray<{ productId: string | null; material: string | null; grams: number | null; colorsCount: number }>
+): Promise<Array<number | null>> {
+  const productIds = [...new Set(items.map((item) => item.productId).filter((id): id is string => Boolean(id)))];
+  const [settings, spools, products] = await Promise.all([
+    prisma.centerSettings.findUnique({
+      where: { centerId },
+      select: { defaultCostPerKg: true, electricityCostPerHour: true, defaultPackagingCost: true, defaultPurgeGrams: true },
+    }),
+    prisma.spool.findMany({
+      where: { centerId, active: true },
+      select: { material: true, active: true, totalGrams: true, pricePaid: true },
+    }),
+    productIds.length > 0
+      ? prisma.product.findMany({
+          where: { centerId, id: { in: productIds } },
+          select: { id: true, material: true, grams: true, printMinutes: true, colorsCount: true, purgeGrams: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const rates: CostRates = {
+    spools,
+    defaultCostPerKg: settings?.defaultCostPerKg ?? 15000,
+    electricityCostPerHour: settings?.electricityCostPerHour ?? 0,
+    packagingCost: settings?.defaultPackagingCost ?? 0,
+    defaultPurgeGrams: settings?.defaultPurgeGrams ?? 0,
+  };
+  const byId = new Map(products.map((product) => [product.id, product]));
+  return items.map((item) => {
+    const product = item.productId ? byId.get(item.productId) : undefined;
+    if (product) return estimateUnitCost(product, rates);
+    return estimateUnitCost({ material: item.material, grams: item.grams, colorsCount: item.colorsCount }, rates);
+  });
+}
 
 /**
  * Un operationId repetido solo es un reintento legítimo si apunta al mismo tipo de movimiento del mismo pedido.

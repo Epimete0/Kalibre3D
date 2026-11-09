@@ -29,6 +29,10 @@ const { prisma, requireOperationalContext, requireCatalogContext } = vi.hoisted(
     prisma: {
       $transaction: vi.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       ...tx,
+      // Tarifas para el costo unitario al vender: sin ajustes ni bobinas ni piezas (costo por defecto).
+      centerSettings: { findUnique: vi.fn().mockResolvedValue(null) },
+      spool: { findMany: vi.fn().mockResolvedValue([]) },
+      product: { findMany: vi.fn().mockResolvedValue([]) },
     },
     requireOperationalContext: vi.fn().mockResolvedValue({
       userId: "user-1",
@@ -130,6 +134,8 @@ describe("order-service", () => {
             material: "PLA",
             grams: null,
             colorsCount: 1,
+            // Sin gramos no se puede estimar el costo: queda sin calcular en vez de inventarlo.
+            unitCost: null,
           },
         ],
       });

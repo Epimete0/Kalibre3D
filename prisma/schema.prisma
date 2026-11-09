@@ -265,6 +265,8 @@ model OrderItem {
   material    String?
   grams       Int?
   colorsCount Int      @default(1)
+  /// Costo unitario estimado al vender (null = no calculable o anterior a 2026-11-11).
+  unitCost    Int?
   order       Order    @relation(fields: [centerId, orderId], references: [centerId, id], onDelete: Cascade)
   product     Product? @relation(fields: [centerId, productId], references: [centerId, id], onDelete: Restrict)
 

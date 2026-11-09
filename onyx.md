@@ -6,6 +6,19 @@
 
 ---
 
+## Bobinas que ya se tenían, Compras y Rentabilidad por pieza — 2026-11-09
+
+- **Pedido del dueño:** las bobinas que ya tenía aparecían como compra (gasto en negativo); además quiere ver sus compras y qué pieza le deja más ganancia.
+- **Bobinas (`spools/SpoolControls.tsx`):** la casilla "Anotar como gasto" venía marcada por defecto. Ahora es una pregunta obligatoria "¿Cómo conseguiste esta bobina?": **La compré ahora** (anota el gasto FILAMENT y pide cómo la pagó) o **Ya la tenía** (sin gasto; lo pagado solo alimenta el costo por gramo). En el inicio guiado viene marcada "Ya la tenía". El servidor ya trataba `recordExpenseInMoney` como falso por defecto; no cambió. Un gasto mal anotado se corrige con «Anular» en Dinero (baja lógica con motivo, sin borrar).
+- **Migración `20261111000000_order_item_unit_cost`:** `OrderItem.unitCost INTEGER NULL` con CHECK 0..1.000.000.000. Solo columna opcional: sin cambios de datos, RLS ni grants. Paquete `scripts/production/20261111-apply-order-item-unit-cost.sql` (exige la migración 20261110) y runbook `docs/runbooks/2026-11-11-migracion-costo-por-venta.md`. **Aplicar antes de desplegar el código.**
+- **Costo al vender (`sale-cost.ts`, `order-service.ts` → `estimateOrderUnitCosts`):** `createOrder` calcula antes de la transacción el costo unitario de cada línea con las tarifas del taller de ese día (bobinas activas, costo por kilo por defecto, luz por hora, embalaje, purga). Piezas del catálogo: sus gramos, minutos, colores y purga. Líneas escritas a mano: solo si traen material y gramos; si no, `null` (no se inventa). Lecturas filtradas por `centerId`.
+- **Dinero con pestañas (`money/MoneyTabs.tsx`):** Resumen · **Compras** (`/money/compras`) · **Rentabilidad** (`/money/rentabilidad`); solo Dueño/Administrador (`requireCatalogContext`, `NoPermission` en las páginas).
+  - **Compras (`insights.ts` → `summarizePurchases`, `insights-queries.ts` → `getMonthlyPurchases`):** total del mes por tipo de gasto sin devoluciones (REFUNDS) ni anulados, detalle con lo anulado tachado, y bobinas agregadas en el mes (cantidad, kg y precio promedio por kilo).
+  - **Rentabilidad (`aggregateProfitability`, `getProductProfitability`):** por pieza del catálogo, unidades, "te entró" (precio menos descuento, comisión y envío de Mercado Libre del pedido, repartidos por subtotal de línea), costo (`unitCost` guardado o, si falta, estimado con los costos de hoy) y ganancia con margen. Cuenta pedidos CONFIRMED, PRINTING, READY y DELIVERED (no cotizados, cancelados ni devueltos). Por mes (día local del taller en que se registró) o "desde que empezaste". Las ventas escritas a mano se agrupan en "Otras ventas", siempre al final, con aviso de las unidades sin costo.
+- **Verificación:** prueba real en `tests/orders-creation.integration.test.ts` (venta de 2 emblemas del catálogo guarda $889 por unidad = 50 g × $15 + $39 de luz + $100 de embalaje; línea sin gramos queda `null`; la base rechaza costo negativo). Local a 375 px: bobina "Ya la tenía" sin gasto nuevo; Compras con $15.000 de filamento y 1 bobina · 1 kg; Rentabilidad con venta por Mercado Libre de 2 emblemas → te entró $13.765, costo $1.778, ganancia $11.987 (87 %). Pruebas nuevas `sale-cost.test.ts`, `insights.test.ts`, `scripts/production/package-20261111.test.ts`. Quality gate PASSED (371 unitarias, 13 RLS, 3 S1, 1 S3, 57 transacciones).
+
+---
+
 ## App más intuitiva sin inducción externa — 2026-11-09
 
 - **Pedido del dueño:** que la app guíe sola y que alguien pueda ordenar su negocio sin que nadie le explique. Recorrido completo en celular (375 px) por todas las pantallas; hallazgos y estado en `docs/ux/2026-11-07-revision-simplicidad.md` (sección "Segunda revisión").

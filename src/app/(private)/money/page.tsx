@@ -4,6 +4,7 @@ import { canManageCatalog, requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { getMonthlyMoneyView } from "@/lib/money-queries";
 import { MoneyControls } from "./MoneyControls";
+import { MoneyTabs } from "./MoneyTabs";
 
 export const metadata = {
   title: "Dinero | Kalibre",
@@ -42,6 +43,7 @@ export default async function MoneyPage(props: {
         title="Dinero del taller"
         description="Cuánto entró, cuánto salió y cuánto ganaste de verdad este mes."
       />
+      <MoneyTabs active="resumen" month={view.month} />
 
       <MoneyControls
         key={`${view.month}-${initialMode ?? "none"}`}

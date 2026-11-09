@@ -74,7 +74,10 @@ export function SpoolCreateModal({
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
   const [operationId, setOperationId] = useState(() => crypto.randomUUID());
-  const [recordExpense, setRecordExpense] = useState(true);
+  // Una bobina que ya se tenía no es una compra: no debe aparecer como gasto en Dinero.
+  // En el inicio guiado viene marcada "Ya la tenía"; en el resto se pide elegir.
+  const [acquisition, setAcquisition] = useState<"PURCHASED" | "OWNED" | null>(welcome ? "OWNED" : null);
+  const recordExpense = acquisition === "PURCHASED";
   const [material, setMaterial] = useState<string>("PETG");
   const [color, setColor] = useState("");
   const [weightChoice, setWeightChoice] = useState<number | "OTHER">(1000);
@@ -268,17 +271,39 @@ export function SpoolCreateModal({
           </p>
         )}
 
-        <div className="rounded-lg border border-line bg-raised/50 p-3 space-y-2.5">
-          <label className="flex items-center gap-2.5 text-sm font-medium text-ink cursor-pointer">
-            <input
-              type="checkbox"
-              name="recordExpenseInMoney"
-              checked={recordExpense}
-              onChange={(e) => setRecordExpense(e.target.checked)}
-              className="h-4 w-4 rounded border-line"
-            />
-            <span>Anotar esta compra como gasto de filamento en Dinero</span>
-          </label>
+        <fieldset className="rounded-lg border border-line bg-raised/50 p-3 space-y-2.5">
+          <legend className="px-1 text-sm font-medium text-ink">¿Cómo conseguiste esta bobina?</legend>
+          {recordExpense && <input type="hidden" name="recordExpenseInMoney" value="on" />}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {([
+              { value: "PURCHASED", title: "La compré ahora", hint: "Se anota como gasto de filamento en Dinero." },
+              { value: "OWNED", title: "Ya la tenía", hint: "No se anota ningún gasto. Lo pagado solo sirve para el costo por gramo." },
+            ] as const).map((option) => {
+              const selected = acquisition === option.value;
+              return (
+                <label
+                  key={option.value}
+                  className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-sm transition-colors ${
+                    selected ? "border-primary bg-primary-soft/40" : "border-line bg-surface hover:bg-canvas"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="acquisition"
+                    value={option.value}
+                    required
+                    checked={selected}
+                    onChange={() => setAcquisition(option.value)}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <span className="block font-semibold text-ink">{option.title}</span>
+                    <span className="block text-xs text-muted">{option.hint}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
 
           {recordExpense && (
             <div className="max-w-xs">
@@ -293,7 +318,7 @@ export function SpoolCreateModal({
               </Field>
             </div>
           )}
-        </div>
+        </fieldset>
 
         <Field label="Notas (opcional)" htmlFor="spool-notes">
           <input id="spool-notes" name="notes" maxLength={500} placeholder="Lote, temperatura recomendada, etc." className={inputClass} />
