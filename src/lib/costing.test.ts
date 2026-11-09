@@ -3,6 +3,7 @@ import {
   computeMaterialCostPerGram,
   directSaleBreakdown,
   electricityCostPerHourFromKwh,
+  printEnergyKwh,
   suggestDirectPrice,
   suggestMlPriceKeeping,
   vatIncluded,
@@ -100,5 +101,16 @@ describe("costos del inicio guiado: luz por kWh, IVA y comisión adicional", () 
     const kept = (p: number) => mercadoLibreNet({ salePrice: p, commissionPct: 19, sellerShippingCost: 799 }).net - vatIncluded(p, 19);
     expect(kept(price)).toBeGreaterThanOrEqual(keep);
     expect(kept(price - 1)).toBeLessThan(keep);
+  });
+});
+
+describe("energía de una impresión", () => {
+  it("calcula los kWh con los watts del perfil y los minutos de la pieza", () => {
+    expect(printEnergyKwh(150, 60)).toBeCloseTo(0.15);
+    expect(printEnergyKwh(150, 90)).toBeCloseTo(0.225);
+    expect(printEnergyKwh(0, 60)).toBe(0);
+    expect(printEnergyKwh(150, 0)).toBe(0);
+    // Con $260/kWh, 0,15 kWh cuestan lo mismo que 60 min a $39 por hora.
+    expect(Math.round(printEnergyKwh(150, 60) * 260)).toBe(electricityCostPerHourFromKwh(260, 150));
   });
 });

@@ -201,3 +201,9 @@ export function suggestMlPriceKeeping(input: {
   while (kept(price) < keepAfterVat) price += 1;
   return price;
 }
+
+/** Energía que consume una impresión: watts × minutos, en kWh (sin redondear). */
+export function printEnergyKwh(printerWatts: number, printMinutes: number): number {
+  if (!(printerWatts > 0 && printMinutes > 0)) return 0;
+  return (printerWatts * printMinutes) / 60 / 1000;
+}

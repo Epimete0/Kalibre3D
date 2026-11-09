@@ -12,6 +12,7 @@ import {
 import {
   computePieceCost,
   directSaleBreakdown,
+  printEnergyKwh,
   suggestDirectPrice,
   suggestMlPriceKeeping,
   vatIncluded,
@@ -38,6 +39,8 @@ type CustomerOption = {
 export function QuoteCalculator({
   currency,
   electricityCostPerHour,
+  electricityKwhPrice = 0,
+  printerWatts = 0,
   defaultPackagingCost,
   defaultPurgeGrams,
   mlCommissionPercent,
@@ -51,6 +54,9 @@ export function QuoteCalculator({
 }: {
   currency: Currency;
   electricityCostPerHour: number;
+  /** Precio del kWh y watts de la impresora del perfil, para mostrar cuánta energía usa la pieza. */
+  electricityKwhPrice?: number;
+  printerWatts?: number;
   defaultPackagingCost: number;
   defaultPurgeGrams: number;
   mlCommissionPercent: number;
@@ -99,6 +105,11 @@ export function QuoteCalculator({
     linkLabel?: string;
   } | null>(null);
 
+  // Lo que el taller desactivó en su perfil no aparece en el cotizador (se calcula en 0).
+  const usesElectricity = electricityCostPerHour > 0;
+  const usesPackaging = defaultPackagingCost > 0;
+  const sellsOnMercadoLibre = mlCommissionPercent > 0 || mlDefaultShippingCost > 0;
+
   const parsedGrams = Math.max(0, Math.round(Number(grams) || 0));
   const parsedMinutes = Math.max(0, Math.round(Number(printMinutes) || 0));
   const parsedColors = Math.min(16, Math.max(1, Math.round(Number(colorsCount) || 1)));
@@ -107,10 +118,14 @@ export function QuoteCalculator({
 
   let packagingMinor = defaultPackagingCost;
   try {
-    packagingMinor = toMinorUnits(packagingInput || "0", currency) ?? 0;
+    packagingMinor = usesPackaging ? toMinorUnits(packagingInput || "0", currency) ?? 0 : 0;
   } catch {
     packagingMinor = 0;
   }
+
+  const energyKwh = printEnergyKwh(printerWatts, parsedMinutes);
+  const kwhLabel = (kwh: number) =>
+    new Intl.NumberFormat("es-CL", { maximumFractionDigits: kwh < 0.1 ? 3 : 2 }).format(kwh);
 
   const currentMaterialRate = materialRates[material];
   const costBreakdown = computePieceCost({
@@ -398,8 +413,8 @@ export function QuoteCalculator({
             ))}
           </div>
 
-          {/* Colores y Purga */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {/* Colores y purga (la purga solo aparece con más de un color) */}
+          <div className={`grid grid-cols-1 gap-3 pt-1 ${parsedColors > 1 ? "sm:grid-cols-2" : ""}`}>
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-ink">
                 Cantidad de colores (AMS / cambio)
@@ -422,38 +437,34 @@ export function QuoteCalculator({
               </div>
             </div>
 
-            <Field
-              label="Purga multicolor (g)"
-              hint={
-                parsedColors === 1
-                  ? "En 1 color no se suma purga."
-                  : "Se suma al peso de la pieza."
-              }
-            >
-              <input
-                type="number"
-                min={0}
-                step={1}
-                disabled={parsedColors === 1}
-                value={parsedColors === 1 ? "0" : purgeGrams}
-                onChange={(e) => setPurgeGrams(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+            {parsedColors > 1 && (
+              <Field label="Purga multicolor (g)" hint="Se suma al peso de la pieza.">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={purgeGrams}
+                  onChange={(e) => setPurgeGrams(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            )}
           </div>
 
-          {/* Embalaje y Cantidad */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <Field label={`Embalaje unitario (${currency})`}>
-              <input
-                type="number"
-                min={0}
-                step={currency === "CLP" ? 50 : 0.1}
-                value={packagingInput}
-                onChange={(e) => setPackagingInput(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+          {/* Embalaje (si está activo en el perfil) y cantidad */}
+          <div className={`grid grid-cols-1 gap-3 pt-1 ${usesPackaging ? "sm:grid-cols-2" : ""}`}>
+            {usesPackaging && (
+              <Field label={`Embalaje unitario (${currency})`}>
+                <input
+                  type="number"
+                  min={0}
+                  step={currency === "CLP" ? 50 : 0.1}
+                  value={packagingInput}
+                  onChange={(e) => setPackagingInput(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            )}
             <Field label="Cantidad a cotizar">
               <input
                 type="number"
@@ -555,18 +566,29 @@ export function QuoteCalculator({
                 {formatMoney(costBreakdown.materialCost, currency)}
               </span>
             </div>
-            <div className="flex justify-between gap-2 text-muted">
-              <span>Electricidad ({parsedMinutes} min)</span>
-              <span className="text-ink font-medium tabular-nums">
-                {formatMoney(costBreakdown.electricityCost, currency)}
-              </span>
-            </div>
-            <div className="flex justify-between gap-2 text-muted">
-              <span>Embalaje unitario</span>
-              <span className="text-ink font-medium tabular-nums">
-                {formatMoney(costBreakdown.packagingCost, currency)}
-              </span>
-            </div>
+            {usesElectricity && (
+              <div className="flex justify-between gap-2 text-muted">
+                <span>
+                  Electricidad ({parsedMinutes} min)
+                  {energyKwh > 0 && electricityKwhPrice > 0 && (
+                    <span className="block text-[11px]">
+                      {kwhLabel(energyKwh)} kWh × {formatMoney(electricityKwhPrice, currency)}/kWh
+                    </span>
+                  )}
+                </span>
+                <span className="text-ink font-medium tabular-nums">
+                  {formatMoney(costBreakdown.electricityCost, currency)}
+                </span>
+              </div>
+            )}
+            {usesPackaging && (
+              <div className="flex justify-between gap-2 text-muted">
+                <span>Embalaje unitario</span>
+                <span className="text-ink font-medium tabular-nums">
+                  {formatMoney(costBreakdown.packagingCost, currency)}
+                </span>
+              </div>
+            )}
             <div className="border-t border-line pt-2 flex justify-between gap-2 text-sm font-semibold">
               <span className="text-ink">Costo total unitario</span>
               <span className="text-ink tabular-nums">
@@ -576,7 +598,7 @@ export function QuoteCalculator({
           </div>
 
           {/* Precios sugeridos: Directo vs Mercado Libre */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${sellsOnMercadoLibre ? "sm:grid-cols-2" : ""}`}>
             <div className="rounded-xl border border-ok/30 bg-ok-soft p-3.5 space-y-1">
               <div className="text-[11px] uppercase tracking-wider text-ok font-semibold">
                 Venta directa
@@ -602,18 +624,20 @@ export function QuoteCalculator({
               )}
             </div>
 
-            <div className="rounded-xl border border-warn/30 bg-warn-soft p-3.5 space-y-1">
-              <div className="text-[11px] uppercase tracking-wider text-warn font-semibold">
-                Mercado Libre ({mlCommissionPercent}%)
+            {sellsOnMercadoLibre && (
+              <div className="rounded-xl border border-warn/30 bg-warn-soft p-3.5 space-y-1">
+                <div className="text-[11px] uppercase tracking-wider text-warn font-semibold">
+                  Mercado Libre ({mlCommissionPercent}%)
+                </div>
+                <div className="text-xl font-bold text-ink tabular-nums">
+                  {formatMoney(suggestedMlMinor, currency)}
+                </div>
+                <div className="text-xs text-muted">
+                  Conserva tu ganancia tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
+                  {mlVat > 0 && <> · incluye IVA {formatMoney(mlVat, currency)}</>}
+                </div>
               </div>
-              <div className="text-xl font-bold text-ink tabular-nums">
-                {formatMoney(suggestedMlMinor, currency)}
-              </div>
-              <div className="text-xs text-muted">
-                Conserva tu ganancia tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
-                {mlVat > 0 && <> · incluye IVA {formatMoney(mlVat, currency)}</>}
-              </div>
-            </div>
+            )}
           </div>
 
           {parsedQty > 1 && (

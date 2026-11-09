@@ -6,6 +6,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Cotizador según tu perfil:** muestra los kWh que usa cada pieza y oculta lo que tienes desactivado (Mercado Libre, embalaje, luz); la purga aparece solo con más de un color.
 - **Inicio guiado "Prepara tu taller":** al crear el taller, primero los costos (opcionales, con ayudas), luego la primera bobina y después la primera venta.
 - **Costos nuevos en Ajustes:** luz calculada desde el precio del kWh y los watts de la impresora, comisión adicional por venta, IVA incluido en los precios y margen mínimo de ganancia.
 - **Bobina guiada:** material y peso en botones (1 kg marcado), colores comunes con muestra y costo por kilo y por gramo al instante.

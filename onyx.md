@@ -6,6 +6,15 @@
 
 ---
 
+## Cotizador según el perfil del taller y kWh visibles — 2026-11-09
+
+- **Pedido del dueño:** el presupuesto interno debe usar los datos del perfil y mostrar la energía en kWh.
+- **kWh en el desglose (`QuoteCalculator.tsx`, `printEnergyKwh` en `costing.ts`):** la línea de electricidad muestra "0,15 kWh × $260/kWh" calculado con los watts y el precio del kWh guardados en Ajustes; el costo sigue saliendo de `electricityCostPerHour` (mismo valor que kWh × precio).
+- **Lo apagado en el perfil no aparece:** sin luz no se muestra la línea de electricidad; sin embalaje no aparecen su campo ni su línea (se calcula en 0); sin Mercado Libre (comisión y envío en 0) no aparece su tarjeta de precio; la purga solo aparece con más de un color. El IVA y la comisión adicional ya se mostraban solo si estaban activos.
+- **Verificación:** local a 375 px con kWh $200 × 150 W → "0,15 kWh × $200/kWh $30"; con Mercado Libre apagado la tarjeta desaparece; con 2 colores aparece la purga. Quality gate PASSED (354 unitarias, 13 RLS, 3 S1, 1 S3, 56 transacciones). Sin migraciones.
+
+---
+
 ## Inicio guiado: costos primero, bobina guiada y cotizador con IVA — 2026-11-08
 
 - **Decisión del dueño (Surko):** el orden de los primeros pasos es **costos → primera bobina → primera venta**, porque toda venta tiene costos detrás y así la primera venta ya muestra la ganancia real. Los costos son opcionales y se explican con ayudas.

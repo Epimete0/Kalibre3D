@@ -51,7 +51,7 @@ export default async function QuotePage() {
     <div className="space-y-5">
       <PageHeader
         title="Cotizador de piezas 3D"
-        description="Calcula costos reales de filamento, purga multicolor, electricidad y comisión de Mercado Libre."
+        description="Calcula el costo real y el precio de una pieza con los datos de tu taller (luz, comisiones, IVA y margen se cambian en Ajustes)."
       >
         <div className="flex items-center gap-2">
           <LinkButton href="/spools" variant="ghost">
@@ -66,6 +66,8 @@ export default async function QuotePage() {
       <QuoteCalculator
         currency={settings.currency}
         electricityCostPerHour={settings.electricityCostPerHour}
+        electricityKwhPrice={settings.electricityKwhPrice}
+        printerWatts={settings.printerWatts}
         defaultPackagingCost={settings.defaultPackagingCost}
         defaultPurgeGrams={settings.defaultPurgeGrams}
         mlCommissionPercent={settings.mlCommissionPercent}
