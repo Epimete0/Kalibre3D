@@ -6,6 +6,18 @@
 
 ---
 
+## Herramientas públicas: cotizador 3D sin sesión — 2026-11-09
+
+- **Pedido del dueño:** sección "Herramientas" en la landing con un cotizador abierto, sin inicio de sesión, donde la persona escribe todos sus datos. Se revisó como referencia la calculadora de Erexit 3D (solo lectura) y se tomaron ideas, no diseño ni textos: modelo de impresora que completa los watts, desgaste de la máquina (repuestos ÷ vida útil), margen por fallas, insumos extra y margen con referencias. Kalibre mantiene lo suyo: purga multicolor, IVA, comisión por cobrar y precio de Mercado Libre que conserva la ganancia.
+- **Reglas (`src/lib/public-quote.ts`):** `computePublicQuote` reutiliza `suggestDirectPrice`, `directSaleBreakdown`, `suggestMlPriceKeeping` y `vatIncluded`; agrega `machineWearPerHour`, `PRINTER_PRESETS` (consumos promedio aproximados, editables) y `MARGIN_GUIDE`. Ignora valores negativos o vacíos.
+- **Página `/herramientas/cotizador`** (`PublicQuoteCalculator.tsx`): tres pasos (tus costos, la pieza, cómo vendes), resultado a la vista en escritorio y barra fija con el precio en celular, moneda seleccionable (montos en unidad mínima con `currencyDecimals`). Todo en el navegador: no hay Server Actions, base de datos ni almacenamiento; CTA a crear el taller. `/herramientas` redirige al cotizador.
+- **Público:** `/herramientas` y `/herramientas/cotizador` agregadas a `publicPaths` en `src/proxy.ts` (verificado: 200 sin sesión; `/dashboard` sigue redirigiendo al login). Agregado al sitemap con prioridad 0,9 y metadatos SEO propios.
+- **Landing:** sección `#herramientas` con la tarjeta del cotizador y un ejemplo (llavero con NFC: costo $643, cobra $2.144, te quedan $1.501) amarrado al cálculo por `src/lib/landing-example.test.ts`. Enlace "Herramientas" en la cabecera pública; los enlaces de la cabecera pasan a `/#…` para funcionar desde cualquier página.
+- **Verificación:** local a 375 px y escritorio (50 g, 1 h, $260/kWh, 150 W → costo $789, cobra $1.973, te quedan $1.184 con 60 %). Pruebas nuevas `public-quote.test.ts`. Quality gate PASSED (376 unitarias, 13 RLS, 3 S1, 1 S3, 57 transacciones). Sin migraciones.
+- **Siguiente posible:** llevar desgaste de la máquina y margen por fallas también al cotizador del taller (hoy solo están en el público).
+
+---
+
 ## Bobinas que ya se tenían, Compras y Rentabilidad por pieza — 2026-11-09
 
 - **Pedido del dueño:** las bobinas que ya tenía aparecían como compra (gasto en negativo); además quiere ver sus compras y qué pieza le deja más ganancia.

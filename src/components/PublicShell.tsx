@@ -40,17 +40,23 @@ export function PublicHeader({ showHowItWorks = false }: { showHowItWorks?: bool
         <nav className="flex items-center gap-1.5 sm:gap-3" aria-label="Navegación pública">
           {showHowItWorks ? (
             <>
-              <a href="#pilares" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              <Link href="/#pilares" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
                 Módulos
-              </a>
-              <a href="#cotizador-real" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              </Link>
+              <Link href="/#cotizador-real" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
                 Mercado Libre y Costos
-              </a>
-              <a href="#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              </Link>
+              <Link href="/#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
                 Flujo de taller
-              </a>
+              </Link>
             </>
           ) : null}
+          <Link
+            href="/herramientas/cotizador"
+            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink sm:inline-block"
+          >
+            Herramientas
+          </Link>
           <Link href="/login" className="rounded-lg px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface hover:text-ink">
             Iniciar sesión
           </Link>

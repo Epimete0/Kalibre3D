@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const legalUpdated = new Date(`${TERMS_VERSION}T00:00:00Z`);
   return [
     { url: `${base}/`, changeFrequency: "monthly", priority: 1 },
+    { url: `${base}/herramientas/cotizador`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/registro`, changeFrequency: "yearly", priority: 0.8 },
     { url: `${base}/login`, changeFrequency: "yearly", priority: 0.5 },
     { url: `${base}/terminos`, lastModified: legalUpdated, changeFrequency: "yearly", priority: 0.3 },

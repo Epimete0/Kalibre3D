@@ -355,6 +355,82 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* HERRAMIENTAS GRATIS (#herramientas) */}
+        <section id="herramientas" className="scroll-mt-20 border-t border-line bg-surface py-16 sm:py-24">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+            <div className="max-w-2xl">
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary">Herramientas gratis</p>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                Calcula cuánto cobrar, sin crear cuenta.
+              </h2>
+              <p className="mt-3 text-base text-muted">
+                Herramientas abiertas para cualquier maker. Escribe tus datos y obtén el resultado al instante.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
+              <article className="flex flex-col justify-between rounded-2xl border border-primary/40 bg-canvas p-6">
+                <div>
+                  <span className="rounded-md bg-primary-soft px-2.5 py-1 font-mono text-xs font-bold text-primary">TOOL-01 · COTIZADOR 3D</span>
+                  <h3 className="mt-4 font-display text-2xl font-bold text-ink">Cotizador de impresión 3D</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    Cuánto te cuesta imprimir una pieza y a qué precio venderla, con todo lo que normalmente se olvida.
+                  </p>
+                  <ul className="mt-4 grid gap-2 text-sm text-ink sm:grid-cols-2">
+                    {[
+                      "Filamento y purga multicolor",
+                      "Luz por kWh según tu impresora",
+                      "Desgaste de la máquina y fallas",
+                      "Insumos: argollas, imanes, NFC",
+                      "IVA y comisión por cobrar",
+                      "Precio para Mercado Libre",
+                    ].map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/herramientas/cotizador"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                  >
+                    Usar el cotizador <span aria-hidden="true">→</span>
+                  </Link>
+                  <span className="text-xs text-muted">Gratis · Sin registro · Nada sale de tu navegador</span>
+                </div>
+              </article>
+
+              <div className="kalibre-dark-grid rounded-2xl border border-slate-800 p-5 font-mono text-xs text-slate-200">
+                <p className="text-slate-400">EJEMPLO · LLAVERO CON NFC</p>
+                <dl className="mt-3 space-y-1.5">
+                  {[
+                    ["Filamento (12 g)", "$180"],
+                    ["Luz (0,05 kWh)", "$13"],
+                    ["Insumos (argolla + NFC)", "$450"],
+                    ["Te cuesta hacerlo", "$643"],
+                  ].map(([label, value], index, rows) => (
+                    <div
+                      key={label}
+                      className={`flex justify-between gap-2 ${index === rows.length - 1 ? "border-t border-slate-700 pt-2 font-bold text-white" : ""}`}
+                    >
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-4 rounded-lg bg-emerald-500/10 p-3">
+                  <p className="text-emerald-300">COBRA (MARGEN 70%)</p>
+                  <p className="mt-1 font-display text-2xl font-bold text-white">$2.144</p>
+                  <p className="text-emerald-400">Te quedan $1.501 limpios</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* CTA FINAL */}
         <section className="pb-16 sm:pb-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">

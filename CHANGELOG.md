@@ -6,6 +6,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Herramientas gratis:** cotizador de impresión 3D abierto, sin crear cuenta, en la landing y en `/herramientas/cotizador`, con modelo de impresora, desgaste, fallas, insumos, IVA y Mercado Libre.
 - **Compras:** nueva pestaña en Dinero con lo que gastaste en el mes por tipo y las bobinas que agregaste (kilos y precio promedio).
 - **Rentabilidad por pieza:** nueva pestaña en Dinero que muestra qué pieza te deja más ganancia, después de comisiones, envíos y costos. Cada venta guarda su costo del día.
 - **Navegación más directa en el celular:** botón central «Vender» y acceso a «Cotizar» en la barra inferior; el menú «Más» explica para qué sirve cada sección.
