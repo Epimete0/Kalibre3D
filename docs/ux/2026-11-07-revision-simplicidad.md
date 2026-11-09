@@ -50,3 +50,26 @@ Los campos de cantidad y precio en Nueva venta no tienen su etiqueta conectada a
 ---
 
 **Siguiente paso sugerido:** implementar 1 y 2. Son los que más ayudan a que alguien nuevo ordene su negocio desde el primer día.
+
+---
+
+## Segunda revisión (9 de noviembre de 2026): que la app guíe sola
+
+Recorrido completo en celular por todas las pantallas, con la pregunta: ¿alguien que nunca usó Kalibre sabría qué hacer sin que nadie le explique?
+
+| Hallazgo | Estado |
+|---|---|
+| "Nueva venta", la acción más frecuente, no estaba en la barra inferior; el Cotizador quedaba escondido en "Más". | ✅ Botón central **Vender** y **Cotizar** en la barra. |
+| Tres nombres para cosas parecidas: "Mi taller", "Ajustes del taller" y "Configuración". | ✅ Ahora son **Mi cuenta** y **Mis costos**. |
+| Un pedido por encargo no decía en qué etapa iba ni qué hacer después. | ✅ Línea de etapas con "Ahora" y "Siguiente paso". |
+| Los estados vacíos decían "No se encontraron…" sin explicar para qué sirve la sección. En el Catálogo, el mensaje quedaba cortado dentro de una tabla. | ✅ Explican la sección y el primer paso. |
+| Fechas "2026-11-07" y meses "2026-11". | ✅ "7 nov 2026" y "noviembre 2026". |
+| Los botones -20/-50/-100 g de las bobinas no decían qué hacían. | ✅ "¿Imprimiste algo? Descuenta lo que usaste". |
+| El Catálogo pedía precio de Mercado Libre aunque el taller no venda por ahí. | ✅ Se oculta según el perfil. |
+
+### Pendiente, propuesto para la siguiente vuelta
+
+- **Material en Nueva venta y copia desde el catálogo** (propuesta 4 de la primera revisión).
+- **Descontar filamento al vender o al marcar "Imprimiendo"**: hoy se descuenta a mano en Bobinas. Requiere diseño, porque toca movimientos de stock.
+- **Ayuda contextual "¿Qué es esto?"** en Dinero (ganancia neta, por cobrar) y en el detalle del pedido (saldo, anular).
+- **Insumos** (NFC, argollas, imanes), ya anotado en `onyx.md`.

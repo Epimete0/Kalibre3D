@@ -52,7 +52,7 @@ export function AccountMenu({ account }: { account: AccountSummary }) {
             <p className="truncate text-xs text-muted">{account.centerName}</p>
           </div>
           <Link role="menuitem" href="/profile" onClick={() => setOpen(false)} className="mt-2 block rounded-lg px-3 py-2 text-sm text-ink hover:bg-canvas">
-            Ajustes de cuenta
+            Mi cuenta
           </Link>
           <Link role="menuitem" href="/profile#mi-taller" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-canvas">
             Mi taller

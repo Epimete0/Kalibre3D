@@ -18,5 +18,5 @@ export async function saveCenterSettingsAction(_state: State, data: FormData): P
   revalidatePath("/", "layout");
   // En el inicio guiado, después de los costos sigue la primera bobina (destino fijo, no viene del cliente).
   if (data.get("welcome") === "1") redirect("/spools?nueva=1&bienvenida=1");
-  return { message: "Ajustes del taller actualizados correctamente." };
+  return { message: "Costos del taller guardados correctamente." };
 }

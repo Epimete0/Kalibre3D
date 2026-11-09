@@ -12,6 +12,7 @@ import {
   STATUS_LABEL,
 } from "@/lib/order-presentation";
 import type { OrderChannel, OrderStatus } from "@/lib/order-status";
+import { formatDay, formatMonth, formatMonthName } from "@/lib/date-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -111,8 +112,8 @@ export default async function DashboardPage({
         title={name ? `Hola, ${name}` : "Hola"}
         description={
           centerName
-            ? `Panel operativo y del mes de ${centerName}.`
-            : "Panel operativo y del mes de tu taller."
+            ? `Lo que tienes pendiente hoy y cómo va el mes en ${centerName}.`
+            : "Lo que tienes pendiente hoy y cómo va el mes en tu taller."
         }
       >
         {canOperate && (
@@ -275,13 +276,13 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-ink">
-                Resumen del mes ({moneyView.month})
+                Resumen de {formatMonth(moneyView.month)}
               </h2>
               <Link
                 href={`/money?month=${moneyView.month}`}
                 className="text-xs font-semibold text-primary hover:underline"
               >
-                Abrir módulo Dinero →
+                Ver todo en Dinero →
               </Link>
             </div>
 
@@ -290,16 +291,16 @@ export default async function DashboardPage({
                 href={`/dashboard?month=${moneyView.previousMonth}`}
                 className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
-                ← {moneyView.previousMonth}
+                ← {formatMonthName(moneyView.previousMonth)}
               </Link>
               <span className="px-2.5 shrink-0 text-xs font-bold text-ink">
-                {moneyView.month}
+                {formatMonthName(moneyView.month)}
               </span>
               <Link
                 href={`/dashboard?month=${moneyView.nextMonth}`}
                 className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
-                {moneyView.nextMonth} →
+                {formatMonthName(moneyView.nextMonth)} →
               </Link>
             </div>
           </div>
@@ -307,7 +308,7 @@ export default async function DashboardPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
             <Card className="p-4 min-w-0">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Ingresos ({moneyView.month})
+                Ingresos del mes
               </span>
               <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
                 {formatMoney(moneyView.summary.income, currency)}
@@ -316,7 +317,7 @@ export default async function DashboardPage({
 
             <Card className="p-4 min-w-0">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Gastos ({moneyView.month})
+                Gastos del mes
               </span>
               <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-danger truncate">
                 {formatMoney(moneyView.summary.expense, currency)}
@@ -351,7 +352,7 @@ export default async function DashboardPage({
             <Card className="p-4 sm:p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-ink">
-                  Ingresos por canal ({moneyView.month})
+                  Ingresos por canal
                 </h3>
                 <span className="text-xs text-muted">
                   Total {formatMoney(moneyView.summary.income, currency)}
@@ -396,7 +397,7 @@ export default async function DashboardPage({
             <Card className="p-4 sm:p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-ink">
-                  Gastos por categoría ({moneyView.month})
+                  Gastos por categoría
                 </h3>
                 <span className="text-xs text-muted">
                   Total {formatMoney(moneyView.summary.expense, currency)}
@@ -492,7 +493,7 @@ export default async function DashboardPage({
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-xs font-bold text-danger block">
-                      Debía entregarse: {order.dueDate}
+                      Debía entregarse: {formatDay(order.dueDate)}
                     </span>
                     {!isViewer && order.balance !== null && order.balance > 0 && (
                       <span className="text-[11px] font-medium text-warn">
@@ -553,7 +554,7 @@ export default async function DashboardPage({
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-xs font-semibold text-ink block">
-                      {order.dueDate ? `Entrega: ${order.dueDate}` : "Sin fecha"}
+                      {order.dueDate ? `Entrega: ${formatDay(order.dueDate)}` : "Sin fecha"}
                     </span>
                     {!isViewer && order.expectedReceivable !== null && (
                       <span className="text-[11px] font-medium text-muted">

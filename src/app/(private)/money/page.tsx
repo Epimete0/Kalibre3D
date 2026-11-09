@@ -40,7 +40,7 @@ export default async function MoneyPage(props: {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Dinero del taller"
-        description="Ingresos, gastos, ganancia mensual real y movimientos por canal y categoría."
+        description="Cuánto entró, cuánto salió y cuánto ganaste de verdad este mes."
       />
 
       <MoneyControls

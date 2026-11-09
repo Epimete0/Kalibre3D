@@ -40,7 +40,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
         <div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Bobinas de filamento</h1>
           <p className="text-sm text-muted">
-            Control de gramos disponibles por material y color, y costo promedio real para cotizar.
+            Cuánto filamento te queda y cuánto te cuesta cada gramo.
           </p>
         </div>
 
@@ -139,9 +139,13 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
       {/* Lista de bobinas */}
       {view.spools.length === 0 ? (
         <Card className="p-8 text-center space-y-2">
-          <p className="text-sm font-medium text-ink">No hay bobinas para este filtro.</p>
+          <p className="text-sm font-medium text-ink">
+            {view.spools.length === 0 && materialFilter === "ALL" && !onlyLow && !includeInactive
+              ? "Aquí verás tus bobinas de filamento"
+              : "Ninguna bobina coincide con el filtro"}
+          </p>
           <p className="text-xs text-muted">
-            Registra tus bobinas para controlar cuántos gramos quedan y calcular el costo real por material.
+            Agrega cada bobina con lo que pagaste: así sabes cuánto te cuesta cada gramo y te avisamos cuando se esté acabando.
           </p>
         </Card>
       ) : (

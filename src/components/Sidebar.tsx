@@ -59,11 +59,19 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
         </Link>
       </div>
       <nav aria-label="Navegación principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-        <FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} active={isActive("/dashboard")} />
+        {canOperate ? (
+          <Link
+            href="/orders/new"
+            className="mb-2 flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-primary px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <span aria-hidden="true" className="text-base leading-none">+</span> Registrar venta
+          </Link>
+        ) : null}
+        <FeatureLink item={{ href: "/dashboard", label: "Inicio", icon: icons.home }} helper="Qué hay que hacer hoy" active={isActive("/dashboard")} />
         <div className="pt-3 space-y-1">
           <PlainLink item={{ href: "/orders", label: "Pedidos", icon: icons.orders }} active={isActive("/orders")} />
           {canOperate ? (
-            <PlainLink item={{ href: "/quote", label: "Cotizador", icon: icons.calculator }} active={isActive("/quote")} />
+            <PlainLink item={{ href: "/quote", label: "Cotizar pieza", icon: icons.calculator }} active={isActive("/quote")} />
           ) : null}
           <PlainLink item={{ href: "/products", label: "Catálogo de piezas", icon: icons.cube }} active={isActive("/products")} />
           <PlainLink item={{ href: "/spools", label: "Bobinas", icon: icons.spool }} active={isActive("/spools")} />
@@ -72,9 +80,9 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
             <PlainLink item={{ href: "/money", label: "Dinero", icon: icons.chart }} active={isActive("/money")} />
           ) : null}
           {isManager ? (
-            <PlainLink item={{ href: "/settings", label: "Ajustes", icon: icons.settings }} active={isActive("/settings")} />
+            <PlainLink item={{ href: "/settings", label: "Mis costos", icon: icons.settings }} active={isActive("/settings")} />
           ) : null}
-          <PlainLink item={{ href: "/profile", label: "Mi taller", icon: icons.workshop }} active={isActive("/profile")} />
+          <PlainLink item={{ href: "/profile", label: "Mi cuenta", icon: icons.workshop }} active={isActive("/profile")} />
         </div>
       </nav>
     </aside>

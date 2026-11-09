@@ -30,16 +30,17 @@ export default async function ProductsPage() {
     <>
       <PageHeader
         title="Catálogo de piezas y stock"
-        description="Piezas habituales, costos reales de fabricación, precios directos y de Mercado Libre, y stock disponible."
+        description="Las piezas que vendes seguido, con su precio y cuántas tienes listas."
       >
         <LinkButton href="/quote" variant="ghost">
-          Cotizador 3D
+          Cotizar pieza
         </LinkButton>
       </PageHeader>
       <div className="max-w-5xl pb-20 sm:pb-8">
         <CreateProductBar
           currency={settings.currency}
           defaultPurgeGrams={settings.defaultPurgeGrams}
+          sellsOnMercadoLibre={settings.mlCommissionPercent > 0 || settings.mlDefaultShippingCost > 0}
         />
         <ProductList
           products={products}

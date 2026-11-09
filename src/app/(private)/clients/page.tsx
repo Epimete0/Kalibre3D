@@ -30,7 +30,7 @@ export default async function ClientsPage(props: {
     <div className="space-y-6">
       <PageHeader
         title="Clientes"
-        description="Gestión y directorio de clientes del taller para seguimiento de pedidos y saldos."
+        description="Quiénes te compran, qué te han comprado y cuánto te deben."
       />
 
       {canManage && <CreateCustomerBar />}

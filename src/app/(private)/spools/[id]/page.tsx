@@ -4,6 +4,7 @@ import { SpoolDetailEditControls, SpoolQuickConsumeCard } from "@/app/(private)/
 import { Badge, Card } from "@/components/ui";
 import { MATERIAL_LABEL, SPOOL_MOVEMENT_LABEL, type SpoolMovementKind } from "@/lib/catalog-presentation";
 import { getSpoolDetail } from "@/lib/spool-queries";
+import { formatDay } from "@/lib/date-labels";
 
 export const metadata = {
   title: "Detalle de Bobina · Kalibre",
@@ -24,7 +25,7 @@ export default async function SpoolDetailPage({ params }: { params: Params }) {
         <Link href="/spools" className="text-xs font-semibold text-muted hover:text-ink">
           ← Volver a bobinas
         </Link>
-        <span className="text-xs text-muted">Comprada el {spool.purchasedOn}</span>
+        <span className="text-xs text-muted">Comprada el {formatDay(spool.purchasedOn)}</span>
       </div>
 
       <SpoolQuickConsumeCard

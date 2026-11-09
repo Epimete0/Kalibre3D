@@ -13,6 +13,7 @@ import {
 } from "@/lib/money-presentation";
 import type { OrderDetailPayment } from "@/lib/order-queries";
 import type { OrderChannel, OrderStatus } from "@/lib/order-status";
+import { formatDay } from "@/lib/date-labels";
 import {
   registerPaymentAction,
   returnOrderAction,
@@ -459,7 +460,7 @@ export function OrderMoneyControls({
                       {isVoided && <Badge tone="danger">Anulado</Badge>}
                     </div>
                     <div className="mt-0.5 text-xs text-muted">
-                      Fecha: {tx.occurredOn}
+                      Fecha: {formatDay(tx.occurredOn)}
                       {tx.notes ? ` · ${tx.notes}` : ""}
                       {isVoided && tx.voidReason
                         ? ` · Motivo: ${tx.voidReason}`

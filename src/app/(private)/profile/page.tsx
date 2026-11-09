@@ -29,7 +29,7 @@ export default async function ProfilePage() {
 
   if (!active) {
     return <>
-      <PageHeader title="Configuración" description="Tu cuenta y tu taller." />
+      <PageHeader title="Mi cuenta" description="Tu correo, tu contraseña y el nombre de tu taller." />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
         {account}
         <Card className="min-w-0 p-5 lg:col-span-7">
@@ -49,9 +49,9 @@ export default async function ProfilePage() {
         <div className="mt-3">
           <CenterForm name={activeCenter?.name ?? ""} nameLockedUntil={null} />
           <p className="mt-3 text-xs text-faint">
-            La moneda, la zona horaria y los parámetros de costos se configuran en{" "}
+            Tus costos (luz, comisiones, IVA, margen), la moneda y la zona horaria están en{" "}
             <Link href="/settings" className="font-semibold text-primary hover:underline">
-              Ajustes del taller
+              Mis costos
             </Link>
             .
           </p>
@@ -67,7 +67,7 @@ export default async function ProfilePage() {
   );
 
   return <>
-    <PageHeader title="Configuración" description="Tu cuenta y los datos de tu taller." />
+    <PageHeader title="Mi cuenta" description="Tu correo, tu contraseña y el nombre de tu taller." />
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
       {account}
       {centerCard}

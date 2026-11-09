@@ -21,6 +21,7 @@ import {
   type OrderStatus,
 } from "@/lib/order-status";
 import { changeOrderStatusAction } from "./actions";
+import { formatDay } from "@/lib/date-labels";
 
 function statusTone(status: OrderStatus): "neutral" | "ok" | "warn" | "danger" | "accent" {
   switch (status) {
@@ -229,11 +230,11 @@ export function OrderListControls({
 
       {filteredOrders.length === 0 ? (
         <EmptyState
-          title="No se encontraron pedidos"
+          title={orders.length === 0 ? "Aquí aparecerán tus ventas y pedidos" : "Ningún pedido coincide con el filtro"}
           description={
             orders.length === 0
-              ? "Comienza registrando tu primera venta rápida o pedido por encargo."
-              : "Prueba cambiando el filtro de estado, canal o texto de búsqueda."
+              ? "Registra tu primera venta: solo anotas qué vendiste y en cuánto. Si es un encargo, aquí sigues en qué etapa va."
+              : "Prueba con otro estado, canal o texto de búsqueda."
           }
         >
           {orders.length === 0 && canManage ? (
@@ -296,7 +297,7 @@ export function OrderListControls({
                           <>
                             <span>•</span>
                             <span className={order.isOverdue ? "font-semibold text-danger" : ""}>
-                              Entrega: {order.dueDate}
+                              Entrega: {formatDay(order.dueDate)}
                             </span>
                           </>
                         )}
@@ -333,7 +334,7 @@ export function OrderListControls({
                       href={`/orders/${order.id}`}
                       className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line bg-raised px-3.5 text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
                     >
-                      Ver ficha
+                      Ver detalle
                     </Link>
 
                     {next && (
@@ -416,7 +417,7 @@ export function OrderListControls({
                                   order.isOverdue ? "font-bold text-danger" : "text-ink"
                                 }
                               >
-                                {order.dueDate}
+                                {formatDay(order.dueDate)}
                               </span>
                               {order.isOverdue && <Badge tone="danger">Atrasado</Badge>}
                             </div>
@@ -468,7 +469,7 @@ export function OrderListControls({
                               href={`/orders/${order.id}`}
                               className="rounded-lg border border-line bg-raised px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-canvas"
                             >
-                              Ver ficha
+                              Ver detalle
                             </Link>
                           </div>
                         </td>

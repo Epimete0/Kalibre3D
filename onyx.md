@@ -6,6 +6,18 @@
 
 ---
 
+## App más intuitiva sin inducción externa — 2026-11-09
+
+- **Pedido del dueño:** que la app guíe sola y que alguien pueda ordenar su negocio sin que nadie le explique. Recorrido completo en celular (375 px) por todas las pantallas; hallazgos y estado en `docs/ux/2026-11-07-revision-simplicidad.md` (sección "Segunda revisión").
+- **Navegación (`MobileNav.tsx`, `Sidebar.tsx`):** barra inferior Inicio · Pedidos · **Vender** (botón central destacado) · **Cotizar** · Más. "Más" lista Dinero, Clientes, Catálogo, Bobinas, Mis costos y Mi cuenta, cada uno con una línea de para qué sirve; se cierra con Escape. En escritorio, botón "Registrar venta" arriba de la barra lateral. Nombres unificados: "Mi taller"/"Configuración"/"Ajustes de cuenta" → **Mi cuenta** (`/profile`); "Ajustes del taller" → **Mis costos** (`/settings`). El Ayudante ve Vender y Cotizar; el Lector, Clientes y Catálogo.
+- **Pedido por encargo (`order-stages.ts`, `OrderDetailStatusControls.tsx`):** línea de etapas Cotizado → Confirmado → Imprimiendo → Listo → Entregado con la actual marcada, "Ahora: …" (qué significa) y "Siguiente paso: …" (cuándo tocar el botón). Las etapas se prueban contra `nextStatuses` para que no se desalineen del dominio.
+- **Estados vacíos que explican:** Pedidos, Clientes (opcional, se puede vender sin cliente), Dinero (las ventas se anotan solas; los gastos con «Registrar gasto»), Bobinas y Catálogo (el vacío ya no queda cortado dentro de una tabla de 680 px). Distinguen "todavía no hay nada" de "el filtro no encontró nada".
+- **Fechas en lenguaje normal (`date-labels.ts`):** "7 nov 2026" y "noviembre 2026" en panel, pedidos, cobros, Dinero y bobinas, sin depender de la zona horaria (las fechas ya llegan resueltas en la zona del taller).
+- **Textos:** descripciones de cada pantalla reescritas en lenguaje simple; "Ver ficha" → "Ver detalle"; los botones -20/-50/-100 g de bobinas explican "¿Imprimiste algo? Descuenta lo que usaste" y tienen etiqueta accesible; el Catálogo no pide precio de Mercado Libre si el taller no vende por ahí.
+- **Verificación:** local a 375 px (barra con Vender central, menú Más, pedido por encargo creado y avanzado de Confirmado a Imprimiendo con su explicación, fechas en Dinero). Pruebas nuevas `order-stages.test.ts` y `date-labels.test.ts`. Quality gate PASSED (359 unitarias, 13 RLS, 3 S1, 1 S3, 56 transacciones). Sin migraciones.
+
+---
+
 ## Cotizador según el perfil del taller y kWh visibles — 2026-11-09
 
 - **Pedido del dueño:** el presupuesto interno debe usar los datos del perfil y mostrar la energía en kWh.

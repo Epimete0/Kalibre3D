@@ -24,7 +24,7 @@ export default async function SettingsPage(props: { searchParams?: Promise<{ bie
   return (
     <>
       <PageHeader
-        title={welcome ? "Prepara tu taller" : "Ajustes del taller"}
+        title={welcome ? "Prepara tu taller" : "Mis costos"}
         description={
           welcome
             ? "Paso 1 de 3 · Tus costos. Después agregas tu primera bobina y registras tu primera venta."

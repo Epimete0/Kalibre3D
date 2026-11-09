@@ -428,12 +428,14 @@ export function SpoolQuickConsumeCard({
 
       {canOperate && spool.active && (
         <div className="space-y-2 pt-1">
+          <p className="text-[11px] text-muted">¿Imprimiste algo? Descuenta lo que usaste:</p>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
               {[20, 50, 100].map((g) => (
                 <button
                   key={g}
                   type="button"
+                  aria-label={`Descontar ${g} gramos de esta bobina`}
                   disabled={isPending || spool.remainingGrams < g}
                   onClick={() => handleQuickConsume(g)}
                   className="min-h-[36px] rounded-lg border border-line bg-raised px-2.5 py-1 text-xs font-semibold text-ink hover:bg-canvas disabled:opacity-40"
@@ -446,7 +448,7 @@ export function SpoolQuickConsumeCard({
                 onClick={() => setShowCustom((v) => !v)}
                 className="min-h-[36px] rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-muted hover:text-ink"
               >
-                {showCustom ? "Cerrar" : "Otro / Ajustar"}
+                {showCustom ? "Cerrar" : "Otra cantidad"}
               </button>
             </div>
 

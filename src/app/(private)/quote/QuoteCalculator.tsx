@@ -245,7 +245,7 @@ export function QuoteCalculator({
         tone: "ok",
         message: res.message,
         linkHref: `/products/${res.data.id}`,
-        linkLabel: "Ver ficha en catálogo →",
+        linkLabel: "Ver pieza en el catálogo →",
       });
     });
   }

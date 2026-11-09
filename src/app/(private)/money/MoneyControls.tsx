@@ -18,6 +18,7 @@ import type { MonthlyMoneyView } from "@/lib/money-queries";
 import { CHANNEL_LABEL, orderNumberLabel } from "@/lib/order-presentation";
 import type { OrderChannel } from "@/lib/order-status";
 import { recordManualMoneyAction, voidMoneyAction } from "./actions";
+import { formatDay } from "@/lib/date-labels";
 
 function makeUuid(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -468,8 +469,8 @@ export function MoneyControls({
 
         {view.transactions.length === 0 ? (
           <EmptyState
-            title="Sin movimientos en este mes"
-            description="Los cobros de ventas y los gastos registrados aparecerán aquí."
+            title="Todavía no hay movimientos este mes"
+            description="Cada venta cobrada se anota sola aquí. Los gastos (filamento, envíos, repuestos) los agregas con «Registrar gasto» para saber tu ganancia real."
           />
         ) : (
           <div className="divide-y divide-line/70">
@@ -510,7 +511,7 @@ export function MoneyControls({
                       </div>
 
                       <div className="text-xs text-muted">
-                        <span>{tx.occurredOn}</span>
+                        <span>{formatDay(tx.occurredOn)}</span>
                         {tx.notes ? <span> · {tx.notes}</span> : null}
                         {isVoided && tx.voidReason ? (
                           <span> · Motivo de anulación: {tx.voidReason}</span>

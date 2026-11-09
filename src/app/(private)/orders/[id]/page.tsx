@@ -14,6 +14,7 @@ import { getOrderDetail } from "@/lib/order-queries";
 import type { OrderStatus } from "@/lib/order-status";
 import { OrderDetailStatusControls } from "./OrderDetailStatusControls";
 import { OrderMoneyControls } from "./OrderMoneyControls";
+import { formatDay } from "@/lib/date-labels";
 
 export const metadata = {
   title: "Detalle de pedido | Kalibre",
@@ -137,7 +138,7 @@ export default async function OrderDetailPage(props: {
                     : "border-line bg-raised text-ink"
                 }`}
               >
-                Entrega comprometida: <strong>{order.dueDate}</strong>
+                Entrega comprometida: <strong>{formatDay(order.dueDate)}</strong>
               </div>
             )}
             {order.deliveredAt && (

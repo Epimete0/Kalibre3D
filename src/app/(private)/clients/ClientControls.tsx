@@ -268,7 +268,7 @@ export function CustomerRowActions({
           href={`/clients/${customer.id}`}
           className="inline-flex min-h-8 items-center justify-center rounded border border-line bg-raised px-2.5 text-xs font-semibold text-ink hover:bg-canvas"
         >
-          Ver ficha
+          Ver detalle
         </Link>
         {canManage && (
           <button
@@ -335,8 +335,8 @@ export function CustomerListTable({
   if (customers.length === 0) {
     return (
       <EmptyState
-        title="No se encontraron clientes"
-        description="Agrega nuevos clientes o prueba ajustando los filtros de búsqueda."
+        title="Aquí verás a tus clientes"
+        description="Guarda a quienes te compran seguido para ver su historial y cuánto te deben. Es opcional: puedes vender sin cliente. Si buscaste un nombre, prueba con otro o toca «Todos»."
       />
     );
   }

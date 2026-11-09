@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { STATUS_ACTION_LABEL, STATUS_LABEL } from "@/lib/order-presentation";
+import { ORDER_STAGES, STAGE_MEANING, STAGE_WHEN, isOrderStage, stageIndex } from "@/lib/order-stages";
 import { nextStatuses, type OrderStatus } from "@/lib/order-status";
 import { changeOrderStatusAction } from "../actions";
 
@@ -53,8 +54,36 @@ export function OrderDetailStatusControls({
     });
   }
 
+  const currentIndex = stageIndex(currentStatus);
+  const nextStage = forwardStatuses.find(isOrderStage);
+
   return (
     <div className="space-y-3 border-t border-line/70 pt-4">
+      {currentIndex >= 0 && (
+        <div>
+          <ol aria-label="Etapas del pedido" className="grid grid-cols-5 gap-1">
+            {ORDER_STAGES.map((stage, index) => {
+              const done = index < currentIndex;
+              const current = index === currentIndex;
+              return (
+                <li key={stage} aria-current={current ? "step" : undefined} className="min-w-0 text-center">
+                  <span
+                    aria-hidden="true"
+                    className={`mx-auto mb-1 block h-1.5 rounded-full ${done || current ? "bg-primary" : "bg-line-strong"}`}
+                  />
+                  <span className={`block break-words text-[10px] leading-tight ${current ? "font-bold text-ink" : done ? "text-muted" : "text-faint"}`}>
+                    {STATUS_LABEL[stage]}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-2 text-sm text-ink">
+            <strong>Ahora:</strong> {STAGE_MEANING[ORDER_STAGES[currentIndex]]}
+          </p>
+          {nextStage && <p className="mt-0.5 text-xs text-muted">Siguiente paso: {STAGE_WHEN[nextStage]}</p>}
+        </div>
+      )}
       {error && (
         <div
           role="alert"

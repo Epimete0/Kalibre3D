@@ -53,9 +53,12 @@ function Feedback({ state }: { state: ProductActionState }) {
 export function CreateProductBar({
   currency,
   defaultPurgeGrams = 0,
+  sellsOnMercadoLibre = true,
 }: {
   currency: string;
   defaultPurgeGrams?: number;
+  /** Si el taller no vende por Mercado Libre (perfil), no se pide precio ML. */
+  sellsOnMercadoLibre?: boolean;
 }) {
   const [state, run, pending] = useActionState(createProductAction, {});
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -157,8 +160,9 @@ export function CreateProductBar({
             </Field>
           </div>
 
+          {sellsOnMercadoLibre && (
           <div className="sm:col-span-1 lg:col-span-2">
-            <Field label="Precio ML (opcional)" htmlFor={mlPriceId}>
+            <Field label="Precio en Mercado Libre (opcional)" htmlFor={mlPriceId}>
               <input
                 id={mlPriceId}
                 type="number"
@@ -171,6 +175,7 @@ export function CreateProductBar({
               />
             </Field>
           </div>
+          )}
 
           <div className="sm:col-span-2 lg:col-span-2">
             <button type="submit" disabled={pending || !name.trim() || !salePrice} className={`${primaryBtn} w-full`}>
@@ -622,6 +627,23 @@ export function ProductList({
         />
       </div>
 
+      {filtered.length === 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-line-strong p-6 text-center">
+          <p className="text-sm font-medium text-ink">
+            {search
+              ? "Ninguna pieza tiene ese nombre."
+              : products.length === 0
+                ? "Aquí guardas las piezas que vendes seguido"
+                : "No hay piezas en esta vista."}
+          </p>
+          {!search && products.length === 0 && (
+            <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+              Con su precio y su stock, después las eliges en una venta con un toque. También puedes guardarlas desde el
+              cotizador.
+            </p>
+          )}
+        </div>
+      ) : (
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[680px] text-left border-collapse">
           <thead>
@@ -653,6 +675,7 @@ export function ProductList({
           </tbody>
         </table>
       </div>
+      )}
     </Card>
   );
 }

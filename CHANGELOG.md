@@ -6,6 +6,9 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Navegación más directa en el celular:** botón central «Vender» y acceso a «Cotizar» en la barra inferior; el menú «Más» explica para qué sirve cada sección.
+- **Pedidos por encargo guiados:** se ve en qué etapa va cada pedido, qué significa y cuándo pasar a la siguiente.
+- **Pantallas vacías que orientan:** explican para qué sirve cada sección y qué hacer primero.
 - **Cotizador según tu perfil:** muestra los kWh que usa cada pieza y oculta lo que tienes desactivado (Mercado Libre, embalaje, luz); la purga aparece solo con más de un color.
 - **Inicio guiado "Prepara tu taller":** al crear el taller, primero los costos (opcionales, con ayudas), luego la primera bobina y después la primera venta.
 - **Costos nuevos en Ajustes:** luz calculada desde el precio del kWh y los watts de la impresora, comisión adicional por venta, IVA incluido en los precios y margen mínimo de ganancia.
@@ -15,6 +18,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 - **Nueva venta más simple:** primero se anota qué vendiste y en cuánto; el canal queda recordado para la próxima venta; descuento y notas pasan a "Más opciones".
 
 ### Corregido
+- **Lenguaje:** fechas como «7 nov 2026» y meses con su nombre; «Mi cuenta» y «Mis costos» reemplazan nombres repetidos o confusos; el Catálogo no pide precio de Mercado Libre si no vendes por ahí.
 - **Mercado Libre en Nueva venta:** la comisión sugerida se recalcula con el total aunque el canal se elija antes de escribir el precio.
 - **Primer ingreso:** el panel de un taller recién creado ya no muestra "No pudimos cargar esta sección" la primera vez.
 - **Nueva venta:** las piezas escritas a mano ya no se guardan como PLA si no se eligió material.

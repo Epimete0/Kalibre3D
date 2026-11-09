@@ -23,7 +23,7 @@ export default async function OrdersPage() {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Pedidos y Ventas"
-        description="Historial de ventas entregadas y pedidos por encargo."
+        description="Tus ventas y los encargos que tienes en curso. Toca uno para ver en qué etapa va."
       >
         {canManage && (
           <Link
