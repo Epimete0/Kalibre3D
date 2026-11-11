@@ -6,6 +6,22 @@
 
 ---
 
+## Simplificación de Dinero: Caja del mes vs Margen por pieza — 2026-11-11
+
+- **Pedido del usuario:** eliminar la confusión entre las secciones contables donde aparecían cifras de ganancia diferentes ("Ganancia neta real" en Resumen vs "Ganancia neta real" en Rentabilidad) y simplificar la estructura reduciendo la cantidad de pestañas para que la contabilidad del taller sea clara y no confunda al usuario.
+- **Rediseño conceptual de Dinero (2 pestañas complementarias en lugar de 3):**
+  - **Caja del mes (`/money`):** Perspectiva de flujo de caja real (*"¿Cuánto dinero líquido me quedó en el bolsillo este mes?"*).
+    - Tarjetas: *Entró a caja* (bruto cobrado con detalle de neto taller si hay IVA), *IVA retenido* (si aplica, aclarando que es dinero a tributar y no ganancia), *Salió en compras y gastos* (egresos del período), y *Quedó en caja* (saldo líquido disponible tras compras y gastos, con badge *Saldo a favor* o *Déficit del mes*).
+    - Absorbe la necesidad de la pestaña redundante de Compras (`/money/compras` ahora redirige a `/money` preservando el selector de mes).
+  - **Margen por pieza (`/money/rentabilidad`):** Perspectiva de rentabilidad unitaria de fabricación (*"¿Qué piezas me conviene fabricar y vender?"*).
+    - Se elimina el término ambiguo "Ganancia neta real del taller" que chocaba con la caja, renombrándolo a **"Margen de piezas"**.
+    - Tarjetas: *Ventas de piezas*, *Costo de filamento y luz* (plástico y energía realmente consumidos en las piezas vendidas), *Margen de piezas* (precio menos costo directo, con badge de porcentaje de retorno) y *Unidades fabricadas*.
+    - Banner superior explicativo: *"Margen directo de producción: Mide cuánto le ganas a cada pieza sobre su filamento y luz consumidos. Para ver el dinero líquido que te quedó en la cuenta bancaria tras compras de bobinas y gastos del mes, revisa Caja del mes."*
+    - Tarjeta explicativa inferior que refuerza la diferencia entre ambas visiones contables para evitar cualquier duda al maker.
+- **Verificación:** 377 pruebas en Vitest en verde (`npm test -- --run`). Linter con 0 errores y 0 advertencias (`npm run lint`). Compilación de producción en Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Visualización responsiva y tarjetas móviles de catálogo de piezas — 2026-11-11
 
 - **Pedido del usuario:** corregir la visualización de los productos en dispositivos móviles (la tabla forzaba un scroll horizontal de 680 px cortando el stock y las acciones, los botones de ajuste eran de 28 px y la edición desbordaba la pantalla).

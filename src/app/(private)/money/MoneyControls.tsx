@@ -165,8 +165,6 @@ export function MoneyControls({
   const vatAmount = vatIncluded(grossIncome, vatPercent);
   const netIncome = grossIncome - vatAmount;
   const netProfit = netIncome - view.summary.expense;
-  const marginPercent =
-    netIncome > 0 ? Math.round((netProfit / netIncome) * 100) : 0;
 
   const validTransactions = view.transactions.filter((t) => t.voidedAt === null);
   const expenseCount = validTransactions.filter((t) => t.type === "EXPENSE").length;
@@ -388,48 +386,48 @@ export function MoneyControls({
         </Card>
       )}
 
-      {/* Tarjetas de resumen del mes */}
+      {/* Tarjetas de caja del mes */}
       {vatPercent > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
           <Card className="p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Ingresos cobrados (Bruto)
+                Entró a caja
               </span>
               <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
                 {formatMoney(grossIncome, currency)}
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              Neto sin IVA: <strong className="text-ink font-semibold">{formatMoney(netIncome, currency)}</strong>
+              Neto taller: <strong className="text-ink font-semibold">{formatMoney(netIncome, currency)}</strong>
             </span>
           </Card>
 
           <Card className="p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                IVA contenido ({vatPercent}%)
+                IVA retenido ({vatPercent}%)
               </span>
               <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
                 {formatMoney(vatAmount, currency)}
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              Débito fiscal a tributar · No es ganancia
+              Por pagar a impuestos · No es ganancia
             </span>
           </Card>
 
           <Card className="p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Gastos operativos
+                Salió en compras y gastos
               </span>
               <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
                 {formatMoney(view.summary.expense, currency)}
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              {expenseCount} {expenseCount === 1 ? "egreso registrado" : "egresos registrados"}
+              {expenseCount} {expenseCount === 1 ? "compra / egreso registrado" : "compras / egresos registrados"}
             </span>
           </Card>
 
@@ -437,10 +435,10 @@ export function MoneyControls({
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                  Ganancia neta real
+                  Quedó en caja
                 </span>
-                <Badge tone={marginPercent >= 50 ? "ok" : marginPercent >= 25 ? "warn" : "danger"}>
-                  {marginPercent}% margen
+                <Badge tone={netProfit >= 0 ? "ok" : "danger"}>
+                  {netProfit >= 0 ? "Saldo a favor" : "Déficit del mes"}
                 </Badge>
               </div>
               <span
@@ -452,7 +450,7 @@ export function MoneyControls({
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              Descontando IVA y gastos
+              Dinero disponible tras pagar gastos e IVA
             </span>
           </Card>
         </div>
@@ -461,28 +459,28 @@ export function MoneyControls({
           <Card className="p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Ingresos del mes
+                Entró a caja
               </span>
               <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
                 {formatMoney(view.summary.income, currency)}
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              {incomeCount} {incomeCount === 1 ? "cobro registrado" : "cobros registrados"}
+              {incomeCount} {incomeCount === 1 ? "cobro de venta registrado" : "cobros de ventas registrados"}
             </span>
           </Card>
 
           <Card className="p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Gastos operativos
+                Salió en compras y gastos
               </span>
               <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
                 {formatMoney(view.summary.expense, currency)}
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              {expenseCount} {expenseCount === 1 ? "egreso registrado" : "egresos registrados"}
+              {expenseCount} {expenseCount === 1 ? "compra / egreso registrado" : "compras / egresos registrados"}
             </span>
           </Card>
 
@@ -490,13 +488,11 @@ export function MoneyControls({
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                  Ganancia neta
+                  Quedó en caja
                 </span>
-                {view.summary.income > 0 && (
-                  <Badge tone={view.summary.profit >= 0 ? "ok" : "danger"}>
-                    {Math.round((view.summary.profit / view.summary.income) * 100)}% margen
-                  </Badge>
-                )}
+                <Badge tone={view.summary.profit >= 0 ? "ok" : "danger"}>
+                  {view.summary.profit >= 0 ? "Saldo a favor" : "Déficit del mes"}
+                </Badge>
               </div>
               <span
                 className={`mt-1 block text-2xl font-bold tabular-nums ${
@@ -507,7 +503,7 @@ export function MoneyControls({
               </span>
             </div>
             <span className="mt-2 block text-xs text-muted">
-              Ingresos menos gastos
+              Dinero disponible en tu cuenta tras restar egresos
             </span>
           </Card>
         </div>

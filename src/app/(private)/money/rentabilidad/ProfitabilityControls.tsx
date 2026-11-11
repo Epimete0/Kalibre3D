@@ -46,9 +46,9 @@ export function ProfitabilityControls({
   // Cálculos impositivos globales
   const vatAmount = vatIncluded(totals.revenue, vatPercent);
   const netRevenue = totals.revenue - vatAmount;
-  const netProfit = vatPercent > 0 ? netRevenue - totals.cost : totals.profit;
+  const pieceProfit = totals.profit;
   const globalMargin =
-    netRevenue > 0 ? Math.round((netProfit / netRevenue) * 100) : 0;
+    totals.revenue > 0 ? Math.round((pieceProfit / totals.revenue) * 100) : 0;
 
   // Piezas destacadas para Insights rápidos
   const { topProfitPiece, topVolumePiece, topMarginPiece } = useMemo(() => {
@@ -94,25 +94,45 @@ export function ProfitabilityControls({
 
   return (
     <div className="space-y-6">
-      {/* 1. Tarjetas de salud financiera y KPI */}
+      {/* Aviso contextual: aclara la diferencia con Caja */}
+      <div className="rounded-xl border border-line bg-raised/50 p-3.5 text-xs text-muted flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <p>
+          <strong className="text-ink font-semibold">Margen directo de producción:</strong> Mide cuánto le ganas a cada pieza sobre su filamento y luz consumidos. Para ver el dinero líquido que te quedó en la cuenta bancaria tras compras de bobinas y gastos del mes, revisa{" "}
+          <Link href="/money" className="text-primary font-semibold hover:underline">
+            Caja del mes →
+          </Link>
+        </p>
+      </div>
+
+      {anyWithoutCost && (
+        <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-ink">
+          Hay piezas vendidas cuyo costo no se pudo calcular porque no tenían gramos o material en catálogo. Su margen real podría variar.
+        </div>
+      )}
+
+      {anyEstimatedToday && (
+        <div className="rounded-xl border border-line bg-raised/60 p-3 text-xs text-muted">
+          Algunos pedidos antiguos no tenían el costo histórico guardado; su margen se calculó con los costos de filamento actuales.
+        </div>
+      )}
+
+      {/* 1. Tarjetas de margen de fabricación */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-              Ingresos generados
+              Ventas de piezas
             </span>
-            <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
+            <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
               {formatMoney(totals.revenue, currency)}
             </span>
           </div>
           <div className="mt-2 text-xs text-muted">
-            {vatPercent > 0 ? (
-              <span>
-                Neto taller: <strong className="text-ink font-semibold">{formatMoney(netRevenue, currency)}</strong>
-                {" · "}IVA {vatPercent}% ({formatMoney(vatAmount, currency)})
+            <span>{ordersCount} {ordersCount === 1 ? "pedido entregado" : "pedidos entregados"}</span>
+            {vatPercent > 0 && (
+              <span className="block mt-0.5">
+                Neto sin IVA: <strong className="text-ink font-semibold">{formatMoney(netRevenue, currency)}</strong>
               </span>
-            ) : (
-              <span>{ordersCount} {ordersCount === 1 ? "pedido concretado" : "pedidos concretados"}</span>
             )}
           </div>
         </Card>
@@ -120,14 +140,14 @@ export function ProfitabilityControls({
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-              Costo de fabricación
+              Costo de filamento y luz
             </span>
             <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
               {formatMoney(totals.cost, currency)}
             </span>
           </div>
           <span className="mt-2 block text-xs text-muted">
-            Filamento, luz, embalaje y purga
+            Material y energía en piezas vendidas
           </span>
         </Card>
 
@@ -135,38 +155,36 @@ export function ProfitabilityControls({
           <div>
             <div className="flex items-center justify-between gap-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Ganancia neta real
+                Margen de piezas
               </span>
               <Badge tone={globalMargin >= 50 ? "ok" : globalMargin >= 25 ? "warn" : "danger"}>
-                {globalMargin}% margen
+                {globalMargin}% retorno
               </Badge>
             </div>
             <span
               className={`mt-1 block text-2xl font-bold tabular-nums ${
-                netProfit >= 0 ? "text-ok" : "text-danger"
+                pieceProfit >= 0 ? "text-ok" : "text-danger"
               }`}
             >
-              {formatMoney(netProfit, currency)}
+              {formatMoney(pieceProfit, currency)}
             </span>
           </div>
           <span className="mt-2 block text-xs text-muted">
-            {vatPercent > 0
-              ? "Descontando IVA y costos directos"
-              : "Ventas menos costos de fabricación"}
+            Precio de venta menos costo directo de hacerlas
           </span>
         </Card>
 
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-              Volumen producido
+              Unidades fabricadas
             </span>
             <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
               {totals.units} {totals.units === 1 ? "unidad" : "unidades"}
             </span>
           </div>
           <span className="mt-2 block text-xs text-muted">
-            {rows.length} {rows.length === 1 ? "modelo distinto" : "modelos distintos"} vendidos
+            {rows.length} {rows.length === 1 ? "modelo distinto" : "modelos distintos"}
           </span>
         </Card>
       </div>
@@ -183,7 +201,7 @@ export function ProfitabilityControls({
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted block">
-                  Mayor ganancia total
+                  Mayor margen total ($)
                 </span>
                 <p className="text-sm font-bold text-ink truncate mt-0.5">
                   {topProfitPiece.name}
@@ -227,7 +245,7 @@ export function ProfitabilityControls({
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted block">
-                  Mayor margen porcentual
+                  Mayor retorno porcentual
                 </span>
                 <p className="text-sm font-bold text-ink truncate mt-0.5">
                   {topMarginPiece.name}
@@ -274,7 +292,7 @@ export function ProfitabilityControls({
                 : "text-muted hover:text-ink hover:bg-canvas"
             }`}
           >
-            Mayor ganancia
+            Mayor margen ($)
           </button>
           <button
             type="button"
@@ -285,7 +303,7 @@ export function ProfitabilityControls({
                 : "text-muted hover:text-ink hover:bg-canvas"
             }`}
           >
-            Mayor margen
+            Mayor retorno (%)
           </button>
           <button
             type="button"
@@ -330,7 +348,7 @@ export function ProfitabilityControls({
                 ? Math.round((Math.max(0, row.profit) / totals.profit) * 100)
                 : 0;
 
-            // Proporción visual costo vs ganancia (sobre el precio de venta unitario)
+            // Proporción visual costo vs ganancia
             const profitPct =
               row.revenue > 0
                 ? Math.max(0, Math.min(100, Math.round((row.profit / row.revenue) * 100)))
@@ -359,7 +377,7 @@ export function ProfitabilityControls({
                       </h2>
                       {row.marginPercent !== null && (
                         <Badge tone={marginTone(row.marginPercent)}>
-                          {row.marginPercent}% margen
+                          {row.marginPercent}% retorno
                         </Badge>
                       )}
                     </div>
@@ -371,32 +389,32 @@ export function ProfitabilityControls({
                       {" · "}
                       Costo prom: <span className="text-ink font-medium">{formatMoney(unitCost, currency)}</span>
                       {" · "}
-                      Ganancia/u: <span className="text-ok font-semibold">+{formatMoney(unitProfit, currency)}</span>
+                      Margen/u: <span className="text-ok font-semibold">+{formatMoney(unitProfit, currency)}</span>
                     </p>
                   </div>
 
                   <div className="sm:text-right shrink-0">
                     <span className="text-xs uppercase tracking-wider text-muted block">
-                      Ganancia total
+                      Margen total
                     </span>
                     <span className="text-xl sm:text-2xl font-bold tabular-nums text-ok">
-                      {formatMoney(row.profit, currency)}
+                      +{formatMoney(row.profit, currency)}
                     </span>
                     {totals.profit > 0 && (
                       <span className="mt-0.5 block text-[11px] text-muted">
-                        {profitShare}% del total del taller
+                        {profitShare}% del margen de piezas del taller
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Barra de proporción visual Ganancia vs Costo */}
+                {/* Barra de proporción visual Margen vs Costo */}
                 <div className="space-y-1 pt-1">
                   <div className="h-2 w-full rounded-full bg-raised overflow-hidden flex">
                     <div
                       className="bg-ok h-full transition-all duration-300"
                       style={{ width: `${profitPct}%` }}
-                      title={`Ganancia ${profitPct}%`}
+                      title={`Margen ${profitPct}%`}
                     />
                     <div
                       className="bg-line h-full transition-all duration-300"
@@ -406,7 +424,7 @@ export function ProfitabilityControls({
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-muted">
                     <span>
-                      Ganancia: <strong className="text-ink font-semibold">{profitPct}%</strong> ({formatMoney(row.profit, currency)})
+                      Margen: <strong className="text-ink font-semibold">{profitPct}%</strong> ({formatMoney(row.profit, currency)})
                     </span>
                     <span>
                       Costo: <strong className="text-ink font-semibold">{costPct}%</strong> ({formatMoney(row.cost, currency)})
@@ -419,7 +437,7 @@ export function ProfitabilityControls({
                   <div className="rounded-lg bg-canvas border border-line/60 px-3 py-2 text-[11px] text-muted space-y-0.5">
                     {row.unitsWithoutCost > 0 && (
                       <p className="text-warn">
-                        {row.unitsWithoutCost} {row.unitsWithoutCost === 1 ? "unidad sin costo calculado" : "unidades sin costo calculado"} (sin gramos o material en catálogo). Su ganancia real podría ser menor.
+                        {row.unitsWithoutCost} {row.unitsWithoutCost === 1 ? "unidad sin costo calculado" : "unidades sin costo calculado"} (sin gramos o material en catálogo). Su margen real podría variar.
                       </p>
                     )}
                     {row.unitsEstimatedToday > 0 && (
@@ -435,32 +453,17 @@ export function ProfitabilityControls({
         </div>
       )}
 
-      {/* 5. Tarjeta explicativa con reglas claras de cálculo */}
+      {/* 5. Tarjeta explicativa con reglas claras y directas */}
       <Card className="space-y-2 p-4 sm:p-5 text-xs text-muted">
         <h3 className="font-bold uppercase tracking-wider text-ink text-[11px]">
-          Cómo se calcula la rentabilidad
+          Diferencia entre Margen por pieza y Caja del mes
         </h3>
         <p>
-          <strong className="text-ink">Ingresos netos:</strong> Precio de venta cobrado al cliente menos comisiones de Mercado Libre, costos de envío bonificados y descuentos aplicados.
+          <strong className="text-ink">Margen por pieza (esta pestaña):</strong> Te muestra cuánto le ganas a cada modelo que imprimes. Resta únicamente el plástico y la luz consumidos en esa pieza. Es ideal para fijar precios y saber qué productos te conviene promocionar.
         </p>
         <p>
-          <strong className="text-ink">Costo de fabricación:</strong> Consumo exacto de filamento (incluyendo purga si es multicolor), tiempo de máquina valorizado según tu tarifa eléctrica y costo de embalaje fijados en tu configuración.
+          <strong className="text-ink">Caja del mes:</strong> Es el dinero real que entra y sale de tu cuenta bancaria. Si compraste bobinas enteras para tener stock o repuestos, esas compras se descuentan en Caja, mostrándote el dinero disponible real en tu bolsillo.
         </p>
-        {vatPercent > 0 && (
-          <p>
-            <strong className="text-ink">Tratamiento de IVA ({vatPercent}%):</strong> El IVA se separa automáticamente de los ingresos brutos cobrados para no distorsionar tu rentabilidad real con obligaciones tributarias.
-          </p>
-        )}
-        {anyEstimatedToday && (
-          <p>
-            Algunas ventas antiguas no tenían congelado su costo al registrarse; el sistema las estima con tus tarifas actuales de «Mis costos».
-          </p>
-        )}
-        {anyWithoutCost && (
-          <p>
-            Para asegurar que cada venta tenga su costo automático exacto, asocia tus pedidos a productos registrados en tu catálogo.
-          </p>
-        )}
       </Card>
     </div>
   );

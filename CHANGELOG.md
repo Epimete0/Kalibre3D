@@ -6,10 +6,15 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
-- **Rediseño integral de Rentabilidad (`/money/rentabilidad`):** 4 tarjetas de salud financiera (ingresos generados, costo de fabricación, ganancia neta real con badge de margen y volumen producido), destacados del taller (pieza de mayor ganancia, más vendida y con mejor margen sin emojis), ordenamiento interactivo (ganancia, margen, volumen o menor margen), buscador en tiempo real, barras de proporción visual (ganancia vs costo) y desglose unitario por pieza.
+- **Simplificación del módulo Dinero a 2 pestañas intuitivas:**
+  - Reducción de 3 pestañas a 2 visiones claras: **Caja del mes** (`/money`) para el dinero líquido real disponible en la cuenta bancaria, y **Margen por pieza** (`/money/rentabilidad`) para la rentabilidad de fabricación y precios de venta.
+  - Redirección automática de `/money/compras` hacia `/money` preservando el parámetro de mes para evitar duplicidad de secciones.
+  - Banner y tarjeta explicativa con reglas claras que diferencian el flujo de caja del margen directo sobre filamento y luz.
+- **Rediseño integral de Rentabilidad (`/money/rentabilidad`):** 4 tarjetas de salud financiera (ingresos generados, costo de fabricación, margen de piezas con badge de margen y volumen producido), destacados del taller (pieza de mayor ganancia, más vendida y con mejor margen sin emojis), ordenamiento interactivo (ganancia, margen, volumen o menor margen), buscador en tiempo real, barras de proporción visual (ganancia vs costo) y desglose unitario por pieza.
 - **Visualización de IVA Débito fiscal:** en la pestaña principal de Dinero (`/money`) y en el panel de inicio (`/dashboard`), desglose automático del IVA contenido en cobros y ganancia neta real descontando impuestos cuando el taller tiene configurado un porcentaje de IVA (`vatPercent > 0`).
 
 ### Corregido
+- **Unificación de terminología contable en Dinero:** eliminación del término ambiguo "Ganancia neta real" que mostraba montos diferentes en Resumen y Rentabilidad; ahora se diferencia con precisión entre **"Quedó en caja"** (dinero en mano tras compras y gastos) y **"Margen de piezas"** (precio cobrado menos filamento y luz consumidos).
 - **Visualización de productos en celulares (`/products` y `/products/[id]`):** sustitución de la tabla ancha con scroll horizontal por tarjetas móviles táctiles al 100 % del ancho, botones de ajuste de stock de tamaño cómodo, formulario de edición responsivo integrado y ficha de producto adaptada sin colisiones de texto.
 - **Estilo de gastos operativos:** se eliminó el color rojo de error (`text-danger`) en los gastos del mes de la pestaña principal de Dinero, en el panel de inicio y en Compras, usando un estilo financiero neutro y profesional (`text-ink tabular-nums`).
 - **Erradicación total de emojis:** sustitución de todos los emojis por texto técnico limpio e iconos SVG semánticos en canales de venta (`NewOrderForm`), enlaces de WhatsApp/Instagram en pedidos y ayudas contextuales de configuración.

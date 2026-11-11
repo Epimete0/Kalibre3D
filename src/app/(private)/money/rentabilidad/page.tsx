@@ -40,9 +40,9 @@ export default async function ProfitabilityPage(props: {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Dinero del taller"
-        description="Qué pieza te deja más ganancia, después de comisiones, envíos y costos de fabricación."
+        description="Qué piezas te dejan más ganancia sobre su costo de filamento y luz, para saber qué te conviene fabricar."
       />
-      <MoneyTabs active="rentabilidad" month={all ? undefined : nav.month} />
+      <MoneyTabs active="margen" month={all ? undefined : nav.month} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface p-2">
         {all ? (

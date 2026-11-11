@@ -41,9 +41,9 @@ export default async function MoneyPage(props: {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Dinero del taller"
-        description="Cuánto entró, cuánto salió y cuánto ganaste de verdad este mes."
+        description="Lo que entró a tu cuenta, lo que gastaste en compras y lo que te quedó en caja este mes."
       />
-      <MoneyTabs active="resumen" month={view.month} />
+      <MoneyTabs active="caja" month={view.month} />
 
       <MoneyControls
         key={`${view.month}-${initialMode ?? "none"}`}
