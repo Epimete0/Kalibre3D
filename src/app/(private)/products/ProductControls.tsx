@@ -130,7 +130,7 @@ export function CreateProductBar({
       </div>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 sm:items-end">
           <div className="sm:col-span-2 lg:col-span-5">
             <Field label="Nombre de la pieza" htmlFor={nameId}>
               <input
@@ -161,31 +161,35 @@ export function CreateProductBar({
           </div>
 
           {sellsOnMercadoLibre && (
-          <div className="sm:col-span-1 lg:col-span-2">
-            <Field label="Precio en Mercado Libre (opcional)" htmlFor={mlPriceId}>
-              <input
-                id={mlPriceId}
-                type="number"
-                min="0"
-                step="1"
-                placeholder="10990"
-                value={mlPrice}
-                onChange={(e) => setMlPrice(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-          </div>
+            <div className="sm:col-span-1 lg:col-span-2">
+              <Field label="Precio en Mercado Libre (opcional)" htmlFor={mlPriceId}>
+                <input
+                  id={mlPriceId}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="10990"
+                  value={mlPrice}
+                  onChange={(e) => setMlPrice(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
           )}
 
           <div className="sm:col-span-2 lg:col-span-2">
-            <button type="submit" disabled={pending || !name.trim() || !salePrice} className={`${primaryBtn} w-full`}>
-              {pending ? "…" : "Agregar"}
+            <button
+              type="submit"
+              disabled={pending || !name.trim() || !salePrice}
+              className={`${primaryBtn} w-full min-h-11 sm:min-h-10`}
+            >
+              {pending ? "…" : "Agregar pieza"}
             </button>
           </div>
         </div>
 
         {showAdvanced && (
-          <div className="grid grid-cols-2 gap-3 rounded-lg border border-line bg-raised/40 p-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-line bg-raised/40 p-3.5 sm:p-4">
             <Field label="Categoría">
               <input
                 placeholder="Ej. Emblemas"
@@ -275,20 +279,17 @@ export function CreateProductBar({
   );
 }
 
-function ProductRowItem({
-  product,
-  currency,
-  costSummary,
-}: {
-  product: ProductListItem;
-  currency: string;
-  costSummary?: CatalogSettingsSummary;
-}) {
+function useProductItemLogic(
+  product: ProductListItem,
+  costSummary?: CatalogSettingsSummary
+) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(product.name);
   const [editSalePrice, setEditSalePrice] = useState(String(product.salePrice));
-  const [editMlPrice, setEditMlPrice] = useState(product.mlPrice !== null ? String(product.mlPrice) : "");
+  const [editMlPrice, setEditMlPrice] = useState(
+    product.mlPrice !== null ? String(product.mlPrice) : ""
+  );
   const [editCategory, setEditCategory] = useState(product.category ?? "");
   const [editMaterial, setEditMaterial] = useState(product.material);
   const [editGrams, setEditGrams] = useState(String(product.grams));
@@ -297,9 +298,18 @@ function ProductRowItem({
   const [editPurge, setEditPurge] = useState(String(product.purgeGrams));
   const [editMinStock, setEditMinStock] = useState(String(product.minStock));
 
-  const [updateState, runUpdate, updatePending] = useActionState(updateProductAction, {});
-  const [, runToggle, togglePending] = useActionState(setProductActiveAction, {});
-  const [deleteState, runDelete, deletePending] = useActionState(deleteProductAction, {});
+  const [updateState, runUpdate, updatePending] = useActionState(
+    updateProductAction,
+    {}
+  );
+  const [, runToggle, togglePending] = useActionState(
+    setProductActiveAction,
+    {}
+  );
+  const [deleteState, runDelete, deletePending] = useActionState(
+    deleteProductAction,
+    {}
+  );
   const [stockPending, startStockTransition] = useTransition();
   const [stockError, setStockError] = useState<string | null>(null);
 
@@ -372,7 +382,12 @@ function ProductRowItem({
   };
 
   const handleDelete = () => {
-    if (!window.confirm(`¿Estás seguro de eliminar "${product.name}"? Esta acción no se puede deshacer.`)) return;
+    if (
+      !window.confirm(
+        `¿Estás seguro de eliminar "${product.name}"? Esta acción no se puede deshacer.`
+      )
+    )
+      return;
     const data = new FormData();
     data.set("id", product.id);
     startTransition(() => runDelete(data));
@@ -380,10 +395,448 @@ function ProductRowItem({
 
   const canBeDeleted = !product.hasOrders && !product.hasRealMovements;
 
+  return {
+    isEditing,
+    setIsEditing,
+    editName,
+    setEditName,
+    editSalePrice,
+    setEditSalePrice,
+    editMlPrice,
+    setEditMlPrice,
+    editCategory,
+    setEditCategory,
+    editMaterial,
+    setEditMaterial,
+    editGrams,
+    setEditGrams,
+    editMinutes,
+    setEditMinutes,
+    editColors,
+    setEditColors,
+    editPurge,
+    setEditPurge,
+    editMinStock,
+    setEditMinStock,
+    updateState,
+    updatePending,
+    togglePending,
+    deleteState,
+    deletePending,
+    stockPending,
+    stockError,
+    pieceCost,
+    mlNet,
+    canBeDeleted,
+    handleQuickStock,
+    handleUpdate,
+    handleToggleActive,
+    handleDelete,
+  };
+}
+
+/** Tarjeta móvil para visualización limpia en pantallas pequeñas sin scroll horizontal */
+function ProductCardItem({
+  product,
+  currency,
+  costSummary,
+}: {
+  product: ProductListItem;
+  currency: string;
+  costSummary?: CatalogSettingsSummary;
+}) {
+  const {
+    isEditing,
+    setIsEditing,
+    editName,
+    setEditName,
+    editSalePrice,
+    setEditSalePrice,
+    editMlPrice,
+    setEditMlPrice,
+    editCategory,
+    setEditCategory,
+    editMaterial,
+    setEditMaterial,
+    editGrams,
+    setEditGrams,
+    editMinutes,
+    setEditMinutes,
+    editColors,
+    setEditColors,
+    editPurge,
+    setEditPurge,
+    editMinStock,
+    setEditMinStock,
+    updateState,
+    updatePending,
+    togglePending,
+    deleteState,
+    deletePending,
+    stockPending,
+    stockError,
+    pieceCost,
+    mlNet,
+    canBeDeleted,
+    handleQuickStock,
+    handleUpdate,
+    handleToggleActive,
+    handleDelete,
+  } = useProductItemLogic(product, costSummary);
+
+  if (isEditing) {
+    return (
+      <div className="rounded-2xl border border-primary/40 bg-surface p-4 space-y-3.5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-ink">Editar pieza</h3>
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="text-xs text-muted hover:text-ink font-semibold"
+          >
+            Cerrar ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleUpdate} className="space-y-3">
+          <Field label="Nombre de la pieza">
+            <input
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field label={`Precio directo (${currency})`}>
+              <input
+                required
+                type="number"
+                min="0"
+                value={editSalePrice}
+                onChange={(e) => setEditSalePrice(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Precio en Mercado Libre">
+              <input
+                type="number"
+                min="0"
+                value={editMlPrice}
+                onChange={(e) => setEditMlPrice(e.target.value)}
+                placeholder="Opcional"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field label="Categoría">
+              <input
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                placeholder="Ej. Autos"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Material">
+              <select
+                value={editMaterial}
+                onChange={(e) => setEditMaterial(e.target.value)}
+                className={inputClass}
+              >
+                {MATERIALS.map((m) => (
+                  <option key={m} value={m}>
+                    {MATERIAL_LABEL[m]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field label="Gramos de pieza">
+              <input
+                type="number"
+                min="0"
+                value={editGrams}
+                onChange={(e) => setEditGrams(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Minutos de impresión">
+              <input
+                type="number"
+                min="0"
+                value={editMinutes}
+                onChange={(e) => setEditMinutes(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <Field label="Colores (1-16)">
+              <input
+                type="number"
+                min="1"
+                max="16"
+                value={editColors}
+                onChange={(e) => setEditColors(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Purga (g)">
+              <input
+                type="number"
+                min="0"
+                value={editPurge}
+                onChange={(e) => setEditPurge(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Stock mín.">
+              <input
+                type="number"
+                min="0"
+                value={editMinStock}
+                onChange={(e) => setEditMinStock(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1.5">
+            <button
+              type="submit"
+              disabled={updatePending}
+              className={`${primaryBtn} flex-1 min-h-11`}
+            >
+              {updatePending ? "Guardando…" : "Guardar cambios"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className={`${secondaryBtn} min-h-11 px-4`}
+            >
+              Cancelar
+            </button>
+          </div>
+          {updateState.error ? (
+            <p className="text-xs text-danger">{updateState.error}</p>
+          ) : null}
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-2xl border border-line bg-surface p-4 space-y-3 transition-colors ${
+        !product.active ? "opacity-60 bg-raised/20" : ""
+      }`}
+    >
+      {/* Cabecera móvil: Nombre, badges y control de stock */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link
+              href={`/products/${product.id}`}
+              className="text-base font-bold text-ink hover:text-primary transition-colors hover:underline"
+            >
+              {product.name}
+            </Link>
+            {product.category && <Badge tone="neutral">{product.category}</Badge>}
+            {!product.active && <Badge tone="warn">Inactiva</Badge>}
+            {product.isLowStock && <Badge tone="warn">Stock bajo</Badge>}
+          </div>
+
+          <p className="text-xs text-muted">
+            {MATERIAL_LABEL[product.material as keyof typeof MATERIAL_LABEL] ?? product.material}
+            {product.grams > 0 ? ` · ${product.grams} g` : ""}
+            {product.colorsCount > 1
+              ? ` · ${product.colorsCount} col (+${product.purgeGrams}g purga)`
+              : ""}
+            {product.printMinutes > 0 ? ` · ${product.printMinutes} min` : ""}
+          </p>
+        </div>
+
+        {/* Control táctil de stock */}
+        <div className="flex flex-col items-end shrink-0">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+            Stock
+          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            {product.active && (
+              <button
+                type="button"
+                disabled={stockPending || product.currentStock <= 0}
+                onClick={() => handleQuickStock("EXIT")}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
+                title="Restar 1 unidad"
+              >
+                -
+              </button>
+            )}
+            <span
+              className={`min-w-6 text-center text-base font-bold tabular-nums ${
+                product.isLowStock ? "text-warn" : "text-ink"
+              }`}
+            >
+              {product.currentStock}
+            </span>
+            {product.active && (
+              <button
+                type="button"
+                disabled={stockPending}
+                onClick={() => handleQuickStock("ENTRY")}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
+                title="Sumar 1 fabricada"
+              >
+                +
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {stockError && <p className="text-xs text-danger">{stockError}</p>}
+
+      {/* Caja de precios, costo y ganancia */}
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-raised/50 p-2.5 text-xs">
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted block">
+            Venta directa
+          </span>
+          <span className="text-sm font-bold text-ink tabular-nums block mt-0.5">
+            {formatMoney(product.salePrice, currency)}
+          </span>
+          {pieceCost !== null ? (
+            <span className="text-[11px] text-ok font-semibold block mt-0.5">
+              +{formatMoney(product.salePrice - pieceCost, currency)} ganancia
+            </span>
+          ) : (
+            <span className="text-[11px] text-muted block mt-0.5">Sin costo calculado</span>
+          )}
+        </div>
+
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted block">
+            Mercado Libre
+          </span>
+          {product.mlPrice !== null ? (
+            <>
+              <span className="text-sm font-bold text-ink tabular-nums block mt-0.5">
+                {formatMoney(product.mlPrice, currency)}
+              </span>
+              {mlNet !== null && (
+                <span className="text-[11px] text-muted block mt-0.5">
+                  Neto: {formatMoney(mlNet, currency)}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted block mt-0.5">— No publicado</span>
+          )}
+        </div>
+      </div>
+
+      {/* Barra de acciones para móvil */}
+      <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-line/40">
+        <Link
+          href={`/products/${product.id}`}
+          className="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
+        >
+          Ficha y stock
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="inline-flex min-h-9 px-3 items-center justify-center rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
+        >
+          Editar
+        </button>
+        <button
+          type="button"
+          disabled={togglePending}
+          onClick={handleToggleActive}
+          className="inline-flex min-h-9 px-3 items-center justify-center rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
+        >
+          {product.active ? "Desactivar" : "Reactivar"}
+        </button>
+        {canBeDeleted ? (
+          <button
+            type="button"
+            disabled={deletePending}
+            onClick={handleDelete}
+            className="inline-flex min-h-9 px-3 items-center justify-center rounded-lg border border-danger/30 bg-danger-soft text-xs font-semibold text-danger hover:bg-danger/20 touch-manipulation"
+            title="Eliminar definitivamente"
+          >
+            {deletePending ? "…" : "Eliminar"}
+          </button>
+        ) : null}
+      </div>
+      {deleteState.error ? (
+        <p className="text-xs text-danger">{deleteState.error}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Fila de tabla para pantallas grandes (>= 768px) */
+function ProductRowItem({
+  product,
+  currency,
+  costSummary,
+}: {
+  product: ProductListItem;
+  currency: string;
+  costSummary?: CatalogSettingsSummary;
+}) {
+  const {
+    isEditing,
+    setIsEditing,
+    editName,
+    setEditName,
+    editSalePrice,
+    setEditSalePrice,
+    editMlPrice,
+    setEditMlPrice,
+    editCategory,
+    setEditCategory,
+    editMaterial,
+    setEditMaterial,
+    editGrams,
+    setEditGrams,
+    editMinutes,
+    setEditMinutes,
+    editColors,
+    setEditColors,
+    editPurge,
+    setEditPurge,
+    editMinStock,
+    setEditMinStock,
+    updateState,
+    updatePending,
+    togglePending,
+    deleteState,
+    deletePending,
+    stockPending,
+    stockError,
+    pieceCost,
+    mlNet,
+    canBeDeleted,
+    handleQuickStock,
+    handleUpdate,
+    handleToggleActive,
+    handleDelete,
+  } = useProductItemLogic(product, costSummary);
+
   if (isEditing) {
     return (
       <tr className="border-b border-line/60 bg-surface/50">
-        <td colSpan={6} className="p-3">
+        <td colSpan={5} className="p-3">
           <form onSubmit={handleUpdate} className="space-y-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
               <Field label="Nombre">
@@ -421,9 +874,13 @@ function ProductRowItem({
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
               <Field label="Material">
-                <select value={editMaterial} onChange={(e) => setEditMaterial(e.target.value)} className={inputClass}>
+                <select
+                  value={editMaterial}
+                  onChange={(e) => setEditMaterial(e.target.value)}
+                  className={inputClass}
+                >
                   {MATERIALS.map((m) => (
                     <option key={m} value={m}>
                       {MATERIAL_LABEL[m]}
@@ -432,30 +889,71 @@ function ProductRowItem({
                 </select>
               </Field>
               <Field label="Gramos">
-                <input type="number" min="0" value={editGrams} onChange={(e) => setEditGrams(e.target.value)} className={inputClass} />
+                <input
+                  type="number"
+                  min="0"
+                  value={editGrams}
+                  onChange={(e) => setEditGrams(e.target.value)}
+                  className={inputClass}
+                />
               </Field>
               <Field label="Minutos">
-                <input type="number" min="0" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} className={inputClass} />
+                <input
+                  type="number"
+                  min="0"
+                  value={editMinutes}
+                  onChange={(e) => setEditMinutes(e.target.value)}
+                  className={inputClass}
+                />
               </Field>
               <Field label="Colores">
-                <input type="number" min="1" max="16" value={editColors} onChange={(e) => setEditColors(e.target.value)} className={inputClass} />
+                <input
+                  type="number"
+                  min="1"
+                  max="16"
+                  value={editColors}
+                  onChange={(e) => setEditColors(e.target.value)}
+                  className={inputClass}
+                />
               </Field>
               <Field label="Purga (g)">
-                <input type="number" min="0" value={editPurge} onChange={(e) => setEditPurge(e.target.value)} className={inputClass} />
+                <input
+                  type="number"
+                  min="0"
+                  value={editPurge}
+                  onChange={(e) => setEditPurge(e.target.value)}
+                  className={inputClass}
+                />
               </Field>
               <Field label="Stock mín.">
-                <input type="number" min="0" value={editMinStock} onChange={(e) => setEditMinStock(e.target.value)} className={inputClass} />
+                <input
+                  type="number"
+                  min="0"
+                  value={editMinStock}
+                  onChange={(e) => setEditMinStock(e.target.value)}
+                  className={inputClass}
+                />
               </Field>
             </div>
             <div className="flex items-center gap-2">
-              <button type="submit" disabled={updatePending} className={primaryBtn}>
+              <button
+                type="submit"
+                disabled={updatePending}
+                className={primaryBtn}
+              >
                 {updatePending ? "Guardando…" : "Guardar"}
               </button>
-              <button type="button" onClick={() => setIsEditing(false)} className={secondaryBtn}>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className={secondaryBtn}
+              >
                 Cancelar
               </button>
             </div>
-            {updateState.error ? <p className="w-full text-xs text-danger">{updateState.error}</p> : null}
+            {updateState.error ? (
+              <p className="w-full text-xs text-danger">{updateState.error}</p>
+            ) : null}
           </form>
         </td>
       </tr>
@@ -463,10 +961,17 @@ function ProductRowItem({
   }
 
   return (
-    <tr className={`border-b border-line/50 transition-colors hover:bg-raised/40 ${!product.active ? "opacity-60" : ""}`}>
+    <tr
+      className={`border-b border-line/50 transition-colors hover:bg-raised/40 ${
+        !product.active ? "opacity-60" : ""
+      }`}
+    >
       <td className="p-3 text-sm font-medium text-ink">
         <div className="flex items-center gap-2 flex-wrap">
-          <Link href={`/products/${product.id}`} className="font-semibold hover:text-primary hover:underline">
+          <Link
+            href={`/products/${product.id}`}
+            className="font-semibold hover:text-primary hover:underline"
+          >
             {product.name}
           </Link>
           {product.category && <Badge tone="neutral">{product.category}</Badge>}
@@ -476,22 +981,29 @@ function ProductRowItem({
         <div className="mt-0.5 text-xs text-muted">
           {product.material}
           {product.grams > 0 ? ` · ${product.grams} g` : ""}
-          {product.colorsCount > 1 ? ` (${product.colorsCount} col + ${product.purgeGrams} g purga)` : ""}
+          {product.colorsCount > 1
+            ? ` (${product.colorsCount} col + ${product.purgeGrams} g purga)`
+            : ""}
           {product.printMinutes > 0 ? ` · ${product.printMinutes} min` : ""}
         </div>
       </td>
       <td className="p-3 text-sm">
-        <div className="font-semibold text-ink">{formatMoney(product.salePrice, currency)}</div>
+        <div className="font-semibold text-ink">
+          {formatMoney(product.salePrice, currency)}
+        </div>
         {pieceCost !== null && (
           <div className="text-xs text-muted">
-            Costo: {formatMoney(pieceCost, currency)} · Ganancia: {formatMoney(product.salePrice - pieceCost, currency)}
+            Costo: {formatMoney(pieceCost, currency)} · Ganancia:{" "}
+            {formatMoney(product.salePrice - pieceCost, currency)}
           </div>
         )}
       </td>
       <td className="p-3 text-sm">
         {product.mlPrice !== null ? (
           <div>
-            <div className="font-medium text-ink">{formatMoney(product.mlPrice, currency)}</div>
+            <div className="font-medium text-ink">
+              {formatMoney(product.mlPrice, currency)}
+            </div>
             {mlNet !== null && (
               <div className="text-xs text-muted">
                 Neto ML: {formatMoney(mlNet, currency)}
@@ -504,14 +1016,16 @@ function ProductRowItem({
       </td>
       <td className="p-3 text-sm">
         <div className="flex items-center gap-2">
-          <span className="font-bold tabular-nums text-ink">{product.currentStock}</span>
+          <span className="font-bold tabular-nums text-ink">
+            {product.currentStock}
+          </span>
           {product.active && (
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 disabled={stockPending || product.currentStock <= 0}
                 onClick={() => handleQuickStock("EXIT")}
-                className="h-7 w-7 rounded border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
                 title="Restar 1 del stock"
               >
                 -
@@ -520,7 +1034,7 @@ function ProductRowItem({
                 type="button"
                 disabled={stockPending}
                 onClick={() => handleQuickStock("ENTRY")}
-                className="h-7 w-7 rounded border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
                 title="Sumar 1 fabricada al stock"
               >
                 +
@@ -528,17 +1042,28 @@ function ProductRowItem({
             </div>
           )}
         </div>
-        {stockError && <p className="text-[11px] text-danger mt-0.5">{stockError}</p>}
+        {stockError && (
+          <p className="text-[11px] text-danger mt-0.5">{stockError}</p>
+        )}
       </td>
       <td className="p-3 text-right">
         <div className="flex items-center justify-end gap-1.5 flex-wrap">
           <Link href={`/products/${product.id}`} className={secondaryBtn}>
             Stock / Ficha
           </Link>
-          <button type="button" onClick={() => setIsEditing(true)} className={secondaryBtn}>
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className={secondaryBtn}
+          >
             Editar
           </button>
-          <button type="button" disabled={togglePending} onClick={handleToggleActive} className={secondaryBtn}>
+          <button
+            type="button"
+            disabled={togglePending}
+            onClick={handleToggleActive}
+            className={secondaryBtn}
+          >
             {product.active ? "Desactivar" : "Reactivar"}
           </button>
           {canBeDeleted ? (
@@ -560,7 +1085,11 @@ function ProductRowItem({
             </span>
           )}
         </div>
-        {deleteState.error ? <p className="mt-1 text-right text-xs text-danger">{deleteState.error}</p> : null}
+        {deleteState.error ? (
+          <p className="mt-1 text-right text-xs text-danger">
+            {deleteState.error}
+          </p>
+        ) : null}
       </td>
     </tr>
   );
@@ -581,7 +1110,11 @@ export function ProductList({
   const filtered = products.filter((p) => {
     if (filter === "active" && !p.active) return false;
     if (filter === "inactive" && p.active) return false;
-    if (search.trim() && !p.name.toLowerCase().includes(search.toLowerCase().trim())) return false;
+    if (
+      search.trim() &&
+      !p.name.toLowerCase().includes(search.toLowerCase().trim())
+    )
+      return false;
     return true;
   });
 
@@ -593,7 +1126,9 @@ export function ProductList({
             type="button"
             onClick={() => setFilter("active")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "active" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
+              filter === "active"
+                ? "bg-primary text-white"
+                : "bg-raised text-muted hover:text-ink"
             }`}
           >
             Activas ({products.filter((p) => p.active).length})
@@ -602,7 +1137,9 @@ export function ProductList({
             type="button"
             onClick={() => setFilter("inactive")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "inactive" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
+              filter === "inactive"
+                ? "bg-primary text-white"
+                : "bg-raised text-muted hover:text-ink"
             }`}
           >
             Inactivas ({products.filter((p) => !p.active).length})
@@ -611,7 +1148,9 @@ export function ProductList({
             type="button"
             onClick={() => setFilter("all")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "all" ? "bg-primary text-white" : "bg-raised text-muted hover:text-ink"
+              filter === "all"
+                ? "bg-primary text-white"
+                : "bg-raised text-muted hover:text-ink"
             }`}
           >
             Todas ({products.length})
@@ -638,43 +1177,50 @@ export function ProductList({
           </p>
           {!search && products.length === 0 && (
             <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
-              Con su precio y su stock, después las eliges en una venta con un toque. También puedes guardarlas desde el
-              cotizador.
+              Con su precio y su stock, después las eliges en una venta con un
+              toque. También puedes guardarlas desde el cotizador.
             </p>
           )}
         </div>
       ) : (
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[680px] text-left border-collapse">
-          <thead>
-            <tr className="border-b border-line text-xs font-semibold text-muted">
-              <th className="p-3">Pieza y fabricación</th>
-              <th className="p-3">Precio directo y costo</th>
-              <th className="p-3">Precio Mercado Libre</th>
-              <th className="p-3">Stock</th>
-              <th className="p-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-sm text-faint">
-                  {search ? "No se encontraron piezas con ese nombre." : "No hay piezas registradas en esta vista."}
-                </td>
-              </tr>
-            ) : (
-              filtered.map((item) => (
-                <ProductRowItem
-                  key={item.id}
-                  product={item}
-                  currency={currency}
-                  costSummary={costSummary}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+        <div className="mt-4">
+          {/* Vista móvil: tarjetas táctiles verticales sin desborde horizontal (md:hidden) */}
+          <div className="space-y-3 md:hidden">
+            {filtered.map((item) => (
+              <ProductCardItem
+                key={item.id}
+                product={item}
+                currency={currency}
+                costSummary={costSummary}
+              />
+            ))}
+          </div>
+
+          {/* Vista escritorio: tabla completa para pantallas anchas (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left border-collapse">
+              <thead>
+                <tr className="border-b border-line text-xs font-semibold text-muted">
+                  <th className="p-3">Pieza y fabricación</th>
+                  <th className="p-3">Precio directo y costo</th>
+                  <th className="p-3">Precio Mercado Libre</th>
+                  <th className="p-3">Stock</th>
+                  <th className="p-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => (
+                  <ProductRowItem
+                    key={item.id}
+                    product={item}
+                    currency={currency}
+                    costSummary={costSummary}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </Card>
   );

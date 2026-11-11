@@ -10,6 +10,7 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 - **Visualización de IVA Débito fiscal:** en la pestaña principal de Dinero (`/money`) y en el panel de inicio (`/dashboard`), desglose automático del IVA contenido en cobros y ganancia neta real descontando impuestos cuando el taller tiene configurado un porcentaje de IVA (`vatPercent > 0`).
 
 ### Corregido
+- **Visualización de productos en celulares (`/products` y `/products/[id]`):** sustitución de la tabla ancha con scroll horizontal por tarjetas móviles táctiles al 100 % del ancho, botones de ajuste de stock de tamaño cómodo, formulario de edición responsivo integrado y ficha de producto adaptada sin colisiones de texto.
 - **Estilo de gastos operativos:** se eliminó el color rojo de error (`text-danger`) en los gastos del mes de la pestaña principal de Dinero, en el panel de inicio y en Compras, usando un estilo financiero neutro y profesional (`text-ink tabular-nums`).
 - **Erradicación total de emojis:** sustitución de todos los emojis por texto técnico limpio e iconos SVG semánticos en canales de venta (`NewOrderForm`), enlaces de WhatsApp/Instagram en pedidos y ayudas contextuales de configuración.
 - **Herramientas gratis:** cotizador de impresión 3D abierto, sin crear cuenta, en la landing y en `/herramientas/cotizador`, con modelo de impresora, desgaste, fallas, insumos, IVA y Mercado Libre.

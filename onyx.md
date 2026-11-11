@@ -6,6 +6,26 @@
 
 ---
 
+## Visualización responsiva y tarjetas móviles de catálogo de piezas — 2026-11-11
+
+- **Pedido del usuario:** corregir la visualización de los productos en dispositivos móviles (la tabla forzaba un scroll horizontal de 680 px cortando el stock y las acciones, los botones de ajuste eran de 28 px y la edición desbordaba la pantalla).
+- **Tarjetas móviles de productos (`ProductControls.tsx` → `ProductCardItem`):**
+  - En móviles (`md:hidden`), cada producto se presenta como una tarjeta táctil limpia al 100 % del ancho, eliminando el scroll horizontal dentro del card.
+  - El stock se muestra de forma destacada en la esquina superior con botones de ajuste rápido (`-` y `+`) de 32x32 px con área táctil cómoda (`touch-manipulation`).
+  - Las especificaciones (material, gramos, colores y minutos) se agrupan en una línea legible.
+  - La caja de precios muestra la venta directa con su ganancia calculada en verde semántico (`text-ok`), y el precio de Mercado Libre con el neto respectivo.
+  - Barra de acciones táctil con botones anchos (`Ficha y stock`, `Editar`, `Desactivar`/`Reactivar` y `Eliminar` cuando aplica).
+  - Formulario de edición móvil que se expande dentro de la misma tarjeta ocupando el ancho del dispositivo sin requerir paneo horizontal.
+  - La vista de escritorio conserva la tabla de escaneo rápido (`hidden md:block`).
+  - La lógica de estado, mutaciones y cálculo de costos se unificó en el hook compartido `useProductItemLogic`.
+- **Ficha de detalle de producto (`/products/[id]/page.tsx`):**
+  - Cabecera adaptada (`flex flex-col sm:flex-row`) para que nombres largos de piezas no choquen ni aplasten el contador de stock.
+  - Desglose de costos y márgenes responsivo (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`) con fondos sutiles por métrica.
+  - Reemplazo de colores duros (`text-emerald-600`) por tokens de diseño semánticos (`text-ok`).
+- **Verificación:** 377 pruebas en Vitest en verde (`npm test -- --run`). Linter pasando en 0 (`npm run lint`). Compilación de Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Rediseño de Rentabilidad, visualización de IVA y depuración de emojis — 2026-11-11
 
 - **Pedido del usuario:** mejorar la visualización de costos en la pestaña principal de Dinero y en el panel de inicio (los gastos operativos aparecían con estilo rojo de error alertando innecesariamente sobre egresos normales de negocio), mostrar el desglose de IVA cuando el taller lo tiene activo, erradicar cualquier emoji del código e implementar el rediseño integral de la pestaña de Rentabilidad (`/money/rentabilidad`).
