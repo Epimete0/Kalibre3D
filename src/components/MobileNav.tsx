@@ -91,7 +91,7 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
 
   const moreItems: NavEntry[] = [
     ...(isManager
-      ? [{ href: "/money", label: "Dinero", description: "Cuánto entró, cuánto salió y tu ganancia del mes", icon: icons.money }]
+      ? [{ href: "/money", label: "Dinero", description: "Caja del mes y margen de piezas fabricadas", icon: icons.money }]
       : []),
     ...(canOperate ? [{ href: "/clients", label: "Clientes", description: "Quiénes te compran y cuánto te deben", icon: icons.clients }] : []),
     { href: "/products", label: "Catálogo de piezas", description: "Tus piezas habituales para vender en un toque", icon: icons.catalog },

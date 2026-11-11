@@ -6,6 +6,30 @@
 
 ---
 
+## Unificación integral del entendimiento contable: Caja vs Margen en toda la app — 2026-11-11
+
+- **Pedido del usuario:** revisar si la confusión de términos contables y métricas ocurría en otros lugares de la app para mejorar la experiencia y el entendimiento general de los usuarios.
+- **Auditoría e impacto:** Se identificó que el panel de inicio (`/dashboard`) era la causa raíz directa de la confusión: mostraba una tarjeta titulada «Ganancia neta» con la cifra de caja ($33.545), mientras que en el catálogo y cotizador se hablaba de "ganancia" para el margen unitario de las piezas. Además, la barra de egresos del inicio usaba color rojo de alerta (`bg-danger`) para compras normales de negocio.
+- **Cambios aplicados:**
+  - **Panel de Inicio (`/dashboard`):**
+    - Sección financiera renombrada a *«Caja de [Mes]»* con enlace *«Ver caja del mes →»*.
+    - Banner superior de ayuda: *«Flujo de caja del taller: dinero real disponible tras ventas, compras y gastos»* con acceso directo a *«Ver margen por modelo fabricado →»*.
+    - Tarjetas unificadas: *Entró a caja* (con neto sin IVA si aplica), *Compras y gastos* (con IVA retenido), *Quedó en caja* (con badge de *Saldo a favor* o *Déficit* y subtítulo claro) y *Por cobrar*.
+    - Barra de categorías de gastos normalizada a tono neutro financiero (`bg-line-strong`), reservando el rojo exclusivamente para atrasos y deudas.
+  - **Catálogo de Piezas (`ProductControls.tsx` y `/products/[id]`):**
+    - En tarjetas móviles y tabla de escritorio, se sustituyó "ganancia" por *«Margen: +$X»* o *«+$X margen»*.
+    - En la ficha de detalle, se unificó a *«Margen directo: +$X»* y *«Margen en ML: +$X»*, conectándolo 1:1 con la pestaña *Margen por pieza*.
+  - **Cotizador de Piezas (`QuoteCalculator.tsx`):**
+    - Se unificó el desglose de resultado a *«Margen: +$X / ud.»*, *«Conserva tu margen tras comisión + envío»* y *«Margen total: $X»*.
+  - **Bobinas (`SpoolControls.tsx`):**
+    - En el selector de adquisición, se aclaró: *"Se anota como compra en Caja del mes"* y *"No se anota en Caja del mes. Lo pagado solo sirve para calcular el costo de tus piezas."*.
+  - **Navegación Móvil y Portada (`MobileNav.tsx` y `page.tsx`):**
+    - En `MobileNav`: *"Caja del mes y margen de piezas fabricadas"*.
+    - En `page.tsx`: *"Caja del mes y margen de piezas, sin mezclar platas"*.
+- **Verificación:** 377 pruebas en Vitest en verde (`npm test -- --run`). Linter con 0 errores y 0 advertencias (`npm run lint`). Compilación de producción en Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Simplificación de Dinero: Caja del mes vs Margen por pieza — 2026-11-11
 
 - **Pedido del usuario:** eliminar la confusión entre las secciones contables donde aparecían cifras de ganancia diferentes ("Ganancia neta real" en Resumen vs "Ganancia neta real" en Rentabilidad) y simplificar la estructura reduciendo la cantidad de pestañas para que la contabilidad del taller sea clara y no confunda al usuario.

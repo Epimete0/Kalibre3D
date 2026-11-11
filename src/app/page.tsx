@@ -25,9 +25,9 @@ const modules = [
   },
   {
     code: "MOD-04 · DINERO DEL MES",
-    title: "Ganancia neta real, sin mezclar platas",
+    title: "Caja del mes y margen de piezas, sin mezclar platas",
     description:
-      "Mira cuánto entró por cada canal y cuánto salió en filamento, repuestos, luz, envíos o devoluciones. Separa el dinero de tu taller del personal y protege los costos según el rol de tu equipo.",
+      "Mira cuánto dinero real entró y quedó en caja tras compras y gastos, y cuánto margen le ganas a cada modelo según su filamento y luz consumidos.",
     metrics: "Exclusivo Dueño / Administrador",
   },
 ];

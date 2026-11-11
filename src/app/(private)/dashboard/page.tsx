@@ -278,13 +278,13 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-ink">
-                Resumen de {formatMonth(moneyView.month)}
+                Caja de {formatMonth(moneyView.month)}
               </h2>
               <Link
                 href={`/money?month=${moneyView.month}`}
                 className="text-xs font-semibold text-primary hover:underline"
               >
-                Ver todo en Dinero →
+                Ver caja del mes →
               </Link>
             </div>
 
@@ -307,6 +307,18 @@ export default async function DashboardPage({
             </div>
           </div>
 
+          <div className="rounded-xl border border-line bg-raised/40 px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
+            <span>
+              Flujo de caja del taller: dinero real disponible tras ventas, compras y gastos.
+            </span>
+            <Link
+              href="/money/rentabilidad"
+              className="text-primary font-semibold hover:underline shrink-0"
+            >
+              Ver margen por modelo fabricado →
+            </Link>
+          </div>
+
           {(() => {
             const grossIncome = moneyView.summary.income;
             const vatAmount = vatIncluded(grossIncome, vatPercent);
@@ -317,7 +329,7 @@ export default async function DashboardPage({
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
                 <Card className="p-4 min-w-0">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                    Ingresos del mes
+                    Entró a caja
                   </span>
                   <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
                     {formatMoney(grossIncome, currency)}
@@ -331,22 +343,27 @@ export default async function DashboardPage({
 
                 <Card className="p-4 min-w-0">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                    Gastos del mes
+                    Compras y gastos
                   </span>
                   <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ink truncate">
                     {formatMoney(moneyView.summary.expense, currency)}
                   </span>
                   {vatPercent > 0 && (
                     <span className="mt-0.5 block text-[11px] text-muted truncate">
-                      IVA Débito: {formatMoney(vatAmount, currency)} ({vatPercent}%)
+                      IVA retenido: {formatMoney(vatAmount, currency)} ({vatPercent}%)
                     </span>
                   )}
                 </Card>
 
                 <Card className="p-4 min-w-0 border-primary/25">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                    Ganancia neta
-                  </span>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                      Quedó en caja
+                    </span>
+                    <Badge tone={netProfit >= 0 ? "ok" : "danger"}>
+                      {netProfit >= 0 ? "Saldo a favor" : "Déficit"}
+                    </Badge>
+                  </div>
                   <span
                     className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
                       netProfit >= 0 ? "text-ok" : "text-danger"
@@ -354,22 +371,22 @@ export default async function DashboardPage({
                   >
                     {formatMoney(netProfit, currency)}
                   </span>
-                  {vatPercent > 0 && (
-                    <span className="mt-0.5 block text-[11px] text-muted truncate">
-                      Descontando IVA y gastos
-                    </span>
-                  )}
+                  <span className="mt-0.5 block text-[11px] text-muted truncate">
+                    {vatPercent > 0
+                      ? "Descontando compras, gastos e IVA"
+                      : "Dinero disponible tras compras y gastos"}
+                  </span>
                 </Card>
 
                 <Card className="p-4 min-w-0">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                    Por cobrar (pedidos activos)
+                    Por cobrar
                   </span>
                   <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-warn truncate">
                     {formatMoney(pendingReceivableTotal ?? 0, currency)}
                   </span>
                   <span className="mt-0.5 block text-[11px] text-muted truncate">
-                    Saldos pendientes
+                    En pedidos activos
                   </span>
                 </Card>
               </div>
@@ -457,7 +474,7 @@ export default async function DashboardPage({
                         </div>
                         <div className="h-2 w-full rounded-full bg-canvas overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-danger"
+                            className="h-full rounded-full bg-line-strong"
                             style={{ width: `${Math.max(4, pct)}%` }}
                           />
                         </div>

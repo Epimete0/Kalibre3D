@@ -99,7 +99,7 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
                 {formatMoney(product.salePrice, settings.currency)}
               </div>
               <div className="text-[11px] text-ok font-semibold mt-0.5">
-                Ganancia: +{formatMoney(product.salePrice - costBreakdown.totalCost, settings.currency)}
+                Margen directo: +{formatMoney(product.salePrice - costBreakdown.totalCost, settings.currency)}
               </div>
             </div>
 
@@ -117,7 +117,7 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
 
             {mlBreakdown && (
               <div className="p-3 rounded-xl bg-raised/40 sm:bg-transparent sm:p-0">
-                <div className="text-xs font-semibold text-muted uppercase tracking-wider">Ganancia real en ML</div>
+                <div className="text-xs font-semibold text-muted uppercase tracking-wider">Margen en ML</div>
                 <div className="text-base sm:text-lg font-bold text-ok tabular-nums mt-0.5">
                   +{formatMoney(mlBreakdown.net - costBreakdown.totalCost, settings.currency)}
                 </div>

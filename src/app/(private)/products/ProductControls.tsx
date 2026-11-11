@@ -714,7 +714,7 @@ function ProductCardItem({
           </span>
           {pieceCost !== null ? (
             <span className="text-[11px] text-ok font-semibold block mt-0.5">
-              +{formatMoney(product.salePrice - pieceCost, currency)} ganancia
+              +{formatMoney(product.salePrice - pieceCost, currency)} margen
             </span>
           ) : (
             <span className="text-[11px] text-muted block mt-0.5">Sin costo calculado</span>
@@ -993,8 +993,10 @@ function ProductRowItem({
         </div>
         {pieceCost !== null && (
           <div className="text-xs text-muted">
-            Costo: {formatMoney(pieceCost, currency)} · Ganancia:{" "}
-            {formatMoney(product.salePrice - pieceCost, currency)}
+            Costo: {formatMoney(pieceCost, currency)} · Margen:{" "}
+            <span className="font-semibold text-ok">
+              +{formatMoney(product.salePrice - pieceCost, currency)}
+            </span>
           </div>
         )}
       </td>

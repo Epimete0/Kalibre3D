@@ -276,8 +276,8 @@ export function SpoolCreateModal({
           {recordExpense && <input type="hidden" name="recordExpenseInMoney" value="on" />}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {([
-              { value: "PURCHASED", title: "La compré ahora", hint: "Se anota como gasto de filamento en Dinero." },
-              { value: "OWNED", title: "Ya la tenía", hint: "No se anota ningún gasto. Lo pagado solo sirve para el costo por gramo." },
+              { value: "PURCHASED", title: "La compré ahora", hint: "Se anota como compra en Caja del mes." },
+              { value: "OWNED", title: "Ya la tenía", hint: "No se anota en Caja del mes. Lo pagado solo sirve para calcular el costo de tus piezas." },
             ] as const).map((option) => {
               const selected = acquisition === option.value;
               return (

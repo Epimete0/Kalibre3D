@@ -607,7 +607,7 @@ export function QuoteCalculator({
                 {formatMoney(activeUnitPriceMinor, currency)}
               </div>
               <div className="text-xs text-muted">
-                Ganancia:{" "}
+                Margen:{" "}
                 <span className="font-semibold text-ok tabular-nums">
                   {formatMoney(unitProfitDirect, currency)}
                 </span>{" "}
@@ -633,7 +633,7 @@ export function QuoteCalculator({
                   {formatMoney(suggestedMlMinor, currency)}
                 </div>
                 <div className="text-xs text-muted">
-                  Conserva tu ganancia tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
+                  Conserva tu margen tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
                   {mlVat > 0 && <> · incluye IVA {formatMoney(mlVat, currency)}</>}
                 </div>
               </div>
@@ -650,7 +650,7 @@ export function QuoteCalculator({
                   {formatMoney(totalOrderMinor, currency)}
                 </div>
                 <div className="text-[11px] text-ok font-medium tabular-nums">
-                  Ganancia total: {formatMoney(totalProfitMinor, currency)}
+                  Margen total: {formatMoney(totalProfitMinor, currency)}
                 </div>
               </div>
             </div>

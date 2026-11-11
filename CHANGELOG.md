@@ -6,6 +6,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Unificación integral de Caja vs Margen en toda la app:**
+  - En el panel de inicio (`/dashboard`), alineación completa con el módulo Dinero: título *«Caja de [Mes]»*, tarjetas *«Entró a caja»*, *«Compras y gastos»*, *«Quedó en caja»* (con badge de saldo disponible) y acceso directo a *«Ver margen por modelo fabricado»*.
+  - En Catálogo de piezas (`/products` y `/products/[id]`), sustitución del término "ganancia" por *«Margen»* o *«Margen directo»*, coordinado 1:1 con la rentabilidad unitaria.
+  - En Cotizador (`/quote`), unificación de los desgloses a *«Margen unitario»* y *«Margen total»*.
+  - En Bobinas (`/spools`), explicación pedagógica al registrar bobinas: *«Se anota como compra en Caja del mes»* o *«No se anota en Caja del mes. Lo pagado solo sirve para calcular el costo de tus piezas»*.
 - **Simplificación del módulo Dinero a 2 pestañas intuitivas:**
   - Reducción de 3 pestañas a 2 visiones claras: **Caja del mes** (`/money`) para el dinero líquido real disponible en la cuenta bancaria, y **Margen por pieza** (`/money/rentabilidad`) para la rentabilidad de fabricación y precios de venta.
   - Redirección automática de `/money/compras` hacia `/money` preservando el parámetro de mes para evitar duplicidad de secciones.
