@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SpoolCreateModal, SpoolQuickConsumeCard } from "@/app/(private)/spools/SpoolControls";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, segmentedItemClass, segmentedTrackClass } from "@/components/ui";
 import { MATERIALS, MATERIAL_LABEL } from "@/lib/catalog-presentation";
 import { formatMoney } from "@/lib/money-format";
 import { listSpools } from "@/lib/spool-queries";
@@ -90,14 +90,10 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
 
       {/* Filtros táctiles */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
+        <div className={`overflow-x-auto pb-0.5 ${segmentedTrackClass}`}>
           <Link
             href={`/spools?material=ALL${includeInactive ? "&inactive=1" : ""}${onlyLow ? "&low=1" : ""}`}
-            className={`min-h-[36px] shrink-0 inline-flex items-center rounded-full px-3 text-xs font-semibold ${
-              materialFilter === "ALL"
-                ? "bg-primary text-white"
-                : "border border-line bg-surface text-muted hover:text-ink"
-            }`}
+            className={`min-h-9 shrink-0 ${segmentedItemClass(materialFilter === "ALL")}`}
           >
             Todos
           </Link>
@@ -105,11 +101,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
             <Link
               key={mat}
               href={`/spools?material=${mat}${includeInactive ? "&inactive=1" : ""}${onlyLow ? "&low=1" : ""}`}
-              className={`min-h-[36px] shrink-0 inline-flex items-center rounded-full px-3 text-xs font-semibold ${
-                materialFilter === mat
-                  ? "bg-primary text-white"
-                  : "border border-line bg-surface text-muted hover:text-ink"
-              }`}
+              className={`min-h-9 shrink-0 ${segmentedItemClass(materialFilter === mat)}`}
             >
               {MATERIAL_LABEL[mat]}
             </Link>

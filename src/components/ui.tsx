@@ -1,10 +1,28 @@
 import Link from "next/link";
 
-// Shared input styling used across forms.
+// Shared input styling used across forms with crisp border, subtle shadow and focus ring.
 export const inputClass =
-  "w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink " +
-  "placeholder:text-faint shadow-sm transition-colors " +
-  "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink " +
+  "placeholder:text-faint shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-150 " +
+  "focus:border-primary focus:bg-surface focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:opacity-50";
+
+// Segmented track & item classes for cohesive controls (replacing loose piles of buttons)
+export const segmentedTrackClass =
+  "inline-flex max-w-full items-center gap-1 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner";
+
+export const segmentedItemClass = (active: boolean) =>
+  `flex items-center justify-center rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-150 touch-manipulation ${
+    active
+      ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:bg-raised dark:border-line border border-line/60"
+      : "text-muted hover:text-ink hover:bg-canvas/50"
+  }`;
+
+export const filterChipClass = (active: boolean) =>
+  `inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-150 touch-manipulation ${
+    active
+      ? "border-primary/35 bg-primary-soft text-primary-ink font-bold shadow-xs ring-1 ring-primary/20"
+      : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink hover:bg-raised/50"
+  }`;
 
 export function PageHeader({
   title,
@@ -18,7 +36,7 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
       <div className="min-w-0">
-        <h1 className="text-2xl sm:text-3xl tracking-[-0.03em] text-ink">{title}</h1>
+        <h1 className="text-2xl sm:text-3xl tracking-[-0.03em] text-ink font-bold">{title}</h1>
         {description ? (
           <p className="mt-1 max-w-xl text-sm text-muted">{description}</p>
         ) : null}
@@ -39,7 +57,7 @@ export function Card({
   return (
     <div
       {...rest}
-      className={`rounded-[var(--radius-lg)] border border-line/90 bg-surface shadow-[0_8px_22px_rgba(15,23,42,0.035)] ${className}`}
+      className={`rounded-[var(--radius-lg)] border border-line/80 bg-surface shadow-[0_1px_3px_rgba(15,23,42,0.04),0_6px_20px_-4px_rgba(15,23,42,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] ${className}`}
     >
       {children}
     </div>
@@ -82,12 +100,12 @@ type LinkButtonProps = {
 export function LinkButton({ href, variant = "primary", children }: LinkButtonProps) {
   const styles =
     variant === "primary"
-      ? "bg-primary text-white hover:bg-primary-hover shadow-[0_10px_22px_rgba(217,83,30,0.2)]"
-      : "border border-line bg-raised text-ink hover:bg-canvas";
+      ? "bg-gradient-to-b from-primary to-primary-hover text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_6px_16px_rgba(217,83,30,0.28)] ring-1 ring-inset ring-white/20 hover:brightness-105"
+      : "border border-line bg-surface text-ink hover:bg-raised shadow-xs";
   return (
     <Link
       href={href}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-center text-sm font-semibold transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch-manipulation ${styles}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 py-2 text-center text-sm font-semibold transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch-manipulation ${styles}`}
     >
       {children}
     </Link>
@@ -110,15 +128,15 @@ export function Badge({
   children: React.ReactNode;
 }) {
   const tones: Record<string, string> = {
-    neutral: "bg-canvas text-muted border-line",
-    ok: "bg-ok-soft text-ok border-ok/20",
-    warn: "bg-warn-soft text-warn border-warn/20",
-    danger: "bg-danger-soft text-danger border-danger/20",
-    accent: "bg-accent-soft text-accent border-accent/30",
+    neutral: "bg-raised text-muted border-line/80",
+    ok: "bg-ok-soft text-ok border-ok/25 font-semibold",
+    warn: "bg-warn-soft text-warn border-warn/25 font-semibold",
+    danger: "bg-danger-soft text-danger border-danger/25 font-semibold",
+    accent: "bg-accent-soft text-accent border-accent/35 font-semibold",
   };
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${tones[tone]}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] whitespace-nowrap shadow-xs ${tones[tone]}`}
     >
       {children}
     </span>

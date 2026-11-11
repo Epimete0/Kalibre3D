@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Badge, Card, inputClass } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  inputClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from "@/components/ui";
 import { vatIncluded } from "@/lib/costing";
 import type { ProductProfitability } from "@/lib/insights";
 import { formatMoney } from "@/lib/money-format";
@@ -282,48 +288,32 @@ export function ProfitabilityControls({
           </svg>
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+        <div className={`overflow-x-auto ${segmentedTrackClass}`}>
           <button
             type="button"
             onClick={() => setSortBy("profit")}
-            className={`min-h-9 px-3 shrink-0 rounded-lg text-xs font-semibold transition-colors ${
-              sortBy === "profit"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted hover:text-ink hover:bg-canvas"
-            }`}
+            className={`min-h-9 shrink-0 ${segmentedItemClass(sortBy === "profit")}`}
           >
             Mayor margen ($)
           </button>
           <button
             type="button"
             onClick={() => setSortBy("margin")}
-            className={`min-h-9 px-3 shrink-0 rounded-lg text-xs font-semibold transition-colors ${
-              sortBy === "margin"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted hover:text-ink hover:bg-canvas"
-            }`}
+            className={`min-h-9 shrink-0 ${segmentedItemClass(sortBy === "margin")}`}
           >
             Mayor retorno (%)
           </button>
           <button
             type="button"
             onClick={() => setSortBy("units")}
-            className={`min-h-9 px-3 shrink-0 rounded-lg text-xs font-semibold transition-colors ${
-              sortBy === "units"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted hover:text-ink hover:bg-canvas"
-            }`}
+            className={`min-h-9 shrink-0 ${segmentedItemClass(sortBy === "units")}`}
           >
             Más vendidas
           </button>
           <button
             type="button"
             onClick={() => setSortBy("low-margin")}
-            className={`min-h-9 px-3 shrink-0 rounded-lg text-xs font-semibold transition-colors ${
-              sortBy === "low-margin"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted hover:text-ink hover:bg-canvas"
-            }`}
+            className={`min-h-9 shrink-0 ${segmentedItemClass(sortBy === "low-margin")}`}
           >
             Menor margen
           </button>

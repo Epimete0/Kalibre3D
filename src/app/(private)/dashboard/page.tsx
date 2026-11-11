@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  LinkButton,
+  PageHeader,
+  segmentedTrackClass,
+} from "@/components/ui";
 import { getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
 import { vatIncluded } from "@/lib/costing";
@@ -288,7 +294,7 @@ export default async function DashboardPage({
               </Link>
             </div>
 
-            <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+            <div className={segmentedTrackClass}>
               <Link
                 href={`/dashboard?month=${moneyView.previousMonth}`}
                 className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"

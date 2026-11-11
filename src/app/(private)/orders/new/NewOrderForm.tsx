@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
-import { Card, inputClass } from "@/components/ui";
+import { Card, filterChipClass, inputClass } from "@/components/ui";
 import { effectiveMlCommission, rememberLastChannel } from "@/lib/last-channel";
 import { formatMoney } from "@/lib/money-format";
 import { unitPriceFor } from "@/lib/order-totals";
@@ -256,7 +256,7 @@ export function NewOrderForm({
       )}
 
       {/* 1. Tipo de registro: selector compacto */}
-      <div role="radiogroup" aria-label="Tipo de registro" className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
+      <div role="radiogroup" aria-label="Tipo de registro" className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner">
         {KINDS.map((option) => {
           const selected = kind === option.id;
           return (
@@ -269,12 +269,14 @@ export function NewOrderForm({
                 setKind(option.id);
                 if (option.id === "QUICK_SALE") setHasPayment(true);
               }}
-              className={`flex min-h-12 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center transition-colors ${
-                selected ? "bg-primary text-white shadow-sm" : "text-ink hover:bg-canvas"
+              className={`flex min-h-12 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-center transition-all duration-150 touch-manipulation ${
+                selected
+                  ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:bg-raised dark:border-line border border-line/60"
+                  : "text-muted hover:text-ink hover:bg-canvas/50"
               }`}
             >
               <span className="text-sm font-semibold">{option.label}</span>
-              <span className={`text-[11px] ${selected ? "text-white/80" : "text-muted"}`}>{option.hint}</span>
+              <span className={`text-[11px] ${selected ? "text-primary font-medium" : "text-muted"}`}>{option.hint}</span>
             </button>
           );
         })}
@@ -425,11 +427,7 @@ export function NewOrderForm({
                 role="radio"
                 aria-checked={isSelected}
                 onClick={() => handleChannelChange(ch.id)}
-                className={`inline-flex min-h-10 items-center justify-center rounded-full border px-3.5 text-xs transition-colors ${
-                  isSelected
-                    ? "border-primary bg-primary text-white font-semibold shadow-sm"
-                    : "border-line bg-raised text-ink hover:bg-canvas"
-                }`}
+                className={filterChipClass(isSelected)}
               >
                 <span>{ch.label}</span>
               </button>

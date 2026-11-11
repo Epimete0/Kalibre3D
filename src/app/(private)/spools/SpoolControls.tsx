@@ -19,9 +19,9 @@ import type { SpoolListItem } from "@/lib/spool-queries";
 const initialState: SpoolActionState = {};
 
 const primaryBtn =
-  "inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const secondaryBtn =
-  "inline-flex min-h-9 items-center justify-center rounded-lg border border-line bg-raised px-3 text-xs font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60";
+  "inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink shadow-xs transition-all hover:bg-raised hover:border-line-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 
 function ErrorMessage({ message }: { message: string }) {
   return (
@@ -54,8 +54,10 @@ const COMMON_COLORS = [
 ] as const;
 
 const chipClass = (selected: boolean) =>
-  `inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
-    selected ? "border-primary bg-primary text-white font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
+  `inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-150 touch-manipulation ${
+    selected
+      ? "border-primary/40 bg-primary-soft text-primary-ink font-bold shadow-xs ring-1 ring-primary/20"
+      : "border-line bg-surface text-ink hover:border-line-strong hover:bg-raised"
   }`;
 
 export function SpoolCreateModal({

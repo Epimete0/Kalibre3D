@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Elevación de la paleta visual, profundidad y controles segmentados:**
+  - Modernización de la paleta de tokens en `globals.css`: fondo claro en slate técnico (`#f8fafc`) con mayor contraste sobre tarjetas blancas puras, y fondo oscuro OLED slate (`#090d16`).
+  - Tarjetas (`Card`) con profundidad táctil, relieve superior y sombra multicapa suave (`shadow-[0_1px_3px_rgba(15,23,42,0.04),0_6px_20px_-4px_rgba(15,23,42,0.04)]`).
+  - Nuevos controles segmentados (`segmentedTrackClass` y `segmentedItemClass`) estilo Apple/Linear para pestañas de Dinero, tipos de venta, ordenamiento y filtros, reemplazando la acumulación de botones planos sueltos.
+  - Chips de selección refinados (`filterChipClass`) con tonos cálidos sutiles (`bg-primary-soft text-primary-ink`) en canales de venta, categorías y bobinas, eliminando los bloques planos de color estridente.
+  - Botones de acción principal (CTA) con micro-gradiente y relieve táctil para destacar la acción jerárquica primaria en cada vista.
 - **Unificación integral de Caja vs Margen en toda la app:**
   - En el panel de inicio (`/dashboard`), alineación completa con el módulo Dinero: título *«Caja de [Mes]»*, tarjetas *«Entró a caja»*, *«Compras y gastos»*, *«Quedó en caja»* (con badge de saldo disponible) y acceso directo a *«Ver margen por modelo fabricado»*.
   - En Catálogo de piezas (`/products` y `/products/[id]`), sustitución del término "ganancia" por *«Margen»* o *«Margen directo»*, coordinado 1:1 con la rentabilidad unitaria.

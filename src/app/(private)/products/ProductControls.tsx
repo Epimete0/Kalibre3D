@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useId, useState, useTransition } from "react";
-import { Badge, Card, Field, inputClass } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  Field,
+  inputClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from "@/components/ui";
 import { MATERIALS, MATERIAL_LABEL } from "@/lib/catalog-presentation";
 import { computePieceCost, mercadoLibreNet } from "@/lib/costing";
 import { formatMoney } from "@/lib/money-format";
@@ -18,11 +25,11 @@ import {
 } from "./actions";
 
 const primaryBtn =
-  "inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const secondaryBtn =
-  "inline-flex min-h-9 items-center justify-center rounded-lg border border-line bg-raised px-3 text-xs font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60";
+  "inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink shadow-xs transition-all hover:bg-raised hover:border-line-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const dangerBtn =
-  "inline-flex min-h-9 items-center justify-center rounded-lg border border-danger/30 bg-danger-soft px-3 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/35 disabled:opacity-60";
+  "inline-flex min-h-9 items-center justify-center rounded-xl border border-danger/30 bg-danger-soft px-3 text-xs font-semibold text-danger shadow-xs transition-all hover:bg-danger/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/35 disabled:opacity-60 touch-manipulation";
 
 export type CatalogSettingsSummary = {
   currency: string;
@@ -1123,37 +1130,25 @@ export function ProductList({
   return (
     <Card className="mt-6 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className={segmentedTrackClass}>
           <button
             type="button"
             onClick={() => setFilter("active")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "active"
-                ? "bg-primary text-white"
-                : "bg-raised text-muted hover:text-ink"
-            }`}
+            className={segmentedItemClass(filter === "active")}
           >
             Activas ({products.filter((p) => p.active).length})
           </button>
           <button
             type="button"
             onClick={() => setFilter("inactive")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "inactive"
-                ? "bg-primary text-white"
-                : "bg-raised text-muted hover:text-ink"
-            }`}
+            className={segmentedItemClass(filter === "inactive")}
           >
             Inactivas ({products.filter((p) => !p.active).length})
           </button>
           <button
             type="button"
             onClick={() => setFilter("all")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filter === "all"
-                ? "bg-primary text-white"
-                : "bg-raised text-muted hover:text-ink"
-            }`}
+            className={segmentedItemClass(filter === "all")}
           >
             Todas ({products.length})
           </button>

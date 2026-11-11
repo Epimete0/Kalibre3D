@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Badge, Card, EmptyState, inputClass } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  filterChipClass,
+  inputClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from "@/components/ui";
 import { vatIncluded } from "@/lib/costing";
 import { formatMoney } from "@/lib/money-format";
 import {
@@ -198,14 +206,14 @@ export function MoneyControls({
           <button
             type="button"
             onClick={() => openForm("EXPENSE")}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-primary-hover transition-colors touch-manipulation"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] touch-manipulation"
           >
             + Registrar gasto
           </button>
           <button
             type="button"
             onClick={() => openForm("INCOME")}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-colors touch-manipulation"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs hover:bg-raised transition-all active:scale-[0.98] touch-manipulation"
           >
             + Otro ingreso
           </button>
@@ -239,22 +247,18 @@ export function MoneyControls({
                 ? "Registrar gasto del taller"
                 : "Registrar ingreso suelto (ej. venta de archivo)"}
             </h2>
-            <div className="inline-flex rounded-lg border border-line bg-raised p-0.5 text-xs">
+            <div className={segmentedTrackClass}>
               <button
                 type="button"
                 onClick={() => openForm("EXPENSE")}
-                className={`rounded-md px-2.5 py-1 font-semibold ${
-                  formMode === "EXPENSE" ? "bg-primary text-white" : "text-muted"
-                }`}
+                className={segmentedItemClass(formMode === "EXPENSE")}
               >
                 Gasto
               </button>
               <button
                 type="button"
                 onClick={() => openForm("INCOME")}
-                className={`rounded-md px-2.5 py-1 font-semibold ${
-                  formMode === "INCOME" ? "bg-primary text-white" : "text-muted"
-                }`}
+                className={segmentedItemClass(formMode === "INCOME")}
               >
                 Ingreso
               </button>
@@ -277,11 +281,7 @@ export function MoneyControls({
                       key={cat}
                       type="button"
                       onClick={() => setCategory(cat)}
-                      className={`min-h-10 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors touch-manipulation ${
-                        active
-                          ? "bg-primary text-white shadow-sm"
-                          : "border border-line bg-raised text-ink hover:bg-canvas"
-                      }`}
+                      className={filterChipClass(active)}
                     >
                       {CATEGORY_LABEL[cat as MoneyCategory]}
                     </button>

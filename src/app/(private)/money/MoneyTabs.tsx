@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { segmentedItemClass, segmentedTrackClass } from "@/components/ui";
 
 const TABS = [
   { key: "caja", href: "/money", label: "Caja del mes" },
@@ -18,7 +19,7 @@ export function MoneyTabs({
   return (
     <nav
       aria-label="Secciones de Dinero"
-      className="grid grid-cols-2 max-w-md gap-1 rounded-xl border border-line bg-surface p-1"
+      className={`grid grid-cols-2 max-w-md ${segmentedTrackClass}`}
     >
       {TABS.map((tab) => {
         const selected = tab.key === active;
@@ -27,11 +28,7 @@ export function MoneyTabs({
             key={tab.key}
             href={month ? `${tab.href}?month=${month}` : tab.href}
             aria-current={selected ? "page" : undefined}
-            className={`flex min-h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold transition-colors ${
-              selected
-                ? "bg-primary text-white shadow-sm"
-                : "text-ink hover:bg-canvas"
-            }`}
+            className={`min-h-10 ${segmentedItemClass(selected)}`}
           >
             {tab.label}
           </Link>

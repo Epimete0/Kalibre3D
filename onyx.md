@@ -6,6 +6,33 @@
 
 ---
 
+## Elevación de la paleta visual, profundidad y controles segmentados — 2026-11-11
+
+- **Pedido del usuario:** mejorar la paleta de colores y el estilo visual general de la app para resolver la sensación de que al entrar a cualquier sección "solo aparecían botones nuevos planos", elevando el contraste, fondos, jerarquía y acabado visual.
+- **Auditoría visual y causa del problema:**
+  - La interfaz utilizaba botones planos `rounded-full` y `rounded-xl` idénticos para tabs, filtros, radios y acciones.
+  - Al seleccionarse, todos se convertían en bloques planos naranja estridente (`bg-primary text-white`), saturando la vista y compitiendo con el botón de acción principal.
+  - El fondo de página (`#f3f5f7`) y las tarjetas (`#ffffff`) tenían un contraste débil y sombras casi imperceptibles, dejando la pantalla visualmente plana.
+- **Mejoras del sistema de diseño:**
+  - **Paleta y tokens (`globals.css`):**
+    - Fondo de página claro refinado a slate técnico limpio (`#f8fafc`), elevando el contraste con las tarjetas blancas puras.
+    - Contenedores elevados (`--color-raised: #f1f5f9;` en claro, `#1e293b;` en oscuro).
+    - Tarjetas (`Card` en `ui.tsx`) con doble biselado/profundidad táctil: sombra multicapa con destaque superior specular (`shadow-[0_1px_3px_rgba(15,23,42,0.04),0_6px_20px_-4px_rgba(15,23,42,0.04)]`).
+    - Inputs (`inputClass` en `ui.tsx`) modernizados con bordes nítidos, radio `rounded-xl`, sombra suave de 1 px y anillo de enfoque translúcido al 15 %.
+    - Badges (`Badge` en `ui.tsx`) estilizados con bordes hairline y fondos enriquecidos.
+  - **Controles segmentados táctiles (`segmentedTrackClass` y `segmentedItemClass`):**
+    - Se reemplazaron las filas sueltas de botones por selectores de riel físico estilo Apple/Linear (riel hundido con sombra interior y pestaña activa en relieve blanco/superficie con sombra y borde sutil).
+    - Aplicado en: pestañas de Dinero (`MoneyTabs.tsx`), selector de tipo de venta (`NewOrderForm.tsx`), ordenamiento de rentabilidad (`ProfitabilityControls.tsx`), filtros de productos (`ProductControls.tsx`), selector de mes en dashboard (`dashboard/page.tsx`) y filtros de materiales de bobinas (`spools/page.tsx`).
+  - **Chips de filtro refinados (`filterChipClass`):**
+    - Los filtros inactivos usan superficie limpia con borde sutil.
+    - Los activos usan un elegante fondo peach/cobre suave con texto en contraste (`bg-primary-soft text-primary-ink border-primary/35 ring-1 ring-primary/20`), eliminando los bloques naranjas invasivos.
+    - Aplicado en: canales de venta (`NewOrderForm.tsx`), categorías de gastos/ingresos (`MoneyControls.tsx`) y opciones de bobinas (`SpoolControls.tsx`).
+  - **Botones de acción primaria (CTA):**
+    - Los botones principales de acción (`LinkButton`, `primaryBtn`, `+ Registrar gasto`, `+ Registrar venta`) ahora cuentan con micro-gradiente sutil, relieve superior y sombra de elevación (`shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_14px_rgba(217,83,30,0.28)]`), destacando de forma jerárquica sobre los filtros secundarios.
+- **Verificación:** 377 pruebas en Vitest en verde (`npm test -- --run`). Linter con 0 errores y 0 advertencias (`npm run lint`). Compilación de producción en Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Unificación integral del entendimiento contable: Caja vs Margen en toda la app — 2026-11-11
 
 - **Pedido del usuario:** revisar si la confusión de términos contables y métricas ocurría en otros lugares de la app para mejorar la experiencia y el entendimiento general de los usuarios.

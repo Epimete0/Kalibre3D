@@ -15,9 +15,9 @@
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* Tema claro: Aluminio anodizado / papel milimétrico técnico */
-  --color-canvas: #f3f5f7;
+  --color-canvas: #f8fafc;
   --color-surface: #ffffff;
-  --color-raised: #f8fafc;
+  --color-raised: #f1f5f9;
 
   --color-ink: #0f172a;
   --color-muted: #475569;
@@ -29,7 +29,7 @@
   /* Primario: Naranja cobre de boquilla térmica (Hotend 220°C) */
   --color-primary: #d9531e;
   --color-primary-hover: #b84114;
-  --color-primary-soft: #fff1eb;
+  --color-primary-soft: #fff7ed;
   --color-primary-ink: #9a3412;
 
   /* Acento: Azul cian de calibración láser / plano CAD */
@@ -64,18 +64,18 @@
   /* Tema oscuro: Cama PEI de carbono texturizado */
   html[data-theme="dark"] {
     color-scheme: dark;
-    --color-canvas: #0b0f17;
-    --color-surface: #131b26;
-    --color-raised: #1a2433;
-    --color-ink: #f1f5f9;
+    --color-canvas: #090d16;
+    --color-surface: #0f172a;
+    --color-raised: #1e293b;
+    --color-ink: #f8fafc;
     --color-muted: #94a3b8;
     --color-faint: #64748b;
     --color-line: #1e293b;
     --color-line-strong: #334155;
     --color-primary: #f97316;
     --color-primary-hover: #fb923c;
-    --color-primary-soft: #2b1810;
-    --color-primary-ink: #ffedd5;
+    --color-primary-soft: #271406;
+    --color-primary-ink: #fed7aa;
     --color-accent: #38bdf8;
     --color-accent-soft: #0c2538;
     --color-danger: #f87171;
