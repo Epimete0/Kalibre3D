@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Rediseño integral de Rentabilidad (`/money/rentabilidad`):** 4 tarjetas de salud financiera (ingresos generados, costo de fabricación, ganancia neta real con badge de margen y volumen producido), destacados del taller (pieza de mayor ganancia, más vendida y con mejor margen sin emojis), ordenamiento interactivo (ganancia, margen, volumen o menor margen), buscador en tiempo real, barras de proporción visual (ganancia vs costo) y desglose unitario por pieza.
+- **Visualización de IVA Débito fiscal:** en la pestaña principal de Dinero (`/money`) y en el panel de inicio (`/dashboard`), desglose automático del IVA contenido en cobros y ganancia neta real descontando impuestos cuando el taller tiene configurado un porcentaje de IVA (`vatPercent > 0`).
+
+### Corregido
+- **Estilo de gastos operativos:** se eliminó el color rojo de error (`text-danger`) en los gastos del mes de la pestaña principal de Dinero, en el panel de inicio y en Compras, usando un estilo financiero neutro y profesional (`text-ink tabular-nums`).
+- **Erradicación total de emojis:** sustitución de todos los emojis por texto técnico limpio e iconos SVG semánticos en canales de venta (`NewOrderForm`), enlaces de WhatsApp/Instagram en pedidos y ayudas contextuales de configuración.
 - **Herramientas gratis:** cotizador de impresión 3D abierto, sin crear cuenta, en la landing y en `/herramientas/cotizador`, con modelo de impresora, desgaste, fallas, insumos, IVA y Mercado Libre.
 - **Compras:** nueva pestaña en Dinero con lo que gastaste en el mes por tipo y las bobinas que agregaste (kilos y precio promedio).
 - **Rentabilidad por pieza:** nueva pestaña en Dinero que muestra qué pieza te deja más ganancia, después de comisiones, envíos y costos. Cada venta guarda su costo del día.

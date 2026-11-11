@@ -17,6 +17,7 @@ export type DashboardActiveStatusCounts = {
 
 export type DashboardOverview = {
   currency: Currency;
+  vatPercent: number;
   isManager: boolean;
   canOperate: boolean;
   isViewer: boolean;
@@ -96,6 +97,7 @@ export async function getDashboardOverview(options?: {
 
   return {
     currency: (settings?.currency as Currency | undefined) ?? "CLP",
+    vatPercent: settings?.vatPercent ?? 0,
     isManager,
     canOperate,
     isViewer,

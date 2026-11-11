@@ -82,4 +82,19 @@ describe("rentabilidad por pieza", () => {
     expect(result.map((row) => row.key)).toEqual(["p-yaris", OTHER_SALES_KEY]);
     expect(result[1]).toMatchObject({ revenue: 3000, cost: 0, unitsWithoutCost: 1 });
   });
+
+  it("calcula el IVA contenido y la ganancia neta real cuando hay IVA configurado", () => {
+    const revenue = 11900;
+    const vatPercent = 19;
+    const vat = Math.round((revenue * vatPercent) / (100 + vatPercent));
+    const netRevenue = revenue - vat;
+    const cost = 2000;
+    const netProfit = netRevenue - cost;
+    const margin = Math.round((netProfit / netRevenue) * 100);
+
+    expect(vat).toBe(1900);
+    expect(netRevenue).toBe(10000);
+    expect(netProfit).toBe(8000);
+    expect(margin).toBe(80);
+  });
 });

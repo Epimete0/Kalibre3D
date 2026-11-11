@@ -312,7 +312,7 @@ export default async function OrderDetailPage(props: {
                       rel="noopener noreferrer"
                       className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-raised px-3 py-1.5 text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
                     >
-                      💬 WhatsApp ({order.customer.phone})
+                      WhatsApp ({order.customer.phone})
                     </a>
                   )}
                   {order.customer.instagram && (
@@ -322,7 +322,7 @@ export default async function OrderDetailPage(props: {
                       rel="noopener noreferrer"
                       className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-raised px-3 py-1.5 text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
                     >
-                      📸 @{order.customer.instagram.replace(/^@+/, "")}
+                      @{order.customer.instagram.replace(/^@+/, "")}
                     </a>
                   )}
                 </div>

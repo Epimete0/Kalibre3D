@@ -27,12 +27,12 @@ type FormItem = {
 };
 
 const CHANNELS = [
-  { id: "WHATSAPP", label: "WhatsApp", icon: "💬" },
-  { id: "INSTAGRAM", label: "Instagram", icon: "📸" },
-  { id: "MERCADOLIBRE", label: "Mercado Libre", icon: "📦" },
-  { id: "IN_PERSON", label: "En persona", icon: "🤝" },
-  { id: "DIGITAL", label: "Archivo digital", icon: "💾" },
-  { id: "OTHER", label: "Otro", icon: "📝" },
+  { id: "WHATSAPP", label: "WhatsApp" },
+  { id: "INSTAGRAM", label: "Instagram" },
+  { id: "MERCADOLIBRE", label: "Mercado Libre" },
+  { id: "IN_PERSON", label: "En persona" },
+  { id: "DIGITAL", label: "Archivo digital" },
+  { id: "OTHER", label: "Otro" },
 ] as const;
 
 const METHODS = [
@@ -44,8 +44,8 @@ const METHODS = [
 ] as const;
 
 const KINDS = [
-  { id: "QUICK_SALE", label: "⚡ Venta rápida", hint: "Entregada y cobrada" },
-  { id: "ORDER", label: "📦 Por encargo", hint: "Se entrega después" },
+  { id: "QUICK_SALE", label: "Venta rápida", hint: "Entregada y cobrada" },
+  { id: "ORDER", label: "Por encargo", hint: "Se entrega después" },
 ] as const;
 
 const emptyItem = (): FormItem => ({
@@ -425,13 +425,12 @@ export function NewOrderForm({
                 role="radio"
                 aria-checked={isSelected}
                 onClick={() => handleChannelChange(ch.id)}
-                className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
+                className={`inline-flex min-h-10 items-center justify-center rounded-full border px-3.5 text-xs transition-colors ${
                   isSelected
                     ? "border-primary bg-primary text-white font-semibold shadow-sm"
                     : "border-line bg-raised text-ink hover:bg-canvas"
                 }`}
               >
-                <span aria-hidden="true">{ch.icon}</span>
                 <span>{ch.label}</span>
               </button>
             );
@@ -442,7 +441,7 @@ export function NewOrderForm({
         {isML && (
           <div className="mt-4 p-3 rounded-xl bg-accent-soft/40 border border-accent/30 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-ink">📦 Opciones de Mercado Libre</span>
+              <span className="text-xs font-bold text-ink">Opciones de Mercado Libre</span>
               <span className="text-[11px] text-muted">Precios ML activos</span>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

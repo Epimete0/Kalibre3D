@@ -42,7 +42,7 @@ export default async function PurchasesPage(props: { searchParams?: Promise<{ mo
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">Compras del mes</p>
-          <p className="mt-1 text-2xl font-bold text-danger tabular-nums">{formatMoney(summary.total, currency)}</p>
+          <p className="mt-1 text-2xl font-bold text-ink tabular-nums">{formatMoney(summary.total, currency)}</p>
           <p className="mt-1 text-xs text-muted">Sin contar devoluciones a clientes ni lo anulado.</p>
         </Card>
         <Card className="p-4">

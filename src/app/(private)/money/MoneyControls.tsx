@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, Card, EmptyState, inputClass } from "@/components/ui";
+import { vatIncluded } from "@/lib/costing";
 import { formatMoney } from "@/lib/money-format";
 import {
   CATEGORY_LABEL,
@@ -56,10 +57,12 @@ function formatMonthLabel(monthStr: string): string {
 export function MoneyControls({
   view,
   currency,
+  vatPercent = 0,
   initialMode = null,
 }: {
   view: MonthlyMoneyView;
   currency: string;
+  vatPercent?: number;
   initialMode?: "EXPENSE" | "INCOME" | null;
 }) {
   const router = useRouter();
@@ -157,6 +160,17 @@ export function MoneyControls({
   const expenseCategories = Object.entries(view.summary.expenseByCategory).sort(
     (a, b) => b[1] - a[1]
   );
+
+  const grossIncome = view.summary.income;
+  const vatAmount = vatIncluded(grossIncome, vatPercent);
+  const netIncome = grossIncome - vatAmount;
+  const netProfit = netIncome - view.summary.expense;
+  const marginPercent =
+    netIncome > 0 ? Math.round((netProfit / netIncome) * 100) : 0;
+
+  const validTransactions = view.transactions.filter((t) => t.voidedAt === null);
+  const expenseCount = validTransactions.filter((t) => t.type === "EXPENSE").length;
+  const incomeCount = validTransactions.filter((t) => t.type === "INCOME").length;
 
   return (
     <div className="space-y-5">
@@ -375,38 +389,129 @@ export function MoneyControls({
       )}
 
       {/* Tarjetas de resumen del mes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-            Ingresos del mes
-          </span>
-          <span className="mt-1 block text-2xl font-bold text-ok">
-            {formatMoney(view.summary.income, currency)}
-          </span>
-        </Card>
+      {vatPercent > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+          <Card className="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Ingresos cobrados (Bruto)
+              </span>
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
+                {formatMoney(grossIncome, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              Neto sin IVA: <strong className="text-ink font-semibold">{formatMoney(netIncome, currency)}</strong>
+            </span>
+          </Card>
 
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-            Gastos del mes
-          </span>
-          <span className="mt-1 block text-2xl font-bold text-danger">
-            {formatMoney(view.summary.expense, currency)}
-          </span>
-        </Card>
+          <Card className="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                IVA contenido ({vatPercent}%)
+              </span>
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
+                {formatMoney(vatAmount, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              Débito fiscal a tributar · No es ganancia
+            </span>
+          </Card>
 
-        <Card className="p-4 sm:p-5 border-primary/25 bg-surface">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-            Ganancia neta
-          </span>
-          <span
-            className={`mt-1 block text-2xl font-bold ${
-              view.summary.profit >= 0 ? "text-ink" : "text-danger"
-            }`}
-          >
-            {formatMoney(view.summary.profit, currency)}
-          </span>
-        </Card>
-      </div>
+          <Card className="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Gastos operativos
+              </span>
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
+                {formatMoney(view.summary.expense, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              {expenseCount} {expenseCount === 1 ? "egreso registrado" : "egresos registrados"}
+            </span>
+          </Card>
+
+          <Card className="p-4 sm:p-5 border-primary/25 bg-surface flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                  Ganancia neta real
+                </span>
+                <Badge tone={marginPercent >= 50 ? "ok" : marginPercent >= 25 ? "warn" : "danger"}>
+                  {marginPercent}% margen
+                </Badge>
+              </div>
+              <span
+                className={`mt-1 block text-2xl font-bold tabular-nums ${
+                  netProfit >= 0 ? "text-ok" : "text-danger"
+                }`}
+              >
+                {formatMoney(netProfit, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              Descontando IVA y gastos
+            </span>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <Card className="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Ingresos del mes
+              </span>
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
+                {formatMoney(view.summary.income, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              {incomeCount} {incomeCount === 1 ? "cobro registrado" : "cobros registrados"}
+            </span>
+          </Card>
+
+          <Card className="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                Gastos operativos
+              </span>
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
+                {formatMoney(view.summary.expense, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              {expenseCount} {expenseCount === 1 ? "egreso registrado" : "egresos registrados"}
+            </span>
+          </Card>
+
+          <Card className="p-4 sm:p-5 border-primary/25 bg-surface flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                  Ganancia neta
+                </span>
+                {view.summary.income > 0 && (
+                  <Badge tone={view.summary.profit >= 0 ? "ok" : "danger"}>
+                    {Math.round((view.summary.profit / view.summary.income) * 100)}% margen
+                  </Badge>
+                )}
+              </div>
+              <span
+                className={`mt-1 block text-2xl font-bold tabular-nums ${
+                  view.summary.profit >= 0 ? "text-ok" : "text-danger"
+                }`}
+              >
+                {formatMoney(view.summary.profit, currency)}
+              </span>
+            </div>
+            <span className="mt-2 block text-xs text-muted">
+              Ingresos menos gastos
+            </span>
+          </Card>
+        </div>
+      )}
 
       {/* Desglose por canal y por categoría */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

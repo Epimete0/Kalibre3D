@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
+import { vatIncluded } from "@/lib/costing";
 import { getDashboardOverview } from "@/lib/dashboard-queries";
 import { GettingStartedCard } from "./GettingStartedCard";
 import { formatMoney } from "@/lib/money-format";
@@ -77,6 +78,7 @@ export default async function DashboardPage({
   const overview = await getDashboardOverview({ month: resolvedParams.month });
   const {
     currency,
+    vatPercent,
     isManager,
     canOperate,
     isViewer,
@@ -305,47 +307,74 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-            <Card className="p-4 min-w-0">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Ingresos del mes
-              </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
-                {formatMoney(moneyView.summary.income, currency)}
-              </span>
-            </Card>
+          {(() => {
+            const grossIncome = moneyView.summary.income;
+            const vatAmount = vatIncluded(grossIncome, vatPercent);
+            const netIncome = grossIncome - vatAmount;
+            const netProfit = vatPercent > 0 ? netIncome - moneyView.summary.expense : moneyView.summary.profit;
 
-            <Card className="p-4 min-w-0">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Gastos del mes
-              </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-danger truncate">
-                {formatMoney(moneyView.summary.expense, currency)}
-              </span>
-            </Card>
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+                <Card className="p-4 min-w-0">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                    Ingresos del mes
+                  </span>
+                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
+                    {formatMoney(grossIncome, currency)}
+                  </span>
+                  {vatPercent > 0 && (
+                    <span className="mt-0.5 block text-[11px] text-muted truncate">
+                      Neto sin IVA: {formatMoney(netIncome, currency)}
+                    </span>
+                  )}
+                </Card>
 
-            <Card className="p-4 min-w-0 border-primary/25">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Ganancia neta
-              </span>
-              <span
-                className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
-                  moneyView.summary.profit >= 0 ? "text-ink" : "text-danger"
-                }`}
-              >
-                {formatMoney(moneyView.summary.profit, currency)}
-              </span>
-            </Card>
+                <Card className="p-4 min-w-0">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                    Gastos del mes
+                  </span>
+                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ink truncate">
+                    {formatMoney(moneyView.summary.expense, currency)}
+                  </span>
+                  {vatPercent > 0 && (
+                    <span className="mt-0.5 block text-[11px] text-muted truncate">
+                      IVA Débito: {formatMoney(vatAmount, currency)} ({vatPercent}%)
+                    </span>
+                  )}
+                </Card>
 
-            <Card className="p-4 min-w-0">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
-                Por cobrar (pedidos activos)
-              </span>
-              <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-warn truncate">
-                {formatMoney(pendingReceivableTotal ?? 0, currency)}
-              </span>
-            </Card>
-          </div>
+                <Card className="p-4 min-w-0 border-primary/25">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                    Ganancia neta
+                  </span>
+                  <span
+                    className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
+                      netProfit >= 0 ? "text-ok" : "text-danger"
+                    }`}
+                  >
+                    {formatMoney(netProfit, currency)}
+                  </span>
+                  {vatPercent > 0 && (
+                    <span className="mt-0.5 block text-[11px] text-muted truncate">
+                      Descontando IVA y gastos
+                    </span>
+                  )}
+                </Card>
+
+                <Card className="p-4 min-w-0">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                    Por cobrar (pedidos activos)
+                  </span>
+                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-warn truncate">
+                    {formatMoney(pendingReceivableTotal ?? 0, currency)}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-muted truncate">
+                    Saldos pendientes
+                  </span>
+                </Card>
+              </div>
+            );
+          })()}
 
           {/* Desglose por canal y por categoría */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

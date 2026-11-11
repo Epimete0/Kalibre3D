@@ -6,6 +6,23 @@
 
 ---
 
+## Rediseño de Rentabilidad, visualización de IVA y depuración de emojis — 2026-11-11
+
+- **Pedido del usuario:** mejorar la visualización de costos en la pestaña principal de Dinero y en el panel de inicio (los gastos operativos aparecían con estilo rojo de error alertando innecesariamente sobre egresos normales de negocio), mostrar el desglose de IVA cuando el taller lo tiene activo, erradicar cualquier emoji del código e implementar el rediseño integral de la pestaña de Rentabilidad (`/money/rentabilidad`).
+- **Eliminación total de emojis:** se eliminaron todos los emojis del código fuente (`NewOrderForm.tsx`, `orders/[id]/page.tsx`, `SettingsForm.tsx`), sustituyéndolos por diseño tipográfico profesional e iconos SVG vectoriales.
+- **Visualización de costos e IVA (`/money`, `MoneyControls.tsx` y `/dashboard`):**
+  - Los gastos operativos en las tarjetas de resumen del mes pasan de `text-danger` a tipografía financiera neutra y legible (`text-ink tabular-nums`).
+  - Cuando `settings.vatPercent > 0`, se desglosa el IVA Débito fiscal contenido en los ingresos brutos cobrados (`vatIncluded`), mostrando ingresos brutos, neto real del taller, IVA contenido a tributar y la ganancia neta real post-impuestos con su margen operativo.
+- **Rediseño integral de Rentabilidad (`/money/rentabilidad` → `ProfitabilityControls.tsx`):**
+  - Cuatro tarjetas de salud financiera (Ingresos generados, Costo de fabricación, Ganancia neta real con badge de salud de margen y Volumen producido).
+  - Destacados automáticos del taller con iconos SVG limpios: mayor ganancia total, pieza más vendida en volumen y mayor margen porcentual.
+  - Ordenamiento interactivo: por mayor ganancia ($), mayor margen (%), más vendidas (u.) y menor margen (para revisar piezas que dejan poco beneficio).
+  - Buscador reactivo en tiempo real por nombre de modelo.
+  - Barra visual de proporción bicolor (ganancia verde vs costo gris) por cada pieza, desglose unitario (precio, costo y ganancia por unidad), porcentaje de aporte a la ganancia del taller y avisos contextuales de costos estimados.
+- **Verificación:** 376 pruebas unitarias e integración pasando en Vitest (`npm test -- --run`). Linter pasando en 0 (`npm run lint`). Compilación de producción Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Herramientas públicas: cotizador 3D sin sesión — 2026-11-09
 
 - **Pedido del dueño:** sección "Herramientas" en la landing con un cotizador abierto, sin inicio de sesión, donde la persona escribe todos sus datos. Se revisó como referencia la calculadora de Erexit 3D (solo lectura) y se tomaron ideas, no diseño ni textos: modelo de impresora que completa los watts, desgaste de la máquina (repuestos ÷ vida útil), margen por fallas, insumos extra y margen con referencias. Kalibre mantiene lo suyo: purga multicolor, IVA, comisión por cobrar y precio de Mercado Libre que conserva la ganancia.

@@ -39,12 +39,25 @@ function Feedback({ state }: { state: State }) {
   return null;
 }
 
-/** Ayuda desplegable con bombilla: explica qué es un dato y cómo encontrarlo. */
+/** Ayuda desplegable: explica qué es un dato y cómo encontrarlo. */
 function HelpTip({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <details className="group mt-3 rounded-xl border border-accent/30 bg-accent-soft/30 text-sm">
       <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 px-3 font-medium text-ink">
-        <span aria-hidden="true">💡</span>
+        <svg
+          className="h-4 w-4 shrink-0 text-accent"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
         <span>{title}</span>
         <span aria-hidden="true" className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
       </summary>

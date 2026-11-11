@@ -49,6 +49,7 @@ export default async function MoneyPage(props: {
         key={`${view.month}-${initialMode ?? "none"}`}
         view={view}
         currency={settings.currency}
+        vatPercent={settings.vatPercent}
         initialMode={initialMode}
       />
     </div>
