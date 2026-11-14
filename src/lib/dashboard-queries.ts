@@ -37,9 +37,17 @@ async function getGettingStartedFacts(centerId: string) {
   const [order, spool, settings] = await Promise.all([
     prisma.order.findFirst({ where: { centerId }, select: { id: true } }),
     prisma.spool.findFirst({ where: { centerId }, select: { id: true } }),
-    prisma.centerSettings.findUnique({ where: { centerId }, select: { createdAt: true, updatedAt: true } }),
+    prisma.centerSettings.findUnique({
+      where: { centerId },
+      select: { createdAt: true, updatedAt: true, enableSpools: true },
+    }),
   ]);
-  return { hasOrder: Boolean(order), hasSpool: Boolean(spool), settingsConfigured: settingsWereSaved(settings) };
+  return {
+    hasOrder: Boolean(order),
+    hasSpool: Boolean(spool),
+    settingsConfigured: settingsWereSaved(settings),
+    enableSpools: settings?.enableSpools ?? true,
+  };
 }
 
 export async function getDashboardOverview(options?: {
@@ -92,8 +100,10 @@ export async function getDashboardOverview(options?: {
     }
   }
 
-  const lowSpools = spoolsView ? spoolsView.spools.filter((s) => s.isLow) : [];
-  const lowStockProducts = products ? products.filter((p) => p.isLowStock) : [];
+  const enableSpools = settings?.enableSpools ?? true;
+  const enableProductStock = settings?.enableProductStock ?? true;
+  const lowSpools = enableSpools && spoolsView ? spoolsView.spools.filter((s) => s.isLow) : [];
+  const lowStockProducts = enableProductStock && products ? products.filter((p) => p.isLowStock) : [];
 
   return {
     currency: (settings?.currency as Currency | undefined) ?? "CLP",

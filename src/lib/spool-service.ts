@@ -36,6 +36,13 @@ export const createSpoolSchema = z.object({
     .min(0, "Los gramos restantes no pueden ser negativos.")
     .max(50000, "Los gramos restantes no pueden superar 50.000 g.")
     .optional(),
+  tareGrams: z.coerce
+    .number({ error: "El peso del carrete vacío debe ser un entero mayor o igual a 0." })
+    .int("El peso del carrete vacío debe ser un número entero.")
+    .min(0, "El peso del carrete vacío no puede ser negativo.")
+    .max(10000, "El peso del carrete vacío no puede superar 10.000 g.")
+    .optional()
+    .default(0),
   pricePaid: z.coerce
     .number({ error: "El precio pagado debe ser mayor o igual a 0." })
     .int("El precio pagado debe ser un número entero.")
@@ -98,6 +105,7 @@ export async function createSpool(
         brand: data.brand ?? null,
         totalGrams: data.totalGrams,
         remainingGrams,
+        tareGrams: data.tareGrams,
         pricePaid: data.pricePaid,
         purchasedOn: new Date(`${purchasedDateStr}T00:00:00.000Z`),
         notes: data.notes ?? null,
@@ -165,6 +173,13 @@ export const updateSpoolSchema = z.object({
     .int("El peso total debe ser un número entero.")
     .min(1, "El peso total debe ser mayor a 0.")
     .max(50000, "El peso total no puede superar 50.000 g."),
+  tareGrams: z.coerce
+    .number({ error: "El peso del carrete vacío debe ser un entero mayor o igual a 0." })
+    .int("El peso del carrete vacío debe ser un número entero.")
+    .min(0, "El peso del carrete vacío no puede ser negativo.")
+    .max(10000, "El peso del carrete vacío no puede superar 10.000 g.")
+    .optional()
+    .default(0),
   pricePaid: z.coerce
     .number({ error: "El precio pagado debe ser mayor o igual a 0." })
     .int("El precio pagado debe ser un número entero.")
@@ -198,6 +213,7 @@ export async function updateSpool(input: UpdateSpoolInput): Promise<{ id: string
       color: data.color,
       brand: data.brand ?? null,
       totalGrams: data.totalGrams,
+      tareGrams: data.tareGrams,
       pricePaid: data.pricePaid,
       purchasedOn: new Date(`${data.purchasedOn}T00:00:00.000Z`),
       notes: data.notes ?? null,

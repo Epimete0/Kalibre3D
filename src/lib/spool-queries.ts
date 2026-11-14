@@ -10,6 +10,7 @@ export type SpoolListItem = {
   brand: string | null;
   totalGrams: number;
   remainingGrams: number;
+  tareGrams: number;
   pricePaid: number | null;
   costPerGram: number | null;
   purchasedOn: string;
@@ -67,6 +68,7 @@ export async function listSpools(options?: {
       brand: s.brand,
       totalGrams: s.totalGrams,
       remainingGrams: s.remainingGrams,
+      tareGrams: s.tareGrams ?? 0,
       pricePaid: canSeeMoney ? s.pricePaid : null,
       costPerGram: canSeeMoney && s.totalGrams > 0 ? Math.round((s.pricePaid / s.totalGrams) * 100) / 100 : null,
       purchasedOn: s.purchasedOn.toISOString().slice(0, 10),
@@ -158,6 +160,7 @@ export async function getSpoolDetail(spoolId: string): Promise<SpoolDetailView |
     brand: spool.brand,
     totalGrams: spool.totalGrams,
     remainingGrams: spool.remainingGrams,
+    tareGrams: spool.tareGrams ?? 0,
     pricePaid: canSeeMoney ? spool.pricePaid : null,
     costPerGram:
       canSeeMoney && spool.totalGrams > 0 ? Math.round((spool.pricePaid / spool.totalGrams) * 100) / 100 : null,

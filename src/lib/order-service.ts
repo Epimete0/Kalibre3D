@@ -392,7 +392,15 @@ async function estimateOrderUnitCosts(
     productIds.length > 0
       ? prisma.product.findMany({
           where: { centerId, id: { in: productIds } },
-          select: { id: true, material: true, grams: true, printMinutes: true, colorsCount: true, purgeGrams: true },
+          select: {
+            id: true,
+            material: true,
+            grams: true,
+            printMinutes: true,
+            colorsCount: true,
+            purgeGrams: true,
+            suppliesCost: true,
+          },
         })
       : Promise.resolve([]),
   ]);

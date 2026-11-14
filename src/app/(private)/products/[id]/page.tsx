@@ -57,6 +57,7 @@ export default async function ProductDetailPage({
     machineWearCostPerHour: settings.machineWearCostPerHour,
     failurePercent: settings.failurePercent,
     packagingCost: settings.defaultPackagingCost,
+    otherCosts: product.suppliesCost,
   });
 
   const mlBreakdown =
@@ -83,20 +84,25 @@ export default async function ProductDetailPage({
               <h1 className="text-xl font-bold text-ink">{product.name}</h1>
               {product.category && <Badge tone="neutral">{product.category}</Badge>}
               {!product.active && <Badge tone="warn">Inactiva</Badge>}
-              {product.isLowStock && <Badge tone="warn">Stock bajo</Badge>}
+              {settings.enableProductStock && product.isLowStock && <Badge tone="warn">Stock bajo</Badge>}
             </div>
             <p className="text-xs text-muted mt-1">
               Material: {MATERIAL_LABEL[product.material as keyof typeof MATERIAL_LABEL] ?? product.material} ·{" "}
               {product.grams} g ({product.colorsCount} {product.colorsCount === 1 ? "color" : "colores"}
               {product.colorsCount > 1 ? ` + ${product.purgeGrams} g purga` : ""}) · {product.printMinutes} min
+              {product.suppliesCost > 0
+                ? ` · Insumos extra ${formatMoney(product.suppliesCost, settings.currency)}`
+                : ""}
             </p>
           </div>
 
-          <div className="flex items-center justify-between sm:flex-col sm:items-end p-2.5 sm:p-0 rounded-xl bg-raised/50 sm:bg-transparent">
-            <span className="text-xs sm:text-[11px] font-semibold text-muted uppercase tracking-wider">Stock actual</span>
-            <span className="text-2xl font-bold text-ink tabular-nums">{product.currentStock} u.</span>
-            <span className="text-xs text-muted">Stock mínimo: {product.minStock} u.</span>
-          </div>
+          {settings.enableProductStock && (
+            <div className="flex items-center justify-between sm:flex-col sm:items-end p-2.5 sm:p-0 rounded-xl bg-raised/50 sm:bg-transparent">
+              <span className="text-xs sm:text-[11px] font-semibold text-muted uppercase tracking-wider">Stock actual</span>
+              <span className="text-2xl font-bold text-ink tabular-nums">{product.currentStock} u.</span>
+              <span className="text-xs text-muted">Stock mínimo: {product.minStock} u.</span>
+            </div>
+          )}
         </div>
 
         {canSeeMoney && (
@@ -112,6 +118,7 @@ export default async function ProductDetailPage({
                 {costBreakdown.wearCost > 0 && ` + Desgaste ${formatMoney(costBreakdown.wearCost, settings.currency)}`}
                 {costBreakdown.failureCost > 0 && ` + Fallos ${formatMoney(costBreakdown.failureCost, settings.currency)}`}
                 {costBreakdown.packagingCost > 0 && ` + Embalaje ${formatMoney(costBreakdown.packagingCost, settings.currency)}`}
+                {costBreakdown.otherCosts > 0 && ` + Insumos ${formatMoney(costBreakdown.otherCosts, settings.currency)}`}
               </div>
             </div>
 
@@ -150,7 +157,9 @@ export default async function ProductDetailPage({
         )}
       </Card>
 
-      <ProductStockControls productId={product.id} currentStock={product.currentStock} />
+      {settings.enableProductStock && (
+        <ProductStockControls productId={product.id} currentStock={product.currentStock} />
+      )}
 
       {performance && (
         <Card className="p-4 sm:p-5 space-y-4">
@@ -345,52 +354,54 @@ export default async function ProductDetailPage({
         </Card>
       )}
 
-      <Card className="p-4 sm:p-5 space-y-3">
-        <h2 className="text-base font-semibold text-ink">
-          Historial de stock ({product.movements.length})
-        </h2>
+      {settings.enableProductStock && (
+        <Card className="p-4 sm:p-5 space-y-3">
+          <h2 className="text-base font-semibold text-ink">
+            Historial de stock ({product.movements.length})
+          </h2>
 
-        {product.movements.length === 0 ? (
-          <p className="text-sm text-muted">Sin movimientos de stock registrados.</p>
-        ) : (
-          <div className="divide-y divide-line">
-            {product.movements.map((mov) => (
-              <div key={mov.id} className="py-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-ink">
-                      {PRODUCT_MOVEMENT_LABEL[mov.kind as ProductMovementKind] ?? mov.kind}
-                    </span>
-                    {mov.orderId && mov.orderNumber !== null && (
-                      <Link
-                        href={`/orders/${mov.orderId}`}
-                        className="text-xs font-semibold text-primary hover:underline"
-                      >
-                        Pedido #{mov.orderNumber}
-                      </Link>
-                    )}
+          {product.movements.length === 0 ? (
+            <p className="text-sm text-muted">Sin movimientos de stock registrados.</p>
+          ) : (
+            <div className="divide-y divide-line">
+              {product.movements.map((mov) => (
+                <div key={mov.id} className="py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-ink">
+                        {PRODUCT_MOVEMENT_LABEL[mov.kind as ProductMovementKind] ?? mov.kind}
+                      </span>
+                      {mov.orderId && mov.orderNumber !== null && (
+                        <Link
+                          href={`/orders/${mov.orderId}`}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Pedido #{mov.orderNumber}
+                        </Link>
+                      )}
+                    </div>
+                    {mov.notes && <p className="text-xs text-muted">{mov.notes}</p>}
+                    <p className="text-[11px] text-muted">
+                      {new Date(mov.createdAt).toLocaleString("es-CL")} · {mov.actorName}
+                    </p>
                   </div>
-                  {mov.notes && <p className="text-xs text-muted">{mov.notes}</p>}
-                  <p className="text-[11px] text-muted">
-                    {new Date(mov.createdAt).toLocaleString("es-CL")} · {mov.actorName}
-                  </p>
-                </div>
 
-                <div className="text-right tabular-nums">
-                  <div
-                    className={`text-sm font-bold ${
-                      mov.delta < 0 ? "text-warn" : "text-ok"
-                    }`}
-                  >
-                    {mov.delta > 0 ? `+${mov.delta}` : mov.delta} u.
+                  <div className="text-right tabular-nums">
+                    <div
+                      className={`text-sm font-bold ${
+                        mov.delta < 0 ? "text-warn" : "text-ok"
+                      }`}
+                    >
+                      {mov.delta > 0 ? `+${mov.delta}` : mov.delta} u.
+                    </div>
+                    <div className="text-xs text-muted">Quedan {mov.resultingStock} u.</div>
                   </div>
-                  <div className="text-xs text-muted">Quedan {mov.resultingStock} u.</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

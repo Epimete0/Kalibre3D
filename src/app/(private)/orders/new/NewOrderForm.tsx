@@ -25,6 +25,8 @@ export type WorkshopSettingsData = {
   currency: string;
   mlCommissionPercent: number;
   mlDefaultShippingCost: number;
+  enableClients?: boolean;
+  enableProductStock?: boolean;
 };
 
 type FormItem = {
@@ -388,19 +390,21 @@ export function NewOrderForm({
                               · {matLabel}
                               {linkedProduct.grams > 0 ? ` · ${linkedProduct.grams} g` : ""}
                             </span>
-                            <Badge
-                              tone={
-                                linkedProduct.currentStock <= 0
-                                  ? "warn"
-                                  : linkedProduct.isLowStock
+                            {(settings.enableProductStock ?? true) && (
+                              <Badge
+                                tone={
+                                  linkedProduct.currentStock <= 0
                                     ? "warn"
-                                    : "ok"
-                              }
-                            >
-                              {linkedProduct.currentStock <= 0
-                                ? "Sin stock listo"
-                                : `Stock: ${linkedProduct.currentStock}`}
-                            </Badge>
+                                    : linkedProduct.isLowStock
+                                      ? "warn"
+                                      : "ok"
+                                }
+                              >
+                                {linkedProduct.currentStock <= 0
+                                  ? "Sin stock listo"
+                                  : `Stock: ${linkedProduct.currentStock}`}
+                              </Badge>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs font-medium text-muted">Pieza manual</span>
@@ -771,29 +775,32 @@ export function NewOrderForm({
             </Card>
           )}
 
-          <Card className="p-4 sm:p-5 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted">
-                Cliente <span className="normal-case font-normal">(opcional)</span>
-              </p>
-              <div className={segmentedTrackClass}>
-                {([
-                  { id: "NONE", label: "Sin cliente" },
-                  { id: "EXISTING", label: "Elegir" },
-                  { id: "NEW", label: "+ Nuevo" },
-                ] as const).map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    aria-pressed={clientMode === mode.id}
-                    onClick={() => setClientMode(mode.id)}
-                    className={segmentedItemClass(clientMode === mode.id)}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
+          {(settings.enableClients ?? true) || clientMode !== "NONE" ? (
+            <Card className="p-4 sm:p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                  Cliente <span className="normal-case font-normal">(opcional)</span>
+                </p>
+                <div className={segmentedTrackClass}>
+                  {(
+                    [
+                      { id: "NONE", label: "Sin cliente" },
+                      { id: "EXISTING", label: "Elegir" },
+                      { id: "NEW", label: "+ Nuevo" },
+                    ] as const
+                  ).map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      aria-pressed={clientMode === mode.id}
+                      onClick={() => setClientMode(mode.id)}
+                      className={segmentedItemClass(clientMode === mode.id)}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
             {clientMode === "EXISTING" && (
               <select
@@ -843,6 +850,15 @@ export function NewOrderForm({
               </div>
             )}
           </Card>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setClientMode("NEW")}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-ink hover:bg-raised transition-colors touch-manipulation"
+            >
+              + Anotar datos del comprador (opcional)
+            </button>
+          )}
 
           {showExtras ? (
             <Card className="p-4 sm:p-5 space-y-3">

@@ -98,6 +98,7 @@ export function QuoteCalculator({
   const [colorsCount, setColorsCount] = useState("1");
   const [purgeGrams, setPurgeGrams] = useState(String(defaultPurgeGrams));
   const [packagingInput, setPackagingInput] = useState(String(defaultPackagingMajor));
+  const [suppliesInput, setSuppliesInput] = useState("");
   const [printerPreset, setPrinterPreset] = useState("");
   const [sessionWatts, setSessionWatts] = useState(printerWatts > 0 ? String(printerWatts) : "");
   const [marginTarget, setMarginTarget] = useState(defaultMarginPercent);
@@ -149,6 +150,7 @@ export function QuoteCalculator({
   };
 
   const packagingMinor = usesPackaging ? (parseInputMinor(packagingInput) ?? 0) : 0;
+  const suppliesMinor = parseInputMinor(suppliesInput) ?? 0;
 
   const energyKwh = printEnergyKwh(activeWatts || printerWatts, parsedMinutes);
   const kwhLabel = (kwh: number) =>
@@ -165,6 +167,7 @@ export function QuoteCalculator({
     colorsCount: parsedColors,
     purgeGrams: parsedPurge,
     packagingCost: packagingMinor,
+    otherCosts: suppliesMinor,
   });
 
   // Precio sugerido: el menor que deja el margen objetivo después del IVA y la comisión adicional.
@@ -259,6 +262,7 @@ export function QuoteCalculator({
     fd.set("printMinutes", String(parsedMinutes));
     fd.set("colorsCount", String(parsedColors));
     fd.set("purgeGrams", String(parsedPurge));
+    fd.set("suppliesCost", String(suppliesMinor));
     fd.set("salePrice", saleMajor);
     fd.set("mlPrice", mlMajor);
     fd.set("initialStock", "0");
@@ -537,8 +541,12 @@ export function QuoteCalculator({
             )}
           </div>
 
-          {/* Embalaje (si está activo en el perfil) y cantidad */}
-          <div className={`grid grid-cols-1 gap-3 pt-1 ${usesPackaging ? "sm:grid-cols-2" : ""}`}>
+          {/* Embalaje (si está activo en el perfil), insumos extra y cantidad */}
+          <div
+            className={`grid grid-cols-1 gap-3 pt-1 ${
+              usesPackaging ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            }`}
+          >
             {usesPackaging && (
               <Field label={`Embalaje unitario (${currency})`}>
                 <SmartMoneyInput
@@ -549,6 +557,14 @@ export function QuoteCalculator({
                 />
               </Field>
             )}
+            <Field label={`Insumos extra c/u (${currency})`} hint="Argolla, imán, tornillo…">
+              <SmartMoneyInput
+                currency={currency}
+                value={suppliesInput}
+                onChangeValue={setSuppliesInput}
+                placeholder="0"
+              />
+            </Field>
             <Field label="Cantidad a cotizar">
               <input
                 type="number"
@@ -683,6 +699,14 @@ export function QuoteCalculator({
                 <span>Embalaje unitario</span>
                 <span className="text-ink font-medium tabular-nums">
                   {formatMoney(costBreakdown.packagingCost, currency)}
+                </span>
+              </div>
+            )}
+            {costBreakdown.otherCosts > 0 && (
+              <div className="flex justify-between gap-2 text-muted">
+                <span>Insumos extra (argolla, imán…)</span>
+                <span className="text-ink font-medium tabular-nums">
+                  {formatMoney(costBreakdown.otherCosts, currency)}
                 </span>
               </div>
             )}

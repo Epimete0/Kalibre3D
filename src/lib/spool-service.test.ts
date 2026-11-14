@@ -59,13 +59,20 @@ describe("spool-service", () => {
       color: "Negro",
       brand: "eSUN",
       totalGrams: 1000,
+      tareGrams: 200,
       pricePaid: 15000,
       recordExpenseInMoney: true,
       paymentMethod: "TRANSFER",
     });
 
     expect(requireCatalogContext).toHaveBeenCalled();
-    expect(prisma.spool.create).toHaveBeenCalled();
+    expect(prisma.spool.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tareGrams: 200,
+        }),
+      })
+    );
     expect(prisma.spoolMovement.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

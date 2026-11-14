@@ -283,6 +283,18 @@ export type OrderDetailPayment = {
   voidReason: string | null;
 };
 
+export type OrderDetailSpoolMovement = {
+  id: string;
+  spoolId: string;
+  material: string;
+  color: string;
+  brand: string | null;
+  deltaGrams: number;
+  resultingGrams: number;
+  notes: string | null;
+  createdAt: Date;
+};
+
 export type OrderDetail = {
   id: string;
   number: number;
@@ -313,6 +325,7 @@ export type OrderDetail = {
   balance: number | null;
   events: OrderDetailEvent[];
   transactions: OrderDetailPayment[];
+  spoolMovements: OrderDetailSpoolMovement[];
 };
 
 export async function getOrderDetail(orderId: string): Promise<OrderDetail | null> {
@@ -339,6 +352,19 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail | nul
         orderBy: { version: "asc" },
       },
       transactions: {
+        orderBy: { createdAt: "desc" },
+      },
+      spoolMovements: {
+        include: {
+          spool: {
+            select: {
+              id: true,
+              material: true,
+              color: true,
+              brand: true,
+            },
+          },
+        },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -462,6 +488,17 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail | nul
       createdAt: tx.createdAt,
       voidedAt: tx.voidedAt,
       voidReason: tx.voidReason,
+    })),
+    spoolMovements: (order.spoolMovements ?? []).map((mov) => ({
+      id: mov.id,
+      spoolId: mov.spoolId,
+      material: mov.spool?.material ?? "PETG",
+      color: mov.spool?.color ?? "",
+      brand: mov.spool?.brand ?? null,
+      deltaGrams: mov.deltaGrams,
+      resultingGrams: mov.resultingGrams,
+      notes: mov.notes,
+      createdAt: mov.createdAt,
     })),
   };
 }

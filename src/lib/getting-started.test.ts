@@ -24,4 +24,24 @@ describe("primeros pasos del taller", () => {
     expect(settingsWereSaved({ createdAt, updatedAt: new Date("2026-11-07T10:00:00.500Z") })).toBe(false);
     expect(settingsWereSaved({ createdAt, updatedAt: new Date("2026-11-07T10:05:00.000Z") })).toBe(true);
   });
+
+  it("omite el paso de primera bobina si el taller desactivó el módulo de bobinas (modo simple)", () => {
+    const simple = buildGettingStarted({
+      hasOrder: false,
+      settingsConfigured: true,
+      hasSpool: false,
+      enableSpools: false,
+    });
+    expect(simple.steps.map((s) => s.key)).toEqual(["costs", "first-sale"]);
+    expect(simple.completed).toBe(1);
+    expect(simple.allDone).toBe(false);
+
+    const simpleDone = buildGettingStarted({
+      hasOrder: true,
+      settingsConfigured: true,
+      hasSpool: false,
+      enableSpools: false,
+    });
+    expect(simpleDone.allDone).toBe(true);
+  });
 });

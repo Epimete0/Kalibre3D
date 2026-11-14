@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SpoolQrLabel } from "@/app/(private)/spools/[id]/SpoolQrLabel";
 import { SpoolDetailEditControls, SpoolQuickConsumeCard } from "@/app/(private)/spools/SpoolControls";
 import { Badge, Card } from "@/components/ui";
 import { MATERIAL_LABEL, SPOOL_MOVEMENT_LABEL, type SpoolMovementKind } from "@/lib/catalog-presentation";
@@ -32,6 +33,15 @@ export default async function SpoolDetailPage({ params }: { params: Params }) {
         spool={spool}
         currency={spool.currency}
         canOperate={spool.canOperate}
+      />
+
+      <SpoolQrLabel
+        spoolId={spool.id}
+        material={spool.material}
+        color={spool.color}
+        brand={spool.brand}
+        totalGrams={spool.totalGrams}
+        tareGrams={spool.tareGrams}
       />
 
       {spool.notes && (

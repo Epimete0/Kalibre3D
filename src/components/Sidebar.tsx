@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KalibreMark } from "@/components/KalibreMark";
 import type { AccountSummary } from "@/lib/auth";
+import type { WorkshopModules } from "@/lib/center-settings-service";
 
 type NavItem = { href: string; label: string; icon: React.ReactNode };
 
@@ -32,7 +33,13 @@ function PlainLink({ item, active, compact = false }: { item: NavItem; active: b
   return <Link href={item.href} className={`flex ${compact ? "min-h-9" : "min-h-10"} items-center gap-3 rounded-[13px] border px-3 text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "border-line bg-surface text-ink shadow-xs" : "border-transparent text-muted hover:bg-raised/70 hover:text-ink"}`}><NavigationIcon>{item.icon}</NavigationIcon>{item.label}</Link>;
 }
 
-export function Sidebar({ account }: { account: AccountSummary | null }) {
+export function Sidebar({
+  account,
+  modules,
+}: {
+  account: AccountSummary | null;
+  modules?: WorkshopModules;
+}) {
   const pathname = usePathname();
   const isActive = (href: string) => href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   const isManager = account?.role === "OWNER" || account?.role === "ADMIN";
@@ -40,6 +47,8 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
     account?.role === "OWNER" ||
     account?.role === "ADMIN" ||
     account?.role === "PROFESSIONAL";
+  const showSpools = modules?.enableSpools ?? true;
+  const showClients = modules?.enableClients ?? true;
 
   return (
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
@@ -69,8 +78,12 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
             <PlainLink item={{ href: "/quote", label: "Cotizar pieza", icon: icons.calculator }} active={isActive("/quote")} />
           ) : null}
           <PlainLink item={{ href: "/products", label: "Catálogo de piezas", icon: icons.cube }} active={isActive("/products")} />
-          <PlainLink item={{ href: "/spools", label: "Bobinas", icon: icons.spool }} active={isActive("/spools")} />
-          <PlainLink item={{ href: "/clients", label: "Clientes", icon: icons.people }} active={isActive("/clients")} />
+          {showSpools ? (
+            <PlainLink item={{ href: "/spools", label: "Bobinas", icon: icons.spool }} active={isActive("/spools")} />
+          ) : null}
+          {showClients ? (
+            <PlainLink item={{ href: "/clients", label: "Clientes", icon: icons.people }} active={isActive("/clients")} />
+          ) : null}
           {isManager ? (
             <PlainLink item={{ href: "/money", label: "Dinero", icon: icons.chart }} active={isActive("/money")} />
           ) : null}

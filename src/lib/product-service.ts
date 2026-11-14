@@ -67,6 +67,7 @@ const createProductSchema = z.object({
   printMinutes: nonNegativeIntSchema("Los minutos de impresión"),
   colorsCount: colorsCountSchema,
   purgeGrams: nonNegativeIntSchema("Los gramos de purga"),
+  suppliesCost: nonNegativeIntSchema("Los insumos extra"),
   initialStock: nonNegativeIntSchema("El stock inicial"),
   minStock: nonNegativeIntSchema("El stock mínimo"),
 });
@@ -82,6 +83,7 @@ const updateProductSchema = z.object({
   printMinutes: nonNegativeIntSchema("Los minutos de impresión"),
   colorsCount: colorsCountSchema,
   purgeGrams: nonNegativeIntSchema("Los gramos de purga"),
+  suppliesCost: nonNegativeIntSchema("Los insumos extra"),
   minStock: nonNegativeIntSchema("El stock mínimo"),
 });
 
@@ -99,6 +101,7 @@ export async function createProduct(formData: FormData) {
     printMinutes: formData.get("printMinutes"),
     colorsCount: formData.get("colorsCount"),
     purgeGrams: formData.get("purgeGrams"),
+    suppliesCost: formData.get("suppliesCost"),
     initialStock: formData.get("initialStock"),
     minStock: formData.get("minStock"),
   };
@@ -135,6 +138,7 @@ export async function createProduct(formData: FormData) {
         printMinutes: parsed.data.printMinutes,
         colorsCount: parsed.data.colorsCount,
         purgeGrams: parsed.data.purgeGrams,
+        suppliesCost: parsed.data.suppliesCost,
         currentStock: parsed.data.initialStock,
         minStock: parsed.data.minStock,
         createdByUserId: userId,
@@ -179,6 +183,7 @@ export async function updateProduct(formData: FormData) {
     printMinutes: formData.get("printMinutes"),
     colorsCount: formData.get("colorsCount"),
     purgeGrams: formData.get("purgeGrams"),
+    suppliesCost: formData.get("suppliesCost"),
     minStock: formData.get("minStock"),
   };
 
@@ -215,6 +220,7 @@ export async function updateProduct(formData: FormData) {
         printMinutes: parsed.data.printMinutes,
         colorsCount: parsed.data.colorsCount,
         purgeGrams: parsed.data.purgeGrams,
+        suppliesCost: parsed.data.suppliesCost,
         minStock: parsed.data.minStock,
       },
     });

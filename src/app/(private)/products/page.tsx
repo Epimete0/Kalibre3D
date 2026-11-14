@@ -40,6 +40,7 @@ export default async function ProductsPage() {
         sellsOnMercadoLibre={settings.mlCommissionPercent > 0 || settings.mlDefaultShippingCost > 0}
         mlCommissionPercent={Number(settings.mlCommissionPercent)}
         mlDefaultShippingCost={settings.mlDefaultShippingCost}
+        enableProductStock={settings.enableProductStock}
       />
       <ProductList
           products={products}
@@ -54,6 +55,7 @@ export default async function ProductsPage() {
             mlCommissionPercent: Number(settings.mlCommissionPercent),
             mlDefaultShippingCost: settings.mlDefaultShippingCost,
             materialCostPerGram: spoolsView.materialCostPerGram,
+            enableProductStock: settings.enableProductStock,
           }}
         />
     </div>

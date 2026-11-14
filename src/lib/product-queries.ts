@@ -10,6 +10,7 @@ export type ProductListItem = {
   printMinutes: number;
   colorsCount: number;
   purgeGrams: number;
+  suppliesCost: number;
   salePrice: number;
   mlPrice: number | null;
   currentStock: number;
@@ -54,6 +55,7 @@ export async function listProducts(options?: { search?: string; includeInactive?
     const printMinutes = item.printMinutes ?? 0;
     const colorsCount = item.colorsCount ?? 1;
     const purgeGrams = item.purgeGrams ?? 0;
+    const suppliesCost = item.suppliesCost ?? 0;
     const currentStock = item.currentStock ?? 0;
     const minStock = item.minStock ?? 0;
     const isLowStock = item.active && minStock > 0 && currentStock <= minStock;
@@ -66,6 +68,7 @@ export async function listProducts(options?: { search?: string; includeInactive?
       printMinutes,
       colorsCount,
       purgeGrams,
+      suppliesCost,
       salePrice: item.salePrice,
       mlPrice: item.mlPrice,
       currentStock,
@@ -131,6 +134,7 @@ export async function getProductById(id: string): Promise<ProductDetailView | nu
   const printMinutes = item.printMinutes ?? 0;
   const colorsCount = item.colorsCount ?? 1;
   const purgeGrams = item.purgeGrams ?? 0;
+  const suppliesCost = item.suppliesCost ?? 0;
   const currentStock = item.currentStock ?? 0;
   const minStock = item.minStock ?? 0;
   const isLowStock = item.active && minStock > 0 && currentStock <= minStock;
@@ -144,6 +148,7 @@ export async function getProductById(id: string): Promise<ProductDetailView | nu
     printMinutes,
     colorsCount,
     purgeGrams,
+    suppliesCost,
     salePrice: item.salePrice,
     mlPrice: item.mlPrice,
     currentStock,

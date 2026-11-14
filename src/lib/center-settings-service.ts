@@ -1,10 +1,16 @@
 import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
-import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
+import { requireAuthContext, requireCatalogContext, requireOperationalContext } from "@/lib/auth";
 import { validateIanaTimeZone } from "@/lib/center-time-zone";
 import { electricityCostPerHourFromKwh, machineWearCostPerHourFromReplacement } from "@/lib/costing";
 import { CURRENCIES, type Currency } from "@/lib/money-format";
 import { prisma } from "@/lib/prisma";
+
+export type WorkshopModules = {
+  enableSpools: boolean;
+  enableClients: boolean;
+  enableProductStock: boolean;
+};
 
 export type CenterSettingsView = {
   centerId: string;
@@ -26,8 +32,21 @@ export type CenterSettingsView = {
   machineLifeHours: number;
   machineWearCostPerHour: number;
   failurePercent: number;
+  enableSpools: boolean;
+  enableClients: boolean;
+  enableProductStock: boolean;
   currencyLocked: boolean;
 };
+
+const booleanFlagSchema = z.preprocess((val) => {
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") {
+    const clean = val.trim().toLowerCase();
+    if (clean === "false" || clean === "0" || clean === "off") return false;
+    if (clean === "true" || clean === "1" || clean === "on") return true;
+  }
+  return true;
+}, z.boolean());
 
 const centerSettingsSchema = z.object({
   currency: z.enum(CURRENCIES, { error: "La moneda seleccionada no es válida." }),
@@ -102,6 +121,9 @@ const centerSettingsSchema = z.object({
     .number({ error: "El porcentaje de fallos no es válido." })
     .min(0, "El porcentaje de fallos no puede ser negativo.")
     .max(50, "El porcentaje de fallos no puede superar el 50%."),
+  enableSpools: booleanFlagSchema,
+  enableClients: booleanFlagSchema,
+  enableProductStock: booleanFlagSchema,
 });
 
 const DEFAULT_GUIDED = {
@@ -114,7 +136,28 @@ const DEFAULT_GUIDED = {
   machineLifeHours: "0",
   machineWearCostPerHour: "0",
   failurePercent: "0",
+  enableSpools: "true",
+  enableClients: "true",
+  enableProductStock: "true",
 };
+
+/** Lee qué módulos opcionales están habilitados en el taller para el menú lateral e inferior. */
+export async function getCenterModulesForAccount(): Promise<WorkshopModules> {
+  const { centerId } = await requireAuthContext();
+  const settings = await prisma.centerSettings.findUnique({
+    where: { centerId },
+    select: {
+      enableSpools: true,
+      enableClients: true,
+      enableProductStock: true,
+    },
+  });
+  return {
+    enableSpools: settings?.enableSpools ?? true,
+    enableClients: settings?.enableClients ?? true,
+    enableProductStock: settings?.enableProductStock ?? true,
+  };
+}
 
 /** Obtiene la configuración del taller activo. Si no existe, crea los valores por defecto (CLP, 19%, etc.). */
 export async function getCenterSettings(): Promise<CenterSettingsView> {
@@ -155,6 +198,9 @@ export async function getCenterSettings(): Promise<CenterSettingsView> {
     machineLifeHours: settings.machineLifeHours,
     machineWearCostPerHour: settings.machineWearCostPerHour,
     failurePercent: Number(settings.failurePercent),
+    enableSpools: settings.enableSpools ?? true,
+    enableClients: settings.enableClients ?? true,
+    enableProductStock: settings.enableProductStock ?? true,
     currencyLocked: txCount > 0,
   };
 }
@@ -186,6 +232,9 @@ export async function updateCenterSettings(formData: FormData) {
     machineLifeHours: formData.get("machineLifeHours") ?? DEFAULT_GUIDED.machineLifeHours,
     machineWearCostPerHour: formData.get("machineWearCostPerHour") ?? DEFAULT_GUIDED.machineWearCostPerHour,
     failurePercent: formData.get("failurePercent") ?? DEFAULT_GUIDED.failurePercent,
+    enableSpools: formData.get("enableSpools") ?? DEFAULT_GUIDED.enableSpools,
+    enableClients: formData.get("enableClients") ?? DEFAULT_GUIDED.enableClients,
+    enableProductStock: formData.get("enableProductStock") ?? DEFAULT_GUIDED.enableProductStock,
   };
 
   const parsed = centerSettingsSchema.safeParse(raw);
@@ -235,6 +284,9 @@ export async function updateCenterSettings(formData: FormData) {
     machineLifeHours: parsed.data.machineLifeHours,
     machineWearCostPerHour,
     failurePercent: round2(parsed.data.failurePercent),
+    enableSpools: parsed.data.enableSpools,
+    enableClients: parsed.data.enableClients,
+    enableProductStock: parsed.data.enableProductStock,
   };
 
   await prisma.$transaction([
@@ -273,5 +325,8 @@ export async function updateCenterSettings(formData: FormData) {
   return {
     currency: parsed.data.currency,
     timeZone,
+    enableSpools: parsed.data.enableSpools,
+    enableClients: parsed.data.enableClients,
+    enableProductStock: parsed.data.enableProductStock,
   };
 }

@@ -50,6 +50,7 @@ export type CatalogSettingsSummary = {
   mlCommissionPercent: number;
   mlDefaultShippingCost: number;
   materialCostPerGram: Record<string, number>;
+  enableProductStock?: boolean;
 };
 
 function Feedback({ state }: { state: ProductActionState }) {
@@ -177,6 +178,7 @@ export function CreateProductBar({
   sellsOnMercadoLibre = true,
   mlCommissionPercent = 19,
   mlDefaultShippingCost = 0,
+  enableProductStock = true,
 }: {
   currency: string;
   defaultPurgeGrams?: number;
@@ -184,6 +186,7 @@ export function CreateProductBar({
   sellsOnMercadoLibre?: boolean;
   mlCommissionPercent?: number;
   mlDefaultShippingCost?: number;
+  enableProductStock?: boolean;
 }) {
   const [state, run, pending] = useActionState(createProductAction, {});
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -198,6 +201,7 @@ export function CreateProductBar({
   const [printMinutes, setPrintMinutes] = useState("");
   const [colorsCount, setColorsCount] = useState("1");
   const [purgeGrams, setPurgeGrams] = useState(String(defaultPurgeGrams));
+  const [suppliesCost, setSuppliesCost] = useState("");
   const [initialStock, setInitialStock] = useState("0");
   const [minStock, setMinStock] = useState("0");
   const [seen, setSeen] = useState(state);
@@ -217,6 +221,7 @@ export function CreateProductBar({
       setGrams("");
       setPrintMinutes("");
       setColorsCount("1");
+      setSuppliesCost("");
       setInitialStock("0");
       setMinStock("0");
     }
@@ -234,6 +239,7 @@ export function CreateProductBar({
     data.set("printMinutes", printMinutes || "0");
     data.set("colorsCount", colorsCount || "1");
     data.set("purgeGrams", purgeGrams || "0");
+    data.set("suppliesCost", suppliesCost || "0");
     data.set("initialStock", initialStock || "0");
     data.set("minStock", minStock || "0");
     startTransition(() => run(data));
@@ -258,7 +264,11 @@ export function CreateProductBar({
           onClick={() => setShowAdvanced((v) => !v)}
           className={secondaryBtn}
         >
-          {showAdvanced ? "Ocultar gramos y stock" : "+ Gramos, tiempo y stock"}
+          {showAdvanced
+            ? "Ocultar detalles técnicos"
+            : enableProductStock
+              ? "+ Gramos, tiempo y stock"
+              : "+ Gramos, tiempo e insumos"}
         </button>
       </div>
 
@@ -384,24 +394,35 @@ export function CreateProductBar({
                 className={inputClass}
               />
             </Field>
-            <Field label="Stock inicial">
-              <input
-                type="number"
-                min="0"
-                value={initialStock}
-                onChange={(e) => setInitialStock(e.target.value)}
-                className={inputClass}
+            <Field label={`Insumos extra c/u (${currency})`}>
+              <MoneyInput
+                placeholder="Argolla, imán…"
+                value={suppliesCost}
+                onChangeValue={(digits) => setSuppliesCost(digits)}
               />
             </Field>
-            <Field label="Alerta stock mínimo">
-              <input
-                type="number"
-                min="0"
-                value={minStock}
-                onChange={(e) => setMinStock(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+            {enableProductStock && (
+              <>
+                <Field label="Stock inicial">
+                  <input
+                    type="number"
+                    min="0"
+                    value={initialStock}
+                    onChange={(e) => setInitialStock(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Alerta stock mínimo">
+                  <input
+                    type="number"
+                    min="0"
+                    value={minStock}
+                    onChange={(e) => setMinStock(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </>
+            )}
           </div>
         )}
       </form>
@@ -441,6 +462,9 @@ function useProductItemLogic(
   const [editMinutes, setEditMinutes] = useState(String(product.printMinutes));
   const [editColors, setEditColors] = useState(String(product.colorsCount));
   const [editPurge, setEditPurge] = useState(String(product.purgeGrams));
+  const [editSuppliesCost, setEditSuppliesCost] = useState(
+    product.suppliesCost > 0 ? String(product.suppliesCost) : ""
+  );
   const [editMinStock, setEditMinStock] = useState(String(product.minStock));
 
   const [updateState, runUpdate, updatePending] = useActionState(
@@ -459,7 +483,7 @@ function useProductItemLogic(
   const [stockError, setStockError] = useState<string | null>(null);
 
   const pieceCost =
-    costSummary && (product.grams > 0 || product.printMinutes > 0)
+    costSummary && (product.grams > 0 || product.printMinutes > 0 || product.suppliesCost > 0)
       ? computePieceCost({
           grams: product.grams,
           colorsCount: product.colorsCount,
@@ -470,6 +494,7 @@ function useProductItemLogic(
           machineWearCostPerHour: costSummary.machineWearCostPerHour ?? 0,
           failurePercent: costSummary.failurePercent ?? 0,
           packagingCost: costSummary.defaultPackagingCost,
+          otherCosts: product.suppliesCost,
         }).totalCost
       : null;
 
@@ -514,6 +539,7 @@ function useProductItemLogic(
     data.set("printMinutes", editMinutes);
     data.set("colorsCount", editColors);
     data.set("purgeGrams", editPurge);
+    data.set("suppliesCost", editSuppliesCost || "0");
     data.set("minStock", editMinStock);
     startTransition(async () => {
       await runUpdate(data);
@@ -567,6 +593,8 @@ function useProductItemLogic(
     setEditColors,
     editPurge,
     setEditPurge,
+    editSuppliesCost,
+    setEditSuppliesCost,
     editMinStock,
     setEditMinStock,
     updateState,
@@ -596,6 +624,7 @@ function ProductCardItem({
   currency: string;
   costSummary?: CatalogSettingsSummary;
 }) {
+  const showStock = costSummary?.enableProductStock !== false;
   const {
     isEditing,
     setIsEditing,
@@ -621,6 +650,8 @@ function ProductCardItem({
     setEditColors,
     editPurge,
     setEditPurge,
+    editSuppliesCost,
+    setEditSuppliesCost,
     editMinStock,
     setEditMinStock,
     updateState,
@@ -734,7 +765,7 @@ function ProductCardItem({
             </Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`grid gap-2 ${showStock ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
             <Field label="Colores (1-16)">
               <input
                 type="number"
@@ -754,15 +785,24 @@ function ProductCardItem({
                 className={inputClass}
               />
             </Field>
-            <Field label="Stock mín.">
-              <input
-                type="number"
-                min="0"
-                value={editMinStock}
-                onChange={(e) => setEditMinStock(e.target.value)}
-                className={inputClass}
+            <Field label={`Insumos c/u (${currency})`}>
+              <MoneyInput
+                placeholder="Argolla…"
+                value={editSuppliesCost}
+                onChangeValue={(digits) => setEditSuppliesCost(digits)}
               />
             </Field>
+            {showStock && (
+              <Field label="Stock mín.">
+                <input
+                  type="number"
+                  min="0"
+                  value={editMinStock}
+                  onChange={(e) => setEditMinStock(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            )}
           </div>
 
           <div className="flex items-center gap-2 pt-1.5">
@@ -807,7 +847,7 @@ function ProductCardItem({
             </Link>
             {product.category && <Badge tone="neutral">{product.category}</Badge>}
             {!product.active && <Badge tone="warn">Inactiva</Badge>}
-            {product.isLowStock && <Badge tone="warn">Stock bajo</Badge>}
+            {showStock && product.isLowStock && <Badge tone="warn">Stock bajo</Badge>}
           </div>
 
           <p className="text-xs text-muted">
@@ -817,49 +857,54 @@ function ProductCardItem({
               ? ` · ${product.colorsCount} col (+${product.purgeGrams}g purga)`
               : ""}
             {product.printMinutes > 0 ? ` · ${product.printMinutes} min` : ""}
+            {product.suppliesCost > 0
+              ? ` · Insumos +${formatMoney(product.suppliesCost, currency)}`
+              : ""}
           </p>
         </div>
 
         {/* Control táctil de stock */}
-        <div className="flex flex-col items-end shrink-0">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Stock
-          </span>
-          <div className="flex items-center gap-1.5 mt-1">
-            {product.active && (
-              <button
-                type="button"
-                disabled={stockPending || product.currentStock <= 0}
-                onClick={() => handleQuickStock("EXIT")}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
-                title="Restar 1 unidad"
-              >
-                -
-              </button>
-            )}
-            <span
-              className={`min-w-6 text-center text-base font-bold tabular-nums ${
-                product.isLowStock ? "text-warn" : "text-ink"
-              }`}
-            >
-              {product.currentStock}
+        {showStock && (
+          <div className="flex flex-col items-end shrink-0">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              Stock
             </span>
-            {product.active && (
-              <button
-                type="button"
-                disabled={stockPending}
-                onClick={() => handleQuickStock("ENTRY")}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
-                title="Sumar 1 fabricada"
+            <div className="flex items-center gap-1.5 mt-1">
+              {product.active && (
+                <button
+                  type="button"
+                  disabled={stockPending || product.currentStock <= 0}
+                  onClick={() => handleQuickStock("EXIT")}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
+                  title="Restar 1 unidad"
+                >
+                  -
+                </button>
+              )}
+              <span
+                className={`min-w-6 text-center text-base font-bold tabular-nums ${
+                  product.isLowStock ? "text-warn" : "text-ink"
+                }`}
               >
-                +
-              </button>
-            )}
+                {product.currentStock}
+              </span>
+              {product.active && (
+                <button
+                  type="button"
+                  disabled={stockPending}
+                  onClick={() => handleQuickStock("ENTRY")}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-sm font-bold text-ink active:scale-95 disabled:opacity-30 touch-manipulation hover:bg-canvas"
+                  title="Sumar 1 fabricada"
+                >
+                  +
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {stockError && <p className="text-xs text-danger">{stockError}</p>}
+      {showStock && stockError && <p className="text-xs text-danger">{stockError}</p>}
 
       {/* Caja de precios, costo y ganancia */}
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-raised/50 p-2.5 text-xs">
@@ -906,7 +951,7 @@ function ProductCardItem({
           href={`/products/${product.id}`}
           className="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas touch-manipulation"
         >
-          Ficha y stock
+          {showStock ? "Ficha y stock" : "Ver ficha"}
         </Link>
         <button
           type="button"
@@ -952,6 +997,7 @@ function ProductRowItem({
   currency: string;
   costSummary?: CatalogSettingsSummary;
 }) {
+  const showStock = costSummary?.enableProductStock !== false;
   const {
     isEditing,
     setIsEditing,
@@ -977,6 +1023,8 @@ function ProductRowItem({
     setEditColors,
     editPurge,
     setEditPurge,
+    editSuppliesCost,
+    setEditSuppliesCost,
     editMinStock,
     setEditMinStock,
     updateState,
@@ -998,7 +1046,7 @@ function ProductRowItem({
   if (isEditing) {
     return (
       <tr className="border-b border-line/60 bg-surface/50">
-        <td colSpan={5} className="p-3">
+        <td colSpan={showStock ? 5 : 4} className="p-3">
           <form onSubmit={handleUpdate} className="space-y-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-start">
               <Field label="Nombre">
@@ -1040,7 +1088,7 @@ function ProductRowItem({
                 currency={currency}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+            <div className={`grid grid-cols-2 gap-2 ${showStock ? "sm:grid-cols-7" : "sm:grid-cols-6"}`}>
               <Field label="Material">
                 <select
                   value={editMaterial}
@@ -1091,15 +1139,24 @@ function ProductRowItem({
                   className={inputClass}
                 />
               </Field>
-              <Field label="Stock mín.">
-                <input
-                  type="number"
-                  min="0"
-                  value={editMinStock}
-                  onChange={(e) => setEditMinStock(e.target.value)}
-                  className={inputClass}
+              <Field label={`Insumos c/u (${currency})`}>
+                <MoneyInput
+                  placeholder="Argolla…"
+                  value={editSuppliesCost}
+                  onChangeValue={(digits) => setEditSuppliesCost(digits)}
                 />
               </Field>
+              {showStock && (
+                <Field label="Stock mín.">
+                  <input
+                    type="number"
+                    min="0"
+                    value={editMinStock}
+                    onChange={(e) => setEditMinStock(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1142,7 +1199,7 @@ function ProductRowItem({
           </Link>
           {product.category && <Badge tone="neutral">{product.category}</Badge>}
           {!product.active ? <Badge tone="warn">Inactiva</Badge> : null}
-          {product.isLowStock ? <Badge tone="warn">Stock bajo</Badge> : null}
+          {showStock && product.isLowStock ? <Badge tone="warn">Stock bajo</Badge> : null}
         </div>
         <div className="mt-0.5 text-xs text-muted">
           {product.material}
@@ -1151,6 +1208,9 @@ function ProductRowItem({
             ? ` (${product.colorsCount} col + ${product.purgeGrams} g purga)`
             : ""}
           {product.printMinutes > 0 ? ` · ${product.printMinutes} min` : ""}
+          {product.suppliesCost > 0
+            ? ` · Insumos +${formatMoney(product.suppliesCost, currency)}`
+            : ""}
         </div>
       </td>
       <td className="p-3 text-sm">
@@ -1182,42 +1242,44 @@ function ProductRowItem({
           <span className="text-faint">—</span>
         )}
       </td>
-      <td className="p-3 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="font-bold tabular-nums text-ink">
-            {product.currentStock}
-          </span>
-          {product.active && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={stockPending || product.currentStock <= 0}
-                onClick={() => handleQuickStock("EXIT")}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
-                title="Restar 1 del stock"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                disabled={stockPending}
-                onClick={() => handleQuickStock("ENTRY")}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
-                title="Sumar 1 fabricada al stock"
-              >
-                +
-              </button>
-            </div>
+      {showStock && (
+        <td className="p-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-bold tabular-nums text-ink">
+              {product.currentStock}
+            </span>
+            {product.active && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={stockPending || product.currentStock <= 0}
+                  onClick={() => handleQuickStock("EXIT")}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
+                  title="Restar 1 del stock"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  disabled={stockPending}
+                  onClick={() => handleQuickStock("ENTRY")}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-line bg-raised text-xs font-bold hover:bg-canvas disabled:opacity-40"
+                  title="Sumar 1 fabricada al stock"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
+          {stockError && (
+            <p className="text-[11px] text-danger mt-0.5">{stockError}</p>
           )}
-        </div>
-        {stockError && (
-          <p className="text-[11px] text-danger mt-0.5">{stockError}</p>
-        )}
-      </td>
+        </td>
+      )}
       <td className="p-3 text-right">
         <div className="flex items-center justify-end gap-1.5 flex-wrap">
           <Link href={`/products/${product.id}`} className={secondaryBtn}>
-            Stock / Ficha
+            {showStock ? "Stock / Ficha" : "Ficha"}
           </Link>
           <button
             type="button"
@@ -1360,7 +1422,7 @@ export function ProductList({
                   <th className="p-3">Pieza y fabricación</th>
                   <th className="p-3">Precio directo y costo</th>
                   <th className="p-3">Precio Mercado Libre</th>
-                  <th className="p-3">Stock</th>
+                  {costSummary?.enableProductStock !== false && <th className="p-3">Stock</th>}
                   <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>

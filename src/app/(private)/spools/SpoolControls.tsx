@@ -87,6 +87,7 @@ export function SpoolCreateModal({
   const [customGrams, setCustomGrams] = useState("");
   const [usedAlready, setUsedAlready] = useState(false);
   const [remaining, setRemaining] = useState("");
+  const [tareGrams, setTareGrams] = useState("");
   const [price, setPrice] = useState(String(defaultCostPerKg));
 
   const totalGrams = weightChoice === "OTHER" ? Math.max(0, Math.round(Number(customGrams) || 0)) : weightChoice;
@@ -247,6 +248,39 @@ export function SpoolCreateModal({
               </Field>
             </div>
           )}
+
+          <div className="mt-3 pt-2.5 border-t border-line/60 space-y-1.5">
+            <Field
+              label="Peso del carrete vacío / tara (g, opcional)"
+              htmlFor="spool-tare"
+              hint="Si pesas la bobina en una balanza, restaremos este carrete vacío con un toque."
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[150, 200, 250].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTareGrams(String(t))}
+                    className={chipClass(tareGrams === String(t))}
+                  >
+                    {t} g
+                  </button>
+                ))}
+                <input
+                  id="spool-tare"
+                  name="tareGrams"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={10000}
+                  placeholder="Ej: 200"
+                  value={tareGrams}
+                  onChange={(e) => setTareGrams(e.target.value)}
+                  className={`${inputClass} w-28`}
+                />
+              </div>
+            </Field>
+          </div>
         </fieldset>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -358,9 +392,19 @@ export function SpoolQuickConsumeCard({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showCustom, setShowCustom] = useState(false);
+  const [showScale, setShowScale] = useState(false);
   const [customGrams, setCustomGrams] = useState("50");
   const [customNotes, setCustomNotes] = useState("");
   const [customKind, setCustomKind] = useState<"CONSUME" | "ADJUST">("CONSUME");
+  const [scaleTotalGrams, setScaleTotalGrams] = useState("");
+  const [scaleTareGrams, setScaleTareGrams] = useState(
+    spool.tareGrams > 0 ? String(spool.tareGrams) : "200"
+  );
+
+  const parsedScaleTotal = Math.max(0, Math.round(Number(scaleTotalGrams) || 0));
+  const parsedScaleTare = Math.max(0, Math.round(Number(scaleTareGrams) || 0));
+  const netFromScale = Math.max(0, parsedScaleTotal - parsedScaleTare);
+  const scaleDelta = netFromScale - spool.remainingGrams;
 
   function handleQuickConsume(grams: number) {
     setError(null);
@@ -376,6 +420,36 @@ export function SpoolQuickConsumeCard({
       if (res.error) {
         setError(res.error);
       } else {
+        router.refresh();
+      }
+    });
+  }
+
+  function handleScaleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!scaleTotalGrams.trim() || parsedScaleTotal <= 0) {
+      setError("Ingresa el peso total que marca la balanza.");
+      return;
+    }
+    if (scaleDelta === 0) {
+      setShowScale(false);
+      return;
+    }
+    const opId = crypto.randomUUID();
+    startTransition(async () => {
+      const res = await recordSpoolMovementAction({
+        operationId: opId,
+        spoolId: spool.id,
+        kind: "ADJUST",
+        deltaGrams: scaleDelta,
+        notes: `Pesaje en balanza (${parsedScaleTotal} g bruto − ${parsedScaleTare} g carrete)`,
+      });
+      if (res.error) {
+        setError(res.error);
+      } else {
+        setShowScale(false);
+        setScaleTotalGrams("");
         router.refresh();
       }
     });
@@ -423,10 +497,16 @@ export function SpoolQuickConsumeCard({
             {!spool.active && <Badge tone="neutral">Inactiva</Badge>}
             {spool.isLow && <Badge tone="warn">Poco filamento</Badge>}
           </div>
-          {spool.pricePaid !== null && (
+          {(spool.pricePaid !== null || spool.tareGrams > 0) && (
             <p className="text-xs text-muted mt-0.5">
-              Pagado: {formatMoney(spool.pricePaid, currency)}
-              {spool.costPerGram !== null ? ` · ~${formatMoney(Math.round(spool.costPerGram), currency)}/g` : ""}
+              {spool.pricePaid !== null && (
+                <>
+                  Pagado: {formatMoney(spool.pricePaid, currency)}
+                  {spool.costPerGram !== null ? ` · ~${formatMoney(Math.round(spool.costPerGram), currency)}/g` : ""}
+                </>
+              )}
+              {spool.pricePaid !== null && spool.tareGrams > 0 ? " · " : ""}
+              {spool.tareGrams > 0 ? `Carrete vacío: ${spool.tareGrams} g` : ""}
             </p>
           )}
         </div>
@@ -455,7 +535,7 @@ export function SpoolQuickConsumeCard({
 
       {canOperate && spool.active && (
         <div className="space-y-2 pt-1">
-          <p className="text-[11px] text-muted">¿Imprimiste algo? Descuenta lo que usaste:</p>
+          <p className="text-[11px] text-muted">¿Imprimiste algo o la pusiste en la balanza?</p>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
               {[20, 50, 100].map((g) => (
@@ -472,7 +552,20 @@ export function SpoolQuickConsumeCard({
               ))}
               <button
                 type="button"
-                onClick={() => setShowCustom((v) => !v)}
+                onClick={() => {
+                  setShowScale((v) => !v);
+                  setShowCustom(false);
+                }}
+                className="min-h-[36px] rounded-lg border border-primary/35 bg-primary-soft/40 px-2.5 py-1 text-xs font-semibold text-primary-ink hover:bg-primary-soft"
+              >
+                {showScale ? "Cerrar balanza" : "Pesar en balanza"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustom((v) => !v);
+                  setShowScale(false);
+                }}
                 className="min-h-[36px] rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-muted hover:text-ink"
               >
                 {showCustom ? "Cerrar" : "Otra cantidad"}
@@ -486,6 +579,46 @@ export function SpoolQuickConsumeCard({
               Ver historial →
             </Link>
           </div>
+
+          {showScale && (
+            <form onSubmit={handleScaleSubmit} className="rounded-lg border border-primary/30 bg-raised/60 p-3 space-y-2.5">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Field label="Peso total en la balanza (g)">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ej: 740"
+                    value={scaleTotalGrams}
+                    onChange={(e) => setScaleTotalGrams(e.target.value)}
+                    required
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Carrete vacío / tara (g)">
+                  <input
+                    type="number"
+                    min="0"
+                    value={scaleTareGrams}
+                    onChange={(e) => setScaleTareGrams(e.target.value)}
+                    required
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              {scaleTotalGrams.trim() !== "" && (
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="text-muted">
+                    Filamento útil calculado:{" "}
+                    <strong className="text-ink tabular-nums">{netFromScale} g</strong>{" "}
+                    ({scaleDelta >= 0 ? `+${scaleDelta}` : scaleDelta} g respecto a los {spool.remainingGrams} g actuales)
+                  </span>
+                  <button type="submit" disabled={isPending || scaleDelta === 0} className={primaryBtn}>
+                    {isPending ? "Guardando…" : `Actualizar a ${netFromScale} g`}
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
 
           {showCustom && (
             <form onSubmit={handleCustomSubmit} className="rounded-lg border border-line bg-raised/50 p-3 space-y-2.5">
@@ -609,9 +742,12 @@ export function SpoolDetailEditControls({
                 <input name="brand" defaultValue={spool.brand ?? ""} className={inputClass} />
               </Field>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <Field label="Peso total inicial (g)">
                 <input name="totalGrams" type="number" min={1} max={50000} defaultValue={spool.totalGrams} required className={inputClass} />
+              </Field>
+              <Field label="Carrete vacío / tara (g)">
+                <input name="tareGrams" type="number" min={0} max={10000} defaultValue={spool.tareGrams} className={inputClass} />
               </Field>
               <Field label={`Precio pagado (${currency})`}>
                 <MoneyInput

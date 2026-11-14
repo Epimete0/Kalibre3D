@@ -10,6 +10,7 @@ export type PieceSpec = {
   printMinutes?: number | null;
   colorsCount?: number | null;
   purgeGrams?: number | null;
+  suppliesCost?: number | null;
 };
 
 export type CostRates = {
@@ -42,5 +43,6 @@ export function estimateUnitCost(spec: PieceSpec, rates: CostRates): number | nu
     machineWearCostPerHour: rates.machineWearCostPerHour ?? 0,
     failurePercent: rates.failurePercent ?? 0,
     packagingCost: rates.packagingCost,
+    otherCosts: Math.max(0, spec.suppliesCost ?? 0),
   }).totalCost;
 }

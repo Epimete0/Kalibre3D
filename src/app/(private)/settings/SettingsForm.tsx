@@ -161,6 +161,26 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
   const [purgeGrams, setPurgeGrams] = useState(String(settings.defaultPurgeGrams));
   const [lowSpoolThreshold, setLowSpoolThreshold] = useState(String(settings.lowSpoolThresholdGrams));
 
+  // Módulos opcionales del taller (las 3 preguntas)
+  const [enableSpools, setEnableSpools] = useState(settings.enableSpools ?? true);
+  const [enableProductStock, setEnableProductStock] = useState(settings.enableProductStock ?? true);
+  const [enableClients, setEnableClients] = useState(settings.enableClients ?? true);
+
+  const isSimplePreset = !enableSpools && !enableProductStock && !enableClients;
+  const isFullPreset = enableSpools && enableProductStock && enableClients;
+
+  const applySimplePreset = () => {
+    setEnableSpools(false);
+    setEnableProductStock(false);
+    setEnableClients(false);
+  };
+
+  const applyFullPreset = () => {
+    setEnableSpools(true);
+    setEnableProductStock(true);
+    setEnableClients(true);
+  };
+
   const zones = useMemo(() => {
     try {
       return Intl.supportedValuesOf("timeZone");
@@ -200,21 +220,174 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
     data.set("defaultCostPerKg", costPerKg);
     data.set("defaultPurgeGrams", purgeGrams);
     data.set("lowSpoolThresholdGrams", lowSpoolThreshold);
+    data.set("enableSpools", enableSpools ? "true" : "false");
+    data.set("enableProductStock", enableProductStock ? "true" : "false");
+    data.set("enableClients", enableClients ? "true" : "false");
     if (welcome) data.set("welcome", "1");
     startTransition(() => run(data));
   };
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      {welcome && (
-        <Card className="border-primary/40 bg-primary-soft/30 p-4 sm:p-5">
-          <h2 className="font-display text-lg font-bold text-ink">Primero, tus costos</h2>
-          <p className="mt-1 text-sm text-muted">
-            Cada venta tiene costos detrás. Activa solo los que quieras considerar; todo es opcional y puedes
-            cambiarlo cuando quieras. Así el cotizador te muestra tu ganancia real desde la primera venta.
-          </p>
-        </Card>
-      )}
+      <Card className="border-primary/35 bg-surface p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div>
+            <span className="inline-block rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary-ink">
+              Personaliza tu taller
+            </span>
+            <h2 className="mt-1 font-display text-lg font-bold text-ink">
+              ¿Qué módulos necesitas usar?
+            </h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-muted">
+              El núcleo de Kalibre (<strong>Cotizador</strong>, <strong>Ventas</strong> y <strong>Dinero</strong>) siempre está activo. Responde estas 3 preguntas para ocultar lo que no uses hoy; puedes activarlo cuando quieras.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={applySimplePreset}
+              aria-pressed={isSimplePreset}
+              className={`min-h-9 rounded-xl border px-3 text-xs font-semibold transition-colors ${
+                isSimplePreset
+                  ? "border-primary bg-primary text-white shadow-xs"
+                  : "border-line bg-raised text-ink hover:bg-canvas"
+              }`}
+            >
+              Modo simple (solo costos y plata)
+            </button>
+            <button
+              type="button"
+              onClick={applyFullPreset}
+              aria-pressed={isFullPreset}
+              className={`min-h-9 rounded-xl border px-3 text-xs font-semibold transition-colors ${
+                isFullPreset
+                  ? "border-primary bg-primary text-white shadow-xs"
+                  : "border-line bg-raised text-ink hover:bg-canvas"
+              }`}
+            >
+              Modo completo (todo activo)
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 border-t border-line/70 pt-3">
+          {/* Pregunta 1: Filamento */}
+          <div className="rounded-xl border border-line bg-raised/40 p-3.5 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-ink">1. ¿Cómo prefieres controlar el filamento?</p>
+                <p className="text-xs text-muted">
+                  Si pesas tus carretes aparte o solo te importa cuánto te cuesta el kilo, elige el modo simple.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1 text-xs shrink-0">
+                <button
+                  type="button"
+                  aria-pressed={!enableSpools}
+                  onClick={() => setEnableSpools(false)}
+                  className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                    !enableSpools ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  Solo precio por kg
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={enableSpools}
+                  onClick={() => setEnableSpools(true)}
+                  className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                    enableSpools ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  Inventario de bobinas
+                </button>
+              </div>
+            </div>
+            {!enableSpools && (
+              <div className="max-w-xs pt-1">
+                <Field
+                  label={`¿Cuánto te cuesta el kilo de filamento en promedio? (${currency}/kg)`}
+                  htmlFor="settings-simple-cost-per-kg"
+                  hint="El cotizador y tus ventas usarán este valor directo."
+                >
+                  <SmartMoneyInput
+                    id="settings-simple-cost-per-kg"
+                    currency={currency}
+                    integerOnly
+                    allowZeroDisplay
+                    value={costPerKg}
+                    onChangeValue={setCostPerKg}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+
+          {/* Pregunta 2: Stock de piezas */}
+          <div className="rounded-xl border border-line bg-raised/40 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-ink">2. ¿Guardas stock de piezas ya impresas para entrega inmediata?</p>
+              <p className="text-xs text-muted">
+                Si imprimes a pedido, desactívalo para que el catálogo sea solo tu lista de precios y recetas sin avisos de stock.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1 text-xs shrink-0">
+              <button
+                type="button"
+                aria-pressed={!enableProductStock}
+                onClick={() => setEnableProductStock(false)}
+                className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                  !enableProductStock ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                }`}
+              >
+                Imprimo a pedido
+              </button>
+              <button
+                type="button"
+                aria-pressed={enableProductStock}
+                onClick={() => setEnableProductStock(true)}
+                className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                  enableProductStock ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                }`}
+              >
+                Llevo stock listo
+              </button>
+            </div>
+          </div>
+
+          {/* Pregunta 3: Clientes */}
+          <div className="rounded-xl border border-line bg-raised/40 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-ink">3. ¿Quieres llevar una agenda de clientes (CRM)?</p>
+              <p className="text-xs text-muted">
+                Si solo quieres anotar ventas rápido sin guardar fichas de compradores, puedes ocultarla.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1 text-xs shrink-0">
+              <button
+                type="button"
+                aria-pressed={!enableClients}
+                onClick={() => setEnableClients(false)}
+                className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                  !enableClients ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                }`}
+              >
+                Solo ventas rápidas
+              </button>
+              <button
+                type="button"
+                aria-pressed={enableClients}
+                onClick={() => setEnableClients(true)}
+                className={`min-h-8 rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+                  enableClients ? "bg-ink text-surface" : "text-muted hover:text-ink"
+                }`}
+              >
+                Agenda de clientes
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <CostToggle
         title="¿Quieres considerar la luz?"

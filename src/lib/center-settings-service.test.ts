@@ -1,20 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prisma, requireCatalogContext, requireOperationalContext } = vi.hoisted(() => ({
+const { prisma, requireAuthContext, requireCatalogContext, requireOperationalContext } = vi.hoisted(() => ({
   prisma: {
     centerSettings: { upsert: vi.fn(), findUnique: vi.fn(), createMany: vi.fn(), findUniqueOrThrow: vi.fn() },
     center: { findUnique: vi.fn(), updateMany: vi.fn() },
     moneyTransaction: { count: vi.fn() },
     $transaction: vi.fn(),
   },
+  requireAuthContext: vi.fn().mockResolvedValue({ userId: "user-a", centerId: "center-a", role: "OWNER" }),
   requireCatalogContext: vi.fn().mockResolvedValue({ userId: "user-a", centerId: "center-a", role: "OWNER" }),
   requireOperationalContext: vi.fn().mockResolvedValue({ userId: "user-a", centerId: "center-a", role: "OWNER" }),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma }));
-vi.mock("@/lib/auth", () => ({ requireCatalogContext, requireOperationalContext }));
+vi.mock("@/lib/auth", () => ({ requireAuthContext, requireCatalogContext, requireOperationalContext }));
 
-import { getCenterSettings, updateCenterSettings } from "./center-settings-service";
+import { getCenterModulesForAccount, getCenterSettings, updateCenterSettings } from "./center-settings-service";
 
 const form = (fields: Record<string, string>) => {
   const data = new FormData();
@@ -166,6 +167,39 @@ describe("center-settings-service", () => {
       expect(second.update).toMatchObject({
         machineWearCostPerHour: 280,
         failurePercent: 0,
+        enableSpools: true,
+        enableClients: true,
+        enableProductStock: true,
+      });
+    });
+
+    it("guarda y lee los módulos opcionales del taller (bobinas, clientes y stock de piezas)", async () => {
+      const f = validForm();
+      f.set("enableSpools", "false");
+      f.set("enableClients", "false");
+      f.set("enableProductStock", "true");
+      const res = await updateCenterSettings(f);
+      expect(res.enableSpools).toBe(false);
+      expect(res.enableClients).toBe(false);
+      expect(res.enableProductStock).toBe(true);
+
+      const upsert = prisma.centerSettings.upsert.mock.calls[0][0];
+      expect(upsert.update).toMatchObject({
+        enableSpools: false,
+        enableClients: false,
+        enableProductStock: true,
+      });
+
+      prisma.centerSettings.findUnique.mockResolvedValueOnce({
+        enableSpools: false,
+        enableClients: false,
+        enableProductStock: true,
+      });
+      const modules = await getCenterModulesForAccount();
+      expect(modules).toEqual({
+        enableSpools: false,
+        enableClients: false,
+        enableProductStock: true,
       });
     });
 

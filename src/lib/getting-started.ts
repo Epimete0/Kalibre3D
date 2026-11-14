@@ -8,6 +8,7 @@ export type GettingStartedFacts = {
   hasOrder: boolean;
   settingsConfigured: boolean;
   hasSpool: boolean;
+  enableSpools?: boolean;
 };
 
 export type GettingStartedStep = {
@@ -35,6 +36,7 @@ export function settingsWereSaved(settings: { createdAt: Date; updatedAt: Date }
 }
 
 export function buildGettingStarted(facts: GettingStartedFacts): GettingStarted {
+  const showSpoolStep = facts.enableSpools ?? true;
   const steps: GettingStartedStep[] = [
     {
       key: "costs",
@@ -44,14 +46,18 @@ export function buildGettingStarted(facts: GettingStartedFacts): GettingStarted 
       action: "Revisar costos",
       done: facts.settingsConfigured,
     },
-    {
-      key: "first-spool",
-      title: "Agrega tu primera bobina",
-      description: "Material, color y cuánto pagaste. Así sabes cuánto te cuesta cada gramo y te avisamos cuando se acabe.",
-      href: "/spools?nueva=1",
-      action: "Agregar bobina",
-      done: facts.hasSpool,
-    },
+    ...(showSpoolStep
+      ? [
+          {
+            key: "first-spool" as const,
+            title: "Agrega tu primera bobina",
+            description: "Material, color y cuánto pagaste. Así sabes cuánto te cuesta cada gramo y te avisamos cuando se acabe.",
+            href: "/spools?nueva=1",
+            action: "Agregar bobina",
+            done: facts.hasSpool,
+          },
+        ]
+      : []),
     {
       key: "first-sale",
       title: "Registra tu primera venta",

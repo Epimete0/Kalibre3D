@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AccountSummary } from "@/lib/auth";
+import type { WorkshopModules } from "@/lib/center-settings-service";
 
 type NavEntry = { href: string; label: string; description?: string; icon: React.ReactNode };
 
@@ -72,11 +73,19 @@ function Icon({ children, className = "h-[18px] w-[18px]" }: { children: React.R
  * Barra inferior del celular. Lo que más se hace va a un toque: registrar una venta (botón central) y cotizar.
  * Lo demás queda en "Más", con una línea que explica para qué sirve cada sección.
  */
-export function MobileNav({ account }: { account?: AccountSummary | null }) {
+export function MobileNav({
+  account,
+  modules,
+}: {
+  account?: AccountSummary | null;
+  modules?: WorkshopModules;
+}) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const isManager = account?.role === "OWNER" || account?.role === "ADMIN";
   const canOperate = isManager || account?.role === "PROFESSIONAL";
+  const showSpools = modules?.enableSpools ?? true;
+  const showClients = modules?.enableClients ?? true;
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(`${href}/`);
@@ -87,15 +96,21 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
   ];
   const rightItems: NavEntry[] = canOperate
     ? [{ href: "/quote", label: "Cotizar", icon: icons.quote }]
-    : [{ href: "/clients", label: "Clientes", icon: icons.clients }];
+    : showClients
+      ? [{ href: "/clients", label: "Clientes", icon: icons.clients }]
+      : [{ href: "/profile", label: "Cuenta", icon: icons.account }];
 
   const moreItems: NavEntry[] = [
     ...(isManager
       ? [{ href: "/money", label: "Dinero", description: "Ventas, costos de fabricación, gastos y caja", icon: icons.money }]
       : []),
-    ...(canOperate ? [{ href: "/clients", label: "Clientes", description: "Quiénes te compran y cuánto te deben", icon: icons.clients }] : []),
+    ...(canOperate && showClients
+      ? [{ href: "/clients", label: "Clientes", description: "Quiénes te compran y cuánto te deben", icon: icons.clients }]
+      : []),
     { href: "/products", label: "Catálogo de piezas", description: "Tus piezas habituales para vender en un toque", icon: icons.catalog },
-    { href: "/spools", label: "Bobinas", description: "Cuánto filamento te queda y cuánto te cuesta", icon: icons.spool },
+    ...(showSpools
+      ? [{ href: "/spools", label: "Bobinas", description: "Cuánto filamento te queda y cuánto te cuesta", icon: icons.spool }]
+      : []),
     ...(isManager
       ? [{ href: "/settings", label: "Mis costos", description: "Luz, comisiones, IVA y margen mínimo", icon: icons.costs }]
       : []),

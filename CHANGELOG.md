@@ -6,6 +6,13 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Módulos configurables por taller ("Núcleo + 3 preguntas", `20261115000000_custom_modules_supplies_and_spool_tare`):**
+  - En la bienvenida (`/settings?welcome=1`) y en *Mis costos* (`/settings`), cada taller puede elegir con un toque entre **Modo simple (solo costos y plata)**, **Modo completo** o responder 3 preguntas simples: *¿Cómo prefieres calcular el filamento?* (`enableSpools`), *¿Fabricación a pedido o con stock?* (`enableProductStock`) y *¿Quieres llevar agenda de clientes?* (`enableClients`).
+  - Los módulos desactivados desaparecen del menú lateral (`Sidebar`), barra móvil (`MobileNav`), pasos iniciales y alertas de *Inicio* (`/dashboard`), *Nueva venta* (`/orders/new`) y *Catálogo* (`/products`), sin perder datos históricos si se vuelven a activar más adelante.
+- **Insumos extra por pieza en Catálogo y Cotizador (`Product.suppliesCost`):** permite guardar el costo unitario de insumos no impresos (argollas, imanes, tornillos, cajas especiales) en cada pieza del catálogo y sumarlo automáticamente al costo de fabricación y margen en `/products`, `/products/[id]`, `/quote`, pedidos y rentabilidad en *Dinero*.
+- **Peso del carrete vacío (`Spool.tareGrams`) y calculadora de balanza en Bobinas (`/spools`):** permite guardar la tara del carrete vacío (`150 g`, `200 g`, `250 g` o manual) y usar el botón **Pesar en balanza** para ingresar el peso bruto de la pesa, restar el carrete vacío y ajustar el filamento útil restante en un toque.
+- **Etiqueta QR imprimible para bobinas (`SpoolQrLabel` en `/spools/[id]`):** genera en el navegador una etiqueta lista para imprimir con código QR escaneable hacia la ficha de la bobina, material, color, marca, peso inicial y peso del carrete vacío.
+- **Descuento opcional de filamento desde el pedido (`OrderSpoolControls` en `/orders/[id]`):** para talleres con el módulo de bobinas activo, sugiere los gramos totales del pedido y permite descontarlos en 1 toque de cualquier bobina activa dejando trazabilidad en el pedido y en la bobina.
 - **Desgaste de impresora y margen de fallos unificados en el taller (`20261114000000_machine_wear_and_failures`):**
   - `CenterSettings` suma `machineReplacementCost`, `machineLifeHours`, `machineWearCostPerHour` y `failurePercent` (todo opcional, `0` por defecto).
   - *Mis costos* (`/settings`) incorpora interruptores opcionales para configurar desgaste por reposición ÷ vida útil (con atajos de horas o monto directo por hora) y porcentaje de fallos/reimpresiones (con atajos `3%`, `5%`, `10%`, `15%`).

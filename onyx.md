@@ -6,6 +6,32 @@
 
 ---
 
+## Bloque 2: Módulos configurables ("Núcleo + 3 preguntas"), insumos extra en catálogo, tara/balanza de bobinas, etiqueta QR y descuento opcional por pedido — 2026-11-15
+
+- **Pedido del usuario:** implementar una forma sencilla y personalizable de usar la aplicación donde cualquier taller pueda elegir entre un **Modo simple** (enfocado 100 % en costos, cotizador, ventas y dónde se va la plata, sin necesidad de llevar inventario de bobinas ni fichas de clientes), un **Modo completo**, o responder **3 preguntas simples** para prender/apagar módulos (`enableSpools`, `enableProductStock`, `enableClients`) tanto en la bienvenida como en *Mis costos* (`/settings`); sumar además insumos extra no impresos por pieza (`suppliesCost`), peso del carrete vacío (`tareGrams`) con calculadora rápida de balanza, etiqueta QR imprimible y descuento opcional de filamento desde el detalle de cada pedido.
+- **Base de datos y migraciones (`20261115000000_custom_modules_supplies_and_spool_tare`):**
+  - `CenterSettings`: `enableSpools BOOLEAN NOT NULL DEFAULT true`, `enableClients BOOLEAN NOT NULL DEFAULT true` y `enableProductStock BOOLEAN NOT NULL DEFAULT true`.
+  - `Product`: `suppliesCost INTEGER NOT NULL DEFAULT 0` con `CHECK ("Product_suppliesCost_non_negative" CHECK ("suppliesCost" >= 0))`.
+  - `Spool`: `tareGrams INTEGER NOT NULL DEFAULT 0` con `CHECK ("Spool_tareGrams_non_negative" CHECK ("tareGrams" >= 0))`.
+  - Paquete de producción idempotente en `scripts/production/20261115-apply-custom-modules-supplies-and-spool-tare.sql` (aplicado en local `54442` y producción remota `umgxxtpekcjknhclojzo`) y test de integridad `scripts/production/package-20261115.test.ts`.
+- **2.1 Módulos configurables por taller ("Núcleo + 3 preguntas"):**
+  - En `/settings` y `/settings?welcome=1` (`SettingsForm.tsx`, `center-settings-service.ts`), la tarjeta **Personaliza tu taller — ¿Qué módulos necesitas usar?** ofrece 2 atajos rápidos (*Modo simple: solo costos y plata* / *Modo completo*) y las 3 preguntas individuales:
+    1. *¿Cómo prefieres calcular el filamento?* (`Solo precio por kg` vs `Controlar bobinas y gramos`). Si elige solo precio por kg, permite indicar ahí mismo el costo promedio por kilo.
+    2. *¿Fabricación a pedido o con stock?* (`Imprimo a pedido` vs `Controlar stock de piezas`).
+    3. *¿Quieres llevar agenda de clientes?* (`No por ahora` vs `Sí, guardar clientes`).
+  - `Sidebar.tsx` y `MobileNav.tsx` ocultan `/spools` cuando `!enableSpools` y `/clients` cuando `!enableClients`.
+  - `dashboard-queries.ts` y `getting-started.ts` omiten el paso `"first-spool"` y las alertas de bobinas bajas cuando `!enableSpools`, y omiten las alertas de stock bajo cuando `!enableProductStock`.
+  - `NewOrderForm.tsx` oculta las insignias de stock disponible cuando `!enableProductStock` y convierte la tarjeta de *Cliente* en un botón discreto `+ Anotar datos del comprador (opcional)` cuando `!enableClients`.
+  - `ProductControls.tsx` y `products/[id]/page.tsx` ocultan contadores, columnas e historial de stock cuando `!enableProductStock`, dejando el catálogo como lista limpia de precios, costos y márgenes.
+- **2.2 Insumos extra por pieza (`Product.suppliesCost`):**
+  - `product-service.ts`, `product-queries.ts`, `ProductControls.tsx`, `products/[id]/page.tsx` y `QuoteCalculator.tsx` permiten guardar costos extra unitarios no impresos (argollas de llavero, imanes, tornillos, electrónica) y los suman como `otherCosts` en `computePieceCost`, `estimateUnitCost` (`sale-cost.ts`), `order-service.ts` e `insights-queries.ts`.
+- **2.3 Tara de bobina, calculadora de balanza, etiqueta QR y descuento por pedido:**
+  - `spool-service.ts`, `spool-queries.ts` y `SpoolControls.tsx` guardan `tareGrams` (peso del carrete vacío, con atajos `150 g`, `200 g`, `250 g`) e incorporan el modo **Pesar en balanza** en cada bobina: al ingresar el peso total que marca la pesa, resta automáticamente el carrete vacío y ajusta `remainingGrams` en un toque.
+  - `SpoolQrLabel.tsx` en `/spools/[id]` genera en el navegador una etiqueta imprimible con código QR (ISO/IEC 18004 v4-L en SVG), material, color, marca, peso inicial y tara del carrete vacío.
+  - `OrderSpoolControls.tsx` en `/orders/[id]` muestra los descuentos de filamento asociados al pedido (`SpoolMovement` con `orderId`) y permite descontar en 1 toque los gramos estimados del pedido sobre cualquier bobina activa cuando el taller usa el módulo de bobinas.
+
+---
+
 ## Bloque 1: Desgaste, fallos, lectura local `.3mf`/`.gcode`, miles en cotizadores y WhatsApp en 1 toque — 2026-11-14
 
 - **Pedido del usuario:** cerrar brechas detectadas frente a competidores (SpoolDeck / EiPrint3D) en la capa de cálculo y operación rápida sin obligar a llenar costos opcionales: unificar desgaste de impresora y margen de fallos del cotizador público en todo el taller, leer archivos `.3mf` laminados y `.gcode` 100 % en el navegador sin subirlos al servidor, sumar selector de impresora por watts y miles automáticos en cotizadores/ajustes, y ofrecer resumen listo para copiar a WhatsApp. Los módulos configurables/onboarding personalizado, descuento automático por bobina, recetas/insumos y QR de bobinas quedan pospuestos para **Bloque 2**.

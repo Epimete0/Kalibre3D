@@ -88,6 +88,7 @@ type ItemCostFields = {
     printMinutes: number | null;
     colorsCount: number | null;
     purgeGrams: number | null;
+    suppliesCost?: number | null;
   } | null;
 };
 
@@ -157,7 +158,17 @@ export async function getProductProfitability(options?: { month?: string; all?: 
             material: true,
             grams: true,
             colorsCount: true,
-            product: { select: { name: true, material: true, grams: true, printMinutes: true, colorsCount: true, purgeGrams: true } },
+            product: {
+              select: {
+                name: true,
+                material: true,
+                grams: true,
+                printMinutes: true,
+                colorsCount: true,
+                purgeGrams: true,
+                suppliesCost: true,
+              },
+            },
           },
         },
       },
@@ -223,7 +234,17 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
             material: true,
             grams: true,
             colorsCount: true,
-            product: { select: { name: true, material: true, grams: true, printMinutes: true, colorsCount: true, purgeGrams: true } },
+            product: {
+              select: {
+                name: true,
+                material: true,
+                grams: true,
+                printMinutes: true,
+                colorsCount: true,
+                purgeGrams: true,
+                suppliesCost: true,
+              },
+            },
           },
         },
       },
@@ -283,6 +304,7 @@ export async function getOrderEconomics(orderId: string): Promise<OrderEconomics
                 printMinutes: true,
                 colorsCount: true,
                 purgeGrams: true,
+                suppliesCost: true,
               },
             },
           },
@@ -363,6 +385,7 @@ export async function getProductPerformance(
                 printMinutes: true,
                 colorsCount: true,
                 purgeGrams: true,
+                suppliesCost: true,
               },
             },
           },

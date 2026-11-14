@@ -63,6 +63,7 @@ describe("product-service", () => {
           printMinutes: 0,
           colorsCount: 1,
           purgeGrams: 0,
+          suppliesCost: 0,
           currentStock: 0,
           minStock: 0,
           createdByUserId: "user-a",
@@ -151,6 +152,7 @@ describe("product-service", () => {
           printMinutes: 0,
           colorsCount: 1,
           purgeGrams: 0,
+          suppliesCost: 0,
           minStock: 0,
         },
       });

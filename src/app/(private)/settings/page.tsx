@@ -25,11 +25,11 @@ export default async function SettingsPage(props: { searchParams?: Promise<{ bie
     <>
       {welcome ? (
         <PageHeader
-          title="Prepara tu taller"
-          description="Paso 1 de 3 · Tus costos. Después agregas tu primera bobina y registras tu primera venta."
+          title="Armemos Kalibre a tu medida"
+          description="Elige qué herramientas necesitas hoy y ajusta tus costos básicos. Puedes activar o desactivar cualquier módulo después."
         />
       ) : (
-        <h1 className="sr-only">Mis costos</h1>
+        <h1 className="sr-only">Mis costos y módulos del taller</h1>
       )}
       <div className="max-w-3xl">
         <SettingsForm settings={settings} welcome={welcome} />

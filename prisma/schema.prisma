@@ -110,6 +110,9 @@ model CenterSettings {
   machineLifeHours       Int      @default(0)
   machineWearCostPerHour Int      @default(0)
   failurePercent         Decimal  @default(0) @db.Decimal(5, 2)
+  enableSpools           Boolean  @default(true)
+  enableClients          Boolean  @default(true)
+  enableProductStock     Boolean  @default(true)
   createdAt              DateTime @default(now()) @db.Timestamptz(6)
   updatedAt              DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 }
@@ -125,6 +128,7 @@ model Product {
   printMinutes    Int               @default(0)
   colorsCount     Int               @default(1)
   purgeGrams      Int               @default(0)
+  suppliesCost    Int               @default(0)
   salePrice       Int
   mlPrice         Int?
   currentStock    Int               @default(0)
@@ -169,6 +173,7 @@ model Spool {
   brand           String?
   totalGrams      Int
   remainingGrams  Int
+  tareGrams       Int             @default(0)
   pricePaid       Int
   purchasedOn     DateTime        @db.Date
   notes           String?

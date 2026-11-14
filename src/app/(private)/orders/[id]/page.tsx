@@ -13,8 +13,10 @@ import {
 } from "@/lib/order-presentation";
 import { getOrderDetail } from "@/lib/order-queries";
 import type { OrderStatus } from "@/lib/order-status";
+import { listSpools } from "@/lib/spool-queries";
 import { OrderDetailStatusControls } from "./OrderDetailStatusControls";
 import { OrderMoneyControls } from "./OrderMoneyControls";
+import { OrderSpoolControls } from "./OrderSpoolControls";
 import { CopyWhatsAppButton } from "./CopyWhatsAppButton";
 import { formatDay } from "@/lib/date-labels";
 import { formatWhatsAppOrderSummary } from "@/lib/whatsapp-quote";
@@ -72,10 +74,11 @@ export default async function OrderDetailPage(props: {
   const canManageMoney = role === "OWNER" || role === "ADMIN";
   const isViewer = role === "VIEWER";
 
-  const [order, settings, economics] = await Promise.all([
+  const [order, settings, economics, spoolsView] = await Promise.all([
     getOrderDetail(id),
     getCenterSettings(),
     canManageMoney ? getOrderEconomics(id) : Promise.resolve(null),
+    listSpools({ includeInactive: false }),
   ]);
 
   if (!order) {
@@ -267,6 +270,17 @@ export default async function OrderDetailPage(props: {
               </div>
             )}
           </Card>
+
+          {(settings.enableSpools || order.spoolMovements.length > 0) && (
+            <OrderSpoolControls
+              orderId={order.id}
+              orderNumber={order.number}
+              items={order.items}
+              spoolMovements={order.spoolMovements}
+              activeSpools={spoolsView.spools}
+              canManage={canManage}
+            />
+          )}
 
           {/* Cobros, anulaciones y devoluciones de dinero (Tarea 1.7) */}
           <Card className="p-4 sm:p-6">

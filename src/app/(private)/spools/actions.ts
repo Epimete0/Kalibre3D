@@ -32,6 +32,7 @@ export async function createSpoolAction(
   }
 
   const rawRemaining = String(formData.get("remainingGrams") ?? "").trim();
+  const rawTare = String(formData.get("tareGrams") ?? "").trim();
 
   try {
     await createSpool({
@@ -41,6 +42,7 @@ export async function createSpoolAction(
       brand: String(formData.get("brand") ?? "") || null,
       totalGrams: Number(formData.get("totalGrams") ?? 1000),
       remainingGrams: rawRemaining ? Number(rawRemaining) : undefined,
+      tareGrams: rawTare ? Number(rawTare) : 0,
       pricePaid: parsedPrice,
       purchasedOn: String(formData.get("purchasedOn") ?? "") || undefined,
       notes: String(formData.get("notes") ?? "") || null,
@@ -66,6 +68,7 @@ export async function updateSpoolAction(
   const currency = String(formData.get("currency") ?? "CLP");
   const rawPrice = String(formData.get("pricePaid") ?? "0").trim();
   const parsedPrice = rawPrice === "" ? 0 : toMinorUnits(rawPrice, currency);
+  const rawTare = String(formData.get("tareGrams") ?? "").trim();
 
   if (parsedPrice === null || parsedPrice < 0) {
     return { error: "Ingresa un precio pagado válido mayor o igual a 0." };
@@ -78,6 +81,7 @@ export async function updateSpoolAction(
       color: String(formData.get("color") ?? ""),
       brand: String(formData.get("brand") ?? "") || null,
       totalGrams: Number(formData.get("totalGrams") ?? 1000),
+      tareGrams: rawTare ? Number(rawTare) : 0,
       pricePaid: parsedPrice,
       purchasedOn: String(formData.get("purchasedOn") ?? ""),
       notes: String(formData.get("notes") ?? "") || null,
@@ -115,6 +119,7 @@ export async function recordSpoolMovementAction(input: {
   spoolId: string;
   kind: "CONSUME" | "ADJUST";
   deltaGrams: number;
+  orderId?: string | null;
   notes?: string;
 }): Promise<SpoolActionState> {
   try {
@@ -123,11 +128,15 @@ export async function recordSpoolMovementAction(input: {
       spoolId: input.spoolId,
       kind: input.kind as RecordSpoolMovementInput["kind"],
       deltaGrams: input.deltaGrams,
+      orderId: input.orderId ?? null,
       notes: input.notes ?? null,
     });
 
     revalidatePath("/spools");
     revalidatePath(`/spools/${input.spoolId}`);
+    if (input.orderId) {
+      revalidatePath(`/orders/${input.orderId}`);
+    }
     revalidatePath("/dashboard");
     return {
       ok: true,

@@ -30,6 +30,13 @@ describe("costo unitario al vender", () => {
     expect(estimateUnitCost({ material: "PETG", grams: 50, printMinutes: 60 }, withWear)).toBe(1188);
   });
 
+  it("suma insumos extra por pieza (argollas, imanes, tornillos) al costo unitario", () => {
+    // 50 g × $15 + 1 h × $39 + $100 embalaje + $150 insumos extra = $1.039
+    expect(
+      estimateUnitCost({ material: "PETG", grams: 50, printMinutes: 60, suppliesCost: 150 }, rates)
+    ).toBe(1039);
+  });
+
   it("no inventa un costo si faltan el material o los gramos", () => {
     expect(estimateUnitCost({ material: null, grams: 50 }, rates)).toBeNull();
     expect(estimateUnitCost({ material: "PETG", grams: 0 }, rates)).toBeNull();

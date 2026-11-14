@@ -47,6 +47,8 @@ export default async function NewOrderPage(props: {
           currency: settings.currency,
           mlCommissionPercent: settings.mlCommissionPercent,
           mlDefaultShippingCost: settings.mlDefaultShippingCost,
+          enableClients: settings.enableClients,
+          enableProductStock: settings.enableProductStock,
         }}
         initialChannel={initialChannel}
       />
