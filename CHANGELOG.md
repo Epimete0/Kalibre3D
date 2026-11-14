@@ -6,6 +6,10 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Mejorado
+- **Rediseño de Nueva venta (`/orders/new`) para múltiples piezas y escritorio:**
+  - **Carga multi-pieza mucho más clara:** cada pieza tiene cabecera numerada (`#1`, `#2`…), indicador de origen (`Catálogo` con material, gramos y stock disponible, o `Pieza manual`), subtotal en tiempo real, botones **Duplicar** y **Quitar**, detalle opcional de material/gramos en piezas manuales y botón destacado **`+ Agregar otra pieza`** al final de la lista.
+  - **Resumen lateral en vivo en escritorio (`lg:grid-cols-12`):** muestra línea por línea las piezas agregadas, descuentos, cargos de Mercado Libre, total o neto ML a recibir, cobro o abono (con botones rápidos `50%` y `Total`) y el botón de guardado en un panel lateral fijo mientras se mantiene el flujo cómodo en móviles.
+  - **Selector de cliente unificado:** actualizado a controles segmentados (`segmentedTrackClass`).
 - **Ergonomía de escritorio en Dinero (`/money`) y cabeceras privadas:**
   - Barra superior unificada en `/money` con selector de mes (`<h1>`), conteo rápido de pedidos/piezas y botones `+ Registrar gasto` / `+ Otro ingreso` en una sola línea, eliminando el encabezado redundante que ocupaba espacio vertical innecesario.
   - Tarjetas de *Resultado de tus ventas* y *Flujo de caja en cuenta* más limpias y escaneables en escritorio: se eliminaron los subtotales repetidos (`= Ganancia estimada` y `= Disponible en caja` duplicando el KPI principal), se aclaró `% margen s/neto` frente a la proporción sobre venta total y se ajustó la densidad para ver también canales y categorías sin desplazamiento incómodo.

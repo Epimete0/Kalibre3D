@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useState } from "react";
-import { Card, filterChipClass, inputClass } from "@/components/ui";
+import { startTransition, useActionState, useRef, useState } from "react";
+import {
+  Badge,
+  Card,
+  filterChipClass,
+  inputClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from "@/components/ui";
+import { MATERIAL_LABEL, MATERIALS, type Material } from "@/lib/catalog-presentation";
+import type { CustomerListItem } from "@/lib/customer-queries";
 import { effectiveMlCommission, rememberLastChannel } from "@/lib/last-channel";
 import { formatMoney } from "@/lib/money-format";
-import { unitPriceFor } from "@/lib/order-totals";
-import type { CustomerListItem } from "@/lib/customer-queries";
 import type { OrderChannel } from "@/lib/order-status";
+import { unitPriceFor } from "@/lib/order-totals";
 import type { ProductListItem } from "@/lib/product-queries";
 import { createOrderAction } from "../actions";
 
@@ -18,12 +26,15 @@ export type WorkshopSettingsData = {
 };
 
 type FormItem = {
+  localId: string;
   productId: string | null;
   description: string;
   qty: number;
   unitPrice: number;
   material: string;
+  grams: number | null;
   colorsCount: number;
+  showCostFields: boolean;
 };
 
 const CHANNELS = [
@@ -44,17 +55,20 @@ const METHODS = [
 ] as const;
 
 const KINDS = [
-  { id: "QUICK_SALE", label: "Venta rápida", hint: "Entregada y cobrada" },
-  { id: "ORDER", label: "Por encargo", hint: "Se entrega después" },
+  { id: "QUICK_SALE", label: "Venta rápida", hint: "Entregada y cobrada hoy" },
+  { id: "ORDER", label: "Por encargo", hint: "Se fabrica o entrega después" },
 ] as const;
 
-const emptyItem = (): FormItem => ({
+const emptyItem = (localId: string): FormItem => ({
+  localId,
   productId: null,
   description: "",
   qty: 1,
   unitPrice: 0,
   material: "",
+  grams: null,
   colorsCount: 1,
+  showCostFields: false,
 });
 
 export function NewOrderForm({
@@ -72,6 +86,8 @@ export function NewOrderForm({
   initialChannel: OrderChannel;
 }) {
   const [state, runAction, pending] = useActionState(createOrderAction, {});
+  const nextIdRef = useRef(2);
+  const allocItemId = () => `item-${nextIdRef.current++}`;
 
   // Modo: venta rápida (entregada y cobrada) vs pedido por encargo
   const [kind, setKind] = useState<"QUICK_SALE" | "ORDER">("QUICK_SALE");
@@ -104,11 +120,13 @@ export function NewOrderForm({
   const [customPaidAmount, setCustomPaidAmount] = useState<number | null>(null);
 
   // Piezas
-  const [items, setItems] = useState<FormItem[]>([emptyItem()]);
+  const [items, setItems] = useState<FormItem[]>(() => [emptyItem("item-1")]);
 
   const isML = channel === "MERCADOLIBRE";
+  const productsById = new Map(products.map((p) => [p.id, p]));
 
   const rawSubtotal = items.reduce((sum, it) => sum + it.qty * it.unitPrice, 0);
+  const totalUnits = items.reduce((sum, it) => sum + it.qty, 0);
   const total = Math.max(0, rawSubtotal - discount);
   // La comisión sugerida de Mercado Libre se recalcula sola con el total, salvo que se escriba a mano.
   const mlCommission = effectiveMlCommission(total, settings.mlCommissionPercent, mlCommissionManual);
@@ -118,33 +136,25 @@ export function NewOrderForm({
     rememberLastChannel(newChannel as OrderChannel);
     const switchingToML = newChannel === "MERCADOLIBRE";
 
-    // Si se pasa a ML, actualizar los precios de lista a precio ML (D4)
     if (switchingToML) {
       setItems((prev) =>
         prev.map((item) => {
           if (!item.productId) return item;
-          const found = products.find((p) => p.id === item.productId);
+          const found = productsById.get(item.productId);
           if (!found) return item;
-          return {
-            ...item,
-            unitPrice: unitPriceFor(found, true),
-          };
+          return { ...item, unitPrice: unitPriceFor(found, true) };
         })
       );
       setPaymentMethod("MERCADOLIBRE");
       setMlCommissionManual(null);
       setMlShippingCost(settings.mlDefaultShippingCost);
     } else {
-      // Si se sale de ML, restaurar precios normales
       setItems((prev) =>
         prev.map((item) => {
           if (!item.productId) return item;
-          const found = products.find((p) => p.id === item.productId);
+          const found = productsById.get(item.productId);
           if (!found) return item;
-          return {
-            ...item,
-            unitPrice: unitPriceFor(found, false),
-          };
+          return { ...item, unitPrice: unitPriceFor(found, false) };
         })
       );
       if (paymentMethod === "MERCADOLIBRE") {
@@ -153,42 +163,54 @@ export function NewOrderForm({
     }
   };
 
-  const handleProductSelect = (index: number, productId: string) => {
+  const handleProductSelect = (localId: string, productId: string) => {
     if (!productId) {
       setItems((prev) =>
-        prev.map((it, i) => (i === index ? { ...it, productId: null } : it))
+        prev.map((it) => (it.localId === localId ? { ...it, productId: null } : it))
       );
       return;
     }
-    const found = products.find((p) => p.id === productId);
+    const found = productsById.get(productId);
     if (!found) return;
 
     const price = unitPriceFor(found, isML);
     setItems((prev) =>
-      prev.map((it, i) =>
-        i === index
+      prev.map((it) =>
+        it.localId === localId
           ? {
               ...it,
               productId: found.id,
               description: found.name,
               unitPrice: price,
+              material: "",
+              grams: null,
+              colorsCount: found.colorsCount,
+              showCostFields: false,
             }
           : it
       )
     );
   };
 
-  const updateItem = (index: number, patch: Partial<FormItem>) => {
-    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+  const updateItem = (localId: string, patch: Partial<FormItem>) => {
+    setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
   };
 
   const addItem = () => {
-    setItems((prev) => [...prev, emptyItem()]);
+    setItems((prev) => [...prev, emptyItem(allocItemId())]);
   };
 
-  const removeItem = (index: number) => {
-    if (items.length <= 1) return;
-    setItems((prev) => prev.filter((_, i) => i !== index));
+  const duplicateItem = (source: FormItem) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.localId === source.localId);
+      const copy: FormItem = { ...source, localId: allocItemId() };
+      if (idx === -1) return [...prev, copy];
+      return [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+    });
+  };
+
+  const removeItem = (localId: string) => {
+    setItems((prev) => (prev.length <= 1 ? prev : prev.filter((it) => it.localId !== localId)));
   };
 
   // Cálculo neto de Mercado Libre
@@ -227,7 +249,8 @@ export function NewOrderForm({
         description: it.description,
         qty: it.qty,
         unitPrice: it.unitPrice,
-        material: it.material || null,
+        material: it.productId ? null : it.material || null,
+        grams: it.productId ? null : it.grams,
         colorsCount: it.colorsCount,
       })),
       initialPayment:
@@ -245,436 +268,798 @@ export function NewOrderForm({
   };
 
   const showExtras = showMore || discount > 0 || notes.trim().length > 0;
+  const namedItems = items.filter((it) => it.description.trim().length > 0 || it.unitPrice > 0);
 
   return (
-    <form onSubmit={handleSubmit} className="pb-32 space-y-4 max-w-2xl mx-auto">
-      {/* Alerta de error si falla */}
+    <form onSubmit={handleSubmit} className="space-y-4">
       {state.error && (
-        <div role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger">
+        <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
           {state.error}
         </div>
       )}
 
-      {/* 1. Tipo de registro: selector compacto */}
-      <div role="radiogroup" aria-label="Tipo de registro" className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner">
-        {KINDS.map((option) => {
-          const selected = kind === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => {
-                setKind(option.id);
-                if (option.id === "QUICK_SALE") setHasPayment(true);
-              }}
-              className={`flex min-h-12 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-center transition-all duration-150 touch-manipulation ${
-                selected
-                  ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:bg-raised dark:border-line border border-line/60"
-                  : "text-muted hover:text-ink hover:bg-canvas/50"
-              }`}
-            >
-              <span className="text-sm font-semibold">{option.label}</span>
-              <span className={`text-[11px] ${selected ? "text-primary font-medium" : "text-muted"}`}>{option.hint}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 2. Qué vendiste: lo único obligatorio */}
-      <Card className="p-3 sm:p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-ink">
-            ¿Qué vendiste?{items.length > 1 ? ` (${items.length} piezas)` : ""}
-          </h2>
-          <button
-            type="button"
-            onClick={addItem}
-            className="min-h-10 px-1 text-xs font-semibold text-primary hover:underline"
+      <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-5">
+        {/* Columna izquierda: Carga de piezas, canal, cliente y extras */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* 1. Tipo de venta */}
+          <div
+            role="radiogroup"
+            aria-label="Tipo de registro"
+            className="grid grid-cols-2 gap-1.5 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner"
           >
-            + Otra pieza
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {items.map((item, idx) => (
-            <div
-              key={idx}
-              className={`space-y-2.5 ${items.length > 1 ? "p-3 rounded-xl border border-line bg-canvas/40" : ""}`}
-            >
-              {items.length > 1 && (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-muted">Pieza #{idx + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    className="text-xs text-danger hover:underline"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              )}
-
-              {/* Selector rápido desde catálogo */}
-              {products.length > 0 && (
-                <select
-                  aria-label={`Elegir pieza ${idx + 1} de tu catálogo`}
-                  value={item.productId || ""}
-                  onChange={(e) => handleProductSelect(idx, e.target.value)}
-                  className={inputClass}
+            {KINDS.map((option) => {
+              const selected = kind === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => {
+                    setKind(option.id);
+                    if (option.id === "QUICK_SALE") {
+                      setHasPayment(true);
+                      setCustomPaidAmount(null);
+                    }
+                  }}
+                  className={`flex min-h-11 flex-col sm:flex-row sm:gap-2 items-center justify-center rounded-xl px-3 py-1.5 text-center transition-all duration-150 touch-manipulation ${
+                    selected
+                      ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-line/60 dark:bg-raised"
+                      : "text-muted hover:text-ink hover:bg-canvas/50"
+                  }`}
                 >
-                  <option value="">Elegir de tu catálogo… (o escribe abajo)</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {formatMoney(unitPriceFor(p, isML), settings.currency)}
-                    </option>
-                  ))}
-                </select>
+                  <span className="text-sm font-semibold">{option.label}</span>
+                  <span className={`text-[11px] ${selected ? "text-primary font-medium" : "text-muted"}`}>
+                    {option.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 2. Piezas de la venta */}
+          <Card className="p-4 sm:p-5 space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+                  ¿Qué vendiste?
+                </h2>
+                {(items.length > 1 || totalUnits > 1) && (
+                  <Badge tone="neutral">
+                    {items.length} {items.length === 1 ? "línea" : "líneas"} · {totalUnits}{" "}
+                    {totalUnits === 1 ? "unidad" : "unidades"}
+                  </Badge>
+                )}
+              </div>
+              {products.length > 0 && (
+                <span className="text-xs text-muted">
+                  Elige de tu catálogo o escribe manualmente
+                </span>
               )}
+            </div>
 
-              {/* Descripción manual */}
-              <label htmlFor={`item-${idx}-description`} className="sr-only">
-                Descripción de la pieza {idx + 1}
-              </label>
-              <input
-                id={`item-${idx}-description`}
-                type="text"
-                required
-                placeholder="Ej: Emblema Toyota Yaris *"
-                value={item.description}
-                onChange={(e) => updateItem(idx, { description: e.target.value })}
-                className={inputClass}
-              />
+            <div className="space-y-3">
+              {items.map((item, idx) => {
+                const linkedProduct = item.productId ? productsById.get(item.productId) : undefined;
+                const lineSubtotal = item.qty * item.unitPrice;
+                const matLabel = linkedProduct
+                  ? MATERIAL_LABEL[linkedProduct.material as Material] ?? linkedProduct.material
+                  : null;
 
-              {/* Precio unitario y cantidad */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor={`item-${idx}-price`} className="text-[11px] text-muted block mb-1">
-                    Precio ({settings.currency})
-                  </label>
-                  <input
-                    id={`item-${idx}-price`}
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    required
-                    value={item.unitPrice || ""}
-                    onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, Number(e.target.value) || 0) })}
-                    className={inputClass}
-                  />
+                return (
+                  <div
+                    key={item.localId}
+                    className={`rounded-2xl border p-3.5 transition-colors space-y-3 ${
+                      items.length > 1
+                        ? "border-line bg-canvas/50"
+                        : "border-line/70 bg-canvas/35"
+                    }`}
+                  >
+                    {/* Cabecera clara de cada pieza con subtotal y acciones rápidas */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg bg-primary-soft px-2 text-xs font-bold text-primary-ink">
+                          #{idx + 1}
+                        </span>
+
+                        {linkedProduct ? (
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            <span className="font-semibold text-ink">Catálogo</span>
+                            <span className="text-muted">
+                              · {matLabel}
+                              {linkedProduct.grams > 0 ? ` · ${linkedProduct.grams} g` : ""}
+                            </span>
+                            <Badge
+                              tone={
+                                linkedProduct.currentStock <= 0
+                                  ? "warn"
+                                  : linkedProduct.isLowStock
+                                    ? "warn"
+                                    : "ok"
+                              }
+                            >
+                              {linkedProduct.currentStock <= 0
+                                ? "Sin stock listo"
+                                : `Stock: ${linkedProduct.currentStock}`}
+                            </Badge>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-medium text-muted">Pieza manual</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-auto">
+                        <span className="text-sm font-bold text-ink tabular-nums">
+                          {formatMoney(lineSubtotal, settings.currency)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => duplicateItem(item)}
+                          title="Duplicar esta pieza"
+                          aria-label={`Duplicar pieza ${idx + 1}`}
+                          className="inline-flex min-h-8 items-center rounded-lg border border-line bg-surface px-2.5 text-[11px] font-semibold text-muted hover:text-ink hover:bg-raised transition-colors touch-manipulation"
+                        >
+                          Duplicar
+                        </button>
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.localId)}
+                            aria-label={`Quitar pieza ${idx + 1}`}
+                            className="inline-flex min-h-8 items-center rounded-lg border border-line bg-surface px-2.5 text-[11px] font-semibold text-danger hover:bg-danger-soft/40 hover:border-danger/40 transition-colors touch-manipulation"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Fila 1: Catálogo (si hay) + Descripción */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                      {products.length > 0 && (
+                        <div className="sm:col-span-5">
+                          <label
+                            htmlFor={`item-${item.localId}-catalog`}
+                            className="text-[11px] font-medium text-muted block mb-1"
+                          >
+                            Catálogo
+                          </label>
+                          <select
+                            id={`item-${item.localId}-catalog`}
+                            aria-label={`Elegir pieza ${idx + 1} de tu catálogo`}
+                            value={item.productId || ""}
+                            onChange={(e) => handleProductSelect(item.localId, e.target.value)}
+                            className={inputClass}
+                          >
+                            <option value="">Escribir manualmente…</option>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} — {formatMoney(unitPriceFor(p, isML), settings.currency)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className={products.length > 0 ? "sm:col-span-7" : "sm:col-span-12"}>
+                        <label
+                          htmlFor={`item-${item.localId}-description`}
+                          className="text-[11px] font-medium text-muted block mb-1"
+                        >
+                          Nombre o descripción *
+                        </label>
+                        <input
+                          id={`item-${item.localId}-description`}
+                          type="text"
+                          required
+                          placeholder="Ej: Emblema Toyota Yaris"
+                          value={item.description}
+                          onChange={(e) => updateItem(item.localId, { description: e.target.value })}
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fila 2: Precio unitario y cantidad */}
+                    <div className="grid grid-cols-12 gap-2.5 items-end">
+                      <div className="col-span-6 sm:col-span-5">
+                        <label
+                          htmlFor={`item-${item.localId}-price`}
+                          className="text-[11px] font-medium text-muted block mb-1"
+                        >
+                          Precio unitario ({settings.currency})
+                        </label>
+                        <input
+                          id={`item-${item.localId}-price`}
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          required
+                          placeholder="0"
+                          value={item.unitPrice || ""}
+                          onChange={(e) =>
+                            updateItem(item.localId, {
+                              unitPrice: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                          className={`${inputClass} font-semibold tabular-nums`}
+                        />
+                      </div>
+
+                      <div className="col-span-6 sm:col-span-4">
+                        <label
+                          htmlFor={`item-${item.localId}-qty`}
+                          className="text-[11px] font-medium text-muted block mb-1"
+                        >
+                          Cantidad
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            aria-label="Restar una unidad"
+                            onClick={() =>
+                              updateItem(item.localId, { qty: Math.max(1, item.qty - 1) })
+                            }
+                            className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-line bg-raised font-bold text-ink hover:bg-surface transition-colors touch-manipulation"
+                          >
+                            −
+                          </button>
+                          <input
+                            id={`item-${item.localId}-qty`}
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            required
+                            value={item.qty}
+                            onChange={(e) =>
+                              updateItem(item.localId, {
+                                qty: Math.max(1, Number(e.target.value) || 1),
+                              })
+                            }
+                            className={`${inputClass} min-w-0 text-center font-semibold tabular-nums`}
+                          />
+                          <button
+                            type="button"
+                            aria-label="Sumar una unidad"
+                            onClick={() => updateItem(item.localId, { qty: item.qty + 1 })}
+                            className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-line bg-raised font-bold text-ink hover:bg-surface transition-colors touch-manipulation"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="hidden sm:flex sm:col-span-3 flex-col items-end justify-center pb-1.5">
+                        <span className="text-[11px] text-muted">Subtotal línea</span>
+                        <span className="text-base font-bold text-ink tabular-nums">
+                          {formatMoney(lineSubtotal, settings.currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Opcional en pieza manual: material y gramos para calcular ganancia real */}
+                    {!linkedProduct && (
+                      <div className="pt-0.5">
+                        {item.showCostFields ? (
+                          <div className="rounded-xl border border-line/70 bg-surface/70 p-3 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-semibold text-muted">
+                                Detalle de impresión (opcional, para calcular ganancia real)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateItem(item.localId, {
+                                    showCostFields: false,
+                                    material: "",
+                                    grams: null,
+                                    colorsCount: 1,
+                                  })
+                                }
+                                className="text-[11px] font-medium text-muted hover:text-ink"
+                              >
+                                Quitar detalle
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label
+                                  htmlFor={`item-${item.localId}-material`}
+                                  className="text-[11px] text-muted block mb-1"
+                                >
+                                  Material
+                                </label>
+                                <select
+                                  id={`item-${item.localId}-material`}
+                                  value={item.material}
+                                  onChange={(e) =>
+                                    updateItem(item.localId, { material: e.target.value })
+                                  }
+                                  className={inputClass}
+                                >
+                                  <option value="">Sin definir</option>
+                                  {MATERIALS.map((mat) => (
+                                    <option key={mat} value={mat}>
+                                      {MATERIAL_LABEL[mat]}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={`item-${item.localId}-grams`}
+                                  className="text-[11px] text-muted block mb-1"
+                                >
+                                  Gramos c/u
+                                </label>
+                                <input
+                                  id={`item-${item.localId}-grams`}
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={0}
+                                  placeholder="Ej: 45"
+                                  value={item.grams ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value.trim();
+                                    updateItem(item.localId, {
+                                      grams: val ? Math.max(0, Number(val) || 0) : null,
+                                    });
+                                  }}
+                                  className={inputClass}
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={`item-${item.localId}-colors`}
+                                  className="text-[11px] text-muted block mb-1"
+                                >
+                                  Colores
+                                </label>
+                                <input
+                                  id={`item-${item.localId}-colors`}
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={1}
+                                  max={16}
+                                  value={item.colorsCount}
+                                  onChange={(e) =>
+                                    updateItem(item.localId, {
+                                      colorsCount: Math.max(
+                                        1,
+                                        Math.min(16, Number(e.target.value) || 1)
+                                      ),
+                                    })
+                                  }
+                                  className={inputClass}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => updateItem(item.localId, { showCostFields: true })}
+                            className="text-[11px] font-medium text-muted hover:text-primary transition-colors"
+                          >
+                            + Indicar material y gramos (opcional, mejora el cálculo de ganancia)
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Botón prominente al pie de las piezas donde termina el recorrido visual */}
+            <button
+              type="button"
+              onClick={addItem}
+              className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/35 bg-primary-soft/35 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary-soft/65 hover:border-primary/55 transition-colors touch-manipulation"
+            >
+              <span aria-hidden="true" className="text-base leading-none">+</span>
+              <span>Agregar otra pieza</span>
+            </button>
+          </Card>
+
+          {/* 3. Canal de venta */}
+          <Card className="p-4 sm:p-5 space-y-3">
+            <p id="channel-label" className="text-xs font-bold uppercase tracking-wider text-muted">
+              ¿Por dónde te compraron?
+            </p>
+            <div role="radiogroup" aria-labelledby="channel-label" className="flex flex-wrap gap-1.5">
+              {CHANNELS.map((ch) => {
+                const isSelected = channel === ch.id;
+                return (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => handleChannelChange(ch.id)}
+                    className={filterChipClass(isSelected)}
+                  >
+                    <span>{ch.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {isML && (
+              <div className="rounded-xl bg-accent-soft/40 border border-accent/30 p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-ink">Opciones de Mercado Libre</span>
+                  <span className="text-[11px] font-medium text-muted">Precios ML activos</span>
                 </div>
-
-                <div>
-                  <label htmlFor={`item-${idx}-qty`} className="text-[11px] text-muted block mb-1">Cantidad</label>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label="Restar una unidad"
-                      onClick={() => updateItem(idx, { qty: Math.max(1, item.qty - 1) })}
-                      className="h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-line bg-raised font-bold text-ink"
-                    >
-                      -
-                    </button>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  <div>
+                    <label htmlFor="ml-ref" className="text-[11px] text-muted block mb-1">
+                      ID / Referencia ML
+                    </label>
                     <input
-                      id={`item-${idx}-qty`}
+                      id="ml-ref"
+                      type="text"
+                      placeholder="ej. 20000084..."
+                      value={mlOrderRef}
+                      onChange={(e) => setMlOrderRef(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="ml-commission" className="text-[11px] text-muted block mb-1">
+                      Comisión ML ({settings.mlCommissionPercent}%)
+                    </label>
+                    <input
+                      id="ml-commission"
                       type="number"
                       inputMode="numeric"
-                      min={1}
-                      required
-                      value={item.qty}
-                      onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })}
-                      className={`${inputClass} min-w-0 text-center`}
+                      value={mlCommission || ""}
+                      onChange={(e) => setMlCommissionManual(Number(e.target.value) || 0)}
+                      className={inputClass}
                     />
-                    <button
-                      type="button"
-                      aria-label="Sumar una unidad"
-                      onClick={() => updateItem(idx, { qty: item.qty + 1 })}
-                      className="h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-line bg-raised font-bold text-ink"
-                    >
-                      +
-                    </button>
+                  </div>
+                  <div>
+                    <label htmlFor="ml-shipping" className="text-[11px] text-muted block mb-1">
+                      Costo de envío a tu cargo
+                    </label>
+                    <input
+                      id="ml-shipping"
+                      type="number"
+                      inputMode="numeric"
+                      value={mlShippingCost || ""}
+                      onChange={(e) => setMlShippingCost(Number(e.target.value) || 0)}
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               </div>
+            )}
+          </Card>
 
-              {/* Subtotal de línea: solo aporta si hay varias unidades o piezas */}
-              {(items.length > 1 || item.qty > 1) && (
-                <div className="text-right text-xs text-muted">
-                  Subtotal:{" "}
-                  <span className="font-semibold text-ink">
-                    {formatMoney(item.qty * item.unitPrice, settings.currency)}
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* 3. Canal de venta (se recuerda el último usado) */}
-      <Card className="p-3 sm:p-4">
-        <p id="channel-label" className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">
-          ¿Por dónde te compraron?
-        </p>
-        <div role="radiogroup" aria-labelledby="channel-label" className="flex flex-wrap gap-1.5">
-          {CHANNELS.map((ch) => {
-            const isSelected = channel === ch.id;
-            return (
-              <button
-                key={ch.id}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => handleChannelChange(ch.id)}
-                className={filterChipClass(isSelected)}
-              >
-                <span>{ch.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Parámetros de Mercado Libre */}
-        {isML && (
-          <div className="mt-4 p-3 rounded-xl bg-accent-soft/40 border border-accent/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-ink">Opciones de Mercado Libre</span>
-              <span className="text-[11px] text-muted">Precios ML activos</span>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <div>
-                <label htmlFor="ml-ref" className="text-[11px] text-muted block mb-1">ID / Referencia ML</label>
-                <input
-                  id="ml-ref"
-                  type="text"
-                  placeholder="ej. 20000084..."
-                  value={mlOrderRef}
-                  onChange={(e) => setMlOrderRef(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="ml-commission" className="text-[11px] text-muted block mb-1">Comisión ML ({settings.mlCommissionPercent}%)</label>
-                <input
-                  id="ml-commission"
-                  type="number"
-                  inputMode="numeric"
-                  value={mlCommission || ""}
-                  onChange={(e) => setMlCommissionManual(Number(e.target.value) || 0)}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="ml-shipping" className="text-[11px] text-muted block mb-1">Costo de envío a tu cargo</label>
-                <input
-                  id="ml-shipping"
-                  type="number"
-                  inputMode="numeric"
-                  value={mlShippingCost || ""}
-                  onChange={(e) => setMlShippingCost(Number(e.target.value) || 0)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* 4. Fecha de entrega (solo pedidos por encargo) */}
-      {kind === "ORDER" && (
-        <Card className="p-3 sm:p-4">
-          <label htmlFor="order-due-date" className="text-xs font-semibold text-ink block mb-1">
-            ¿Para cuándo es? <span className="font-normal text-muted">(opcional)</span>
-          </label>
-          <input
-            id="order-due-date"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className={inputClass}
-          />
-        </Card>
-      )}
-
-      {/* 5. Cliente (D7) */}
-      <Card className="p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-            Cliente <span className="normal-case font-normal">(opcional)</span>
-          </p>
-          <div className="flex items-center gap-1">
-            {([
-              { id: "NONE", label: "Sin cliente" },
-              { id: "EXISTING", label: "Elegir" },
-              { id: "NEW", label: "+ Nuevo" },
-            ] as const).map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                aria-pressed={clientMode === mode.id}
-                onClick={() => setClientMode(mode.id)}
-                className={`min-h-9 px-2 text-xs rounded-lg font-medium transition-colors ${
-                  clientMode === mode.id ? "bg-primary text-white" : "text-muted hover:text-ink"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {clientMode === "EXISTING" && (
-          <div className="mt-2">
-            <select
-              aria-label="Cliente"
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Selecciona un cliente…</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} {c.phone ? `(${c.phone})` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {clientMode === "NEW" && (
-          <div className="mt-2 space-y-2.5">
-            <input
-              type="text"
-              required
-              aria-label="Nombre del cliente"
-              placeholder="Nombre del cliente *"
-              value={newCustomerName}
-              onChange={(e) => setNewCustomerName(e.target.value)}
-              className={inputClass}
-            />
-            <div className="grid grid-cols-2 gap-2">
+          {/* 4. Fecha de entrega (solo por encargo), Cliente y Más opciones */}
+          {kind === "ORDER" && (
+            <Card className="p-4 sm:p-5">
+              <label htmlFor="order-due-date" className="text-xs font-bold uppercase tracking-wider text-muted block mb-2">
+                ¿Para cuándo se entrega? <span className="normal-case font-normal">(opcional)</span>
+              </label>
               <input
-                type="tel"
-                aria-label="Teléfono o WhatsApp"
-                placeholder="Teléfono / WhatsApp"
-                value={newCustomerPhone}
-                onChange={(e) => setNewCustomerPhone(e.target.value)}
-                className={inputClass}
+                id="order-due-date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className={`${inputClass} sm:max-w-xs`}
               />
-              <input
-                type="text"
-                aria-label="Instagram"
-                placeholder="Instagram (@usuario)"
-                value={newCustomerInstagram}
-                onChange={(e) => setNewCustomerInstagram(e.target.value)}
-                className={inputClass}
-              />
+            </Card>
+          )}
+
+          <Card className="p-4 sm:p-5 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                Cliente <span className="normal-case font-normal">(opcional)</span>
+              </p>
+              <div className={segmentedTrackClass}>
+                {([
+                  { id: "NONE", label: "Sin cliente" },
+                  { id: "EXISTING", label: "Elegir" },
+                  { id: "NEW", label: "+ Nuevo" },
+                ] as const).map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    aria-pressed={clientMode === mode.id}
+                    onClick={() => setClientMode(mode.id)}
+                    className={segmentedItemClass(clientMode === mode.id)}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </Card>
 
-      {/* 6. Cobro / Pago */}
-      <Card className="p-3 sm:p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-            {kind === "QUICK_SALE" ? "Cobro" : "Abono inicial"}
-          </p>
-          <label className="flex min-h-9 items-center gap-2 text-xs font-medium text-ink cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hasPayment}
-              onChange={(e) => setHasPayment(e.target.checked)}
-              className="rounded border-line"
-            />
-            <span>{kind === "QUICK_SALE" ? "Registrar cobro ahora" : "Registrar abono"}</span>
-          </label>
-        </div>
-
-        {hasPayment && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2 border-t border-line/60">
-            <div>
-              <label htmlFor="payment-method" className="text-[11px] text-muted block mb-1">Método de pago</label>
+            {clientMode === "EXISTING" && (
               <select
-                id="payment-method"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
+                aria-label="Cliente"
+                value={selectedCustomerId}
+                onChange={(e) => setSelectedCustomerId(e.target.value)}
                 className={inputClass}
               >
-                {METHODS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
+                <option value="">Selecciona un cliente…</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.phone ? `(${c.phone})` : ""}
                   </option>
                 ))}
               </select>
+            )}
+
+            {clientMode === "NEW" && (
+              <div className="space-y-2.5">
+                <input
+                  type="text"
+                  required
+                  aria-label="Nombre del cliente"
+                  placeholder="Nombre del cliente *"
+                  value={newCustomerName}
+                  onChange={(e) => setNewCustomerName(e.target.value)}
+                  className={inputClass}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <input
+                    type="tel"
+                    aria-label="Teléfono o WhatsApp"
+                    placeholder="Teléfono / WhatsApp"
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    className={inputClass}
+                  />
+                  <input
+                    type="text"
+                    aria-label="Instagram"
+                    placeholder="Instagram (@usuario)"
+                    value={newCustomerInstagram}
+                    onChange={(e) => setNewCustomerInstagram(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {showExtras ? (
+            <Card className="p-4 sm:p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="order-discount" className="text-xs font-semibold text-ink block mb-1">
+                    Descuento ({settings.currency})
+                  </label>
+                  <input
+                    id="order-discount"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    placeholder="0"
+                    value={discount || ""}
+                    onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="order-notes" className="text-xs font-semibold text-ink block mb-1">
+                    Notas internas
+                  </label>
+                  <input
+                    id="order-notes"
+                    type="text"
+                    placeholder="Detalles de fabricación, colores o entrega..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowMore(true)}
+              className="min-h-9 px-1 text-xs font-semibold text-primary hover:underline"
+            >
+              + Más opciones (descuento, notas)
+            </button>
+          )}
+        </div>
+
+        {/* Columna derecha en escritorio (abajo en móvil): Resumen en vivo + Cobro + Guardar */}
+        <div className="lg:col-span-4 lg:sticky lg:top-4 space-y-4">
+          <Card className="p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+                Resumen de venta
+              </h2>
+              <span className="text-xs text-muted">
+                {totalUnits} {totalUnits === 1 ? "pieza" : "piezas"}
+              </span>
             </div>
 
-            <div>
-              <label htmlFor="payment-amount" className="text-[11px] text-muted block mb-1">Monto recibido</label>
-              <input
-                id="payment-amount"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={paymentAmount || ""}
-                onChange={(e) => setCustomPaidAmount(Number(e.target.value) || 0)}
-                className={inputClass}
-              />
+            {/* Desglose visual de piezas agregadas */}
+            {namedItems.length > 0 ? (
+              <ul className="divide-y divide-line/60 text-xs space-y-0">
+                {items.map((it, idx) => (
+                  <li key={it.localId} className="flex items-baseline justify-between gap-2 py-1.5 first:pt-0">
+                    <span className="min-w-0 truncate text-ink">
+                      <span className="font-semibold text-muted">{it.qty}×</span>{" "}
+                      {it.description.trim() || `Pieza #${idx + 1}`}
+                    </span>
+                    <span className="font-semibold text-ink tabular-nums shrink-0">
+                      {formatMoney(it.qty * it.unitPrice, settings.currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted">
+                Agrega al menos una pieza y su precio para ver el total.
+              </p>
+            )}
+
+            {/* Desglose económico */}
+            <dl className="space-y-1.5 border-t border-line/70 pt-3 text-xs">
+              {(discount > 0 || isML) && (
+                <div className="flex items-center justify-between text-muted">
+                  <dt>Subtotal piezas</dt>
+                  <dd className="tabular-nums font-medium text-ink">
+                    {formatMoney(rawSubtotal, settings.currency)}
+                  </dd>
+                </div>
+              )}
+              {discount > 0 && (
+                <div className="flex items-center justify-between text-muted">
+                  <dt>− Descuento</dt>
+                  <dd className="tabular-nums">−{formatMoney(discount, settings.currency)}</dd>
+                </div>
+              )}
+              {isML && (
+                <>
+                  <div className="flex items-center justify-between text-muted">
+                    <dt>− Comisión ML</dt>
+                    <dd className="tabular-nums">−{formatMoney(mlCommission, settings.currency)}</dd>
+                  </div>
+                  {mlShippingCost > 0 && (
+                    <div className="flex items-center justify-between text-muted">
+                      <dt>− Envío a tu cargo</dt>
+                      <dd className="tabular-nums">−{formatMoney(mlShippingCost, settings.currency)}</dd>
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="flex items-baseline justify-between gap-2 pt-1">
+                <dt className="text-xs font-semibold text-muted">
+                  {isML ? "Neto ML a recibir" : "Total a cobrar"}
+                </dt>
+                <dd className="text-2xl font-bold tracking-tight text-ink tabular-nums">
+                  {formatMoney(expectedReceivable, settings.currency)}
+                </dd>
+              </div>
+            </dl>
+
+            {/* Cobro / Abono inicial */}
+            <div className="border-t border-line/70 pt-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                  {kind === "QUICK_SALE" ? "Cobro" : "Abono inicial"}
+                </span>
+                <label className="flex min-h-8 items-center gap-2 text-xs font-semibold text-ink cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hasPayment}
+                    onChange={(e) => setHasPayment(e.target.checked)}
+                    className="h-4 w-4 rounded border-line accent-primary"
+                  />
+                  <span>{kind === "QUICK_SALE" ? "Cobrada ahora" : "Registrar abono"}</span>
+                </label>
+              </div>
+
+              {hasPayment && (
+                <div className="space-y-2.5">
+                  <div>
+                    <label htmlFor="payment-method" className="text-[11px] text-muted block mb-1">
+                      Método de pago
+                    </label>
+                    <select
+                      id="payment-method"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className={inputClass}
+                    >
+                      {METHODS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <label htmlFor="payment-amount" className="text-[11px] text-muted">
+                        Monto recibido
+                      </label>
+                      {expectedReceivable > 0 && (
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold">
+                          {kind === "ORDER" && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomPaidAmount(Math.round(expectedReceivable / 2))}
+                              className="text-primary hover:underline"
+                            >
+                              50%
+                            </button>
+                          )}
+                          {(customPaidAmount !== null || kind === "ORDER") && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomPaidAmount(kind === "ORDER" ? expectedReceivable : null)
+                              }
+                              className="text-primary hover:underline"
+                            >
+                              {kind === "QUICK_SALE" ? "Usar total" : "Total"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      id="payment-amount"
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      placeholder={String(expectedReceivable || 0)}
+                      value={paymentAmount || ""}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        setCustomPaidAmount(raw === "" ? 0 : Math.max(0, Number(raw) || 0));
+                      }}
+                      className={`${inputClass} font-semibold tabular-nums`}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </Card>
 
-      {/* 7. Más opciones: descuento y notas, ocultas hasta que se pidan */}
-      {showExtras ? (
-        <Card className="p-3 sm:p-4 space-y-3">
-          <div>
-            <label htmlFor="order-discount" className="text-xs font-semibold text-ink block mb-1">
-              Descuento ({settings.currency})
-            </label>
-            <input
-              id="order-discount"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              placeholder="0"
-              value={discount || ""}
-              onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="order-notes" className="text-xs font-semibold text-ink block mb-1">Notas internas</label>
-            <textarea
-              id="order-notes"
-              rows={2}
-              placeholder="Detalles de fabricación, colores o entrega..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </Card>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowMore(true)}
-          className="min-h-10 px-1 text-xs font-semibold text-primary hover:underline"
-        >
-          + Más opciones (descuento, notas)
-        </button>
-      )}
+            {/* Acciones principales en escritorio */}
+            <div className="hidden lg:flex flex-col gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={pending}
+                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-60 touch-manipulation"
+              >
+                {pending
+                  ? "Guardando…"
+                  : kind === "QUICK_SALE"
+                    ? "Guardar venta"
+                    : "Crear pedido"}
+              </button>
+              <Link
+                href="/dashboard"
+                className="flex min-h-9 w-full items-center justify-center rounded-xl text-xs font-semibold text-muted hover:text-ink transition-colors"
+              >
+                Cancelar
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </div>
 
-      {/* 8. Barra inferior pegajosa (sin pisar MobileNav ni Sidebar) */}
-      <div className="sticky bottom-20 lg:bottom-4 z-10 rounded-2xl bg-surface/95 backdrop-blur-md border border-line p-3 sm:p-4 shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Barra inferior pegajosa solo en móvil/tablet (< lg) */}
+      <div className="lg:hidden sticky bottom-20 z-10 rounded-2xl bg-surface/95 backdrop-blur-md border border-line p-3 shadow-xl">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <span className="text-[11px] uppercase tracking-wider text-muted block">
               {isML ? "Neto ML a recibir" : "Total a cobrar"}
             </span>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-xl sm:text-2xl font-bold tabular-nums text-ink">
+              <span className="text-xl font-bold tabular-nums text-ink">
                 {formatMoney(expectedReceivable, settings.currency)}
               </span>
               {isML && (
@@ -685,7 +1070,7 @@ export function NewOrderForm({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 ml-auto shrink-0">
             <Link
               href="/dashboard"
               className="px-3 py-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
@@ -695,7 +1080,7 @@ export function NewOrderForm({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-5 sm:px-6 text-sm font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60 touch-manipulation"
             >
               {pending ? "Guardando…" : kind === "QUICK_SALE" ? "Guardar venta" : "Crear pedido"}
             </button>

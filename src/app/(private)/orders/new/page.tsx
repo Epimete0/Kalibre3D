@@ -37,10 +37,10 @@ export default async function NewOrderPage(props: {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-24 lg:pb-6">
       <PageHeader
         title="Nueva venta"
-        description="Anota qué vendiste y en cuánto. Lo demás es opcional."
+        description="Elige o escribe tus piezas y confirma el cobro."
       />
 
       <NewOrderForm

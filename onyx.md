@@ -6,6 +6,20 @@
 
 ---
 
+## Rediseño de Nueva venta (`/orders/new`) para múltiples piezas y escritorio — 2026-11-14
+
+- **Pedido del usuario:** mejorar la experiencia de usuario de `/orders/new` (*Nueva venta*), facilitando especialmente visualizar y agregar varias piezas y aprovechando mejor las pantallas de escritorio.
+- **Hallazgos auditados:**
+  - El botón `+ Otra pieza` estaba arriba a la derecha lejos del punto donde se termina de llenar cada línea, las piezas repetían todo el bloque vertical sin jerarquía ni resumen en vivo y usaban `key={idx}` por posición.
+  - Todo el formulario estaba contenido en una sola columna estrecha (`max-w-2xl`) incluso en escritorio, con barra pegajosa inferior pensada para móvil.
+  - Al elegir piezas del catálogo no se mostraba material, gramos ni stock disponible; en piezas manuales tampoco había campo opcional para indicar material/gramos aunque `createOrder` (`order-service.ts`) y `estimateUnitCost` ya los soportan.
+- **Cambios en interfaz (`src/app/(private)/orders/new/page.tsx` y `NewOrderForm.tsx`):**
+  - **Escritorio en 2 columnas (`lg:grid-cols-12`):** columna izquierda (`lg:col-span-8`) para tipo de venta, lista de piezas, canal y cliente; columna derecha pegajosa (`lg:col-span-4 lg:sticky lg:top-4`) con **Resumen de venta** en vivo (listado línea a línea, subtotal, descuento, comisión/envío ML, total neto), cobro/abono con atajos rápidos (`50%` / `Total`) y botón principal de guardado. En móviles (`< lg`) se conserva columna única con barra inferior pegajosa sobre el `MobileNav`.
+  - **Tarjetas de pieza mejoradas:** badge numérico (`#1`, `#2`…), estado (`Catálogo` con material, gramos y stock, o `Pieza manual`), subtotal en cabecera, acciones **Duplicar** y **Quitar** (`localId` estable por fila), detalle opcional colapsable de `Material` / `Gramos` / `Colores` en piezas manuales y botón ancho **`+ Agregar otra pieza`** al pie de la lista.
+  - **Consistencia visual:** selector de **Cliente** migrado a `segmentedTrackClass` / `segmentedItemClass`. Sin cambios en esquema, RLS ni en `createOrder`.
+
+---
+
 ## Refinamiento de ergonomía en escritorio para Dinero y cabeceras — 2026-11-14
 
 - **Pedido del usuario:** optimizar la vista inicial de `/money` y las cabeceras en escritorio, eliminando textos redundantes ("Dinero del taller" + subtítulo largo repetido cuando ya se seleccionó Dinero) y mejorando la comodidad visual sobre pantallas de escritorio.
