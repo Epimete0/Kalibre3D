@@ -6,6 +6,17 @@
 
 ---
 
+## Refinamiento de ergonomía en escritorio para Dinero y cabeceras — 2026-11-14
+
+- **Pedido del usuario:** optimizar la vista inicial de `/money` y las cabeceras en escritorio, eliminando textos redundantes ("Dinero del taller" + subtítulo largo repetido cuando ya se seleccionó Dinero) y mejorando la comodidad visual sobre pantallas de escritorio.
+- **Cambios en interfaz:**
+  - **`/money` (`src/app/(private)/money/page.tsx`, `MoneyControls.tsx`):**
+    - Se retiró `<PageHeader title="Dinero del taller" ... />` y se unificó el selector de mes (`<h1>Noviembre 2026</h1>` con flechas), el conteo rápido (`pedidos · piezas · movimientos`) y los accesos `+ Registrar gasto` / `+ Otro ingreso` en una sola fila superior compacta.
+    - En **Resultado de tus ventas** y **Flujo de caja en cuenta**, se eliminó la fila `= ...` que repetía el monto principal ya destacado arriba, se aclaró la etiqueta de margen (`% margen s/neto` frente a `Sobre venta total: Ganancia · Costos · IVA`) y se compactaron las filas para que resumen, caja y desgloses entren cómodamente en pantalla de escritorio sin sacrificar el diseño móvil.
+  - **Cabeceras en escritorio (`AppShell.tsx`, `PrivateHeader.tsx`, `src/components/ui.tsx`):** se redujo la separación vertical excesiva sobre `lg:` entre la barra superior y `<PageHeader />` (`mb-4 sm:mb-5`, `max-w-2xl` para evitar saltos innecesarios a doble línea).
+
+---
+
 ## Rediseño de Dinero (ventas vs costos vs caja), costos por pedido y rendimiento por producto — 2026-11-14
 
 - **Pedido del usuario:** resolver la confusión en `/money` donde se veía lo que entró y lo que había en caja sin mostrar los costos reales de fabricar lo vendido; retirar la pestaña densa de `Margen por pieza` y llevar esa información directamente al detalle de cada pedido (`/orders/[id]`) y de cada producto (`/products/[id]`), mejorando además la calidad visual de Dinero.

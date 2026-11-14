@@ -1,5 +1,4 @@
 import { NoPermission } from "@/components/NoPermission";
-import { PageHeader } from "@/components/ui";
 import { canManageCatalog, requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { getMonthlySalesEconomics } from "@/lib/insights-queries";
@@ -41,12 +40,7 @@ export default async function MoneyPage(props: {
         : null;
 
   return (
-    <div className="space-y-6 pb-20">
-      <PageHeader
-        title="Dinero del taller"
-        description="Cuánto vendiste, cuánto costó fabricarlo, qué gastaste y cuánto te queda disponible este mes."
-      />
-
+    <div className="pb-20 lg:pb-4">
       <MoneyControls
         key={`${view.month}-${initialMode ?? "none"}`}
         view={view}

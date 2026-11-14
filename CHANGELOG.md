@@ -5,6 +5,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Mejorado
+- **Ergonomía de escritorio en Dinero (`/money`) y cabeceras privadas:**
+  - Barra superior unificada en `/money` con selector de mes (`<h1>`), conteo rápido de pedidos/piezas y botones `+ Registrar gasto` / `+ Otro ingreso` en una sola línea, eliminando el encabezado redundante que ocupaba espacio vertical innecesario.
+  - Tarjetas de *Resultado de tus ventas* y *Flujo de caja en cuenta* más limpias y escaneables en escritorio: se eliminaron los subtotales repetidos (`= Ganancia estimada` y `= Disponible en caja` duplicando el KPI principal), se aclaró `% margen s/neto` frente a la proporción sobre venta total y se ajustó la densidad para ver también canales y categorías sin desplazamiento incómodo.
+  - Ajuste de márgenes verticales en `AppShell`, `PrivateHeader` y `PageHeader` para aprovechar mejor la altura en pantallas de escritorio.
+
 ### Añadido
 - **Rediseño de Dinero del taller (`/money`), costos por pedido y rendimiento por producto:**
   - **Dinero en una sola vista clara:** reemplaza las dos pestañas anteriores por una página unificada con dos bloques principales: **Resultado de tus ventas** (ventas netas − IVA − costo real de fabricación de las piezas vendidas = ganancia estimada, con barra proporcional) y **Flujo de caja en cuenta** (cobros, compras/gastos, IVA apartado y disponible líquido), además de barras por canal/categoría y filtro rápido en movimientos (`Todos` · `Ingresos` · `Gastos`).

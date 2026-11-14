@@ -205,41 +205,50 @@ export function MoneyControls({
   const salesCostShare = Math.max(0, 100 - salesProfitShare - salesVatShare);
 
   return (
-    <div className="space-y-5">
-      {/* Barra superior: Selector de mes y botones de alta rápida (390px) */}
+    <div className="space-y-4">
+      {/* Encabezado unificado: Mes activo + resumen rápido + botones de acción */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="inline-flex items-center justify-between sm:justify-start gap-2 rounded-2xl border border-line bg-surface p-1.5 shadow-sm">
-          <Link
-            href={`/money?month=${view.previousMonth}`}
-            aria-label="Mes anterior"
-            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-line/60 bg-raised px-3 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
-          >
-            ←
-          </Link>
-          <span className="px-3 text-sm sm:text-base font-bold text-ink">
-            {formatMonthLabel(view.month)}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1 rounded-2xl border border-line bg-surface p-1 shadow-xs">
+            <Link
+              href={`/money?month=${view.previousMonth}`}
+              aria-label="Mes anterior"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
+            >
+              ←
+            </Link>
+            <h1 className="px-3 text-base sm:text-lg font-bold tracking-[-0.02em] text-ink">
+              {formatMonthLabel(view.month)}
+            </h1>
+            <Link
+              href={`/money?month=${view.nextMonth}`}
+              aria-label="Mes siguiente"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
+            >
+              →
+            </Link>
+          </div>
+          <span className="hidden md:inline text-xs font-medium text-muted">
+            {salesSummary.ordersCount}{" "}
+            {salesSummary.ordersCount === 1 ? "pedido" : "pedidos"} ·{" "}
+            {salesSummary.units} {salesSummary.units === 1 ? "pieza" : "piezas"} ·{" "}
+            {validTransactions.length}{" "}
+            {validTransactions.length === 1 ? "movimiento" : "movimientos"}
           </span>
-          <Link
-            href={`/money?month=${view.nextMonth}`}
-            aria-label="Mes siguiente"
-            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-line/60 bg-raised px-3 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
-          >
-            →
-          </Link>
         </div>
 
         <div className="grid grid-cols-2 sm:flex items-center gap-2">
           <button
             type="button"
             onClick={() => openForm("EXPENSE")}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] touch-manipulation"
+            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] touch-manipulation"
           >
             + Registrar gasto
           </button>
           <button
             type="button"
             onClick={() => openForm("INCOME")}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs hover:bg-raised transition-all active:scale-[0.98] touch-manipulation"
+            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs hover:bg-raised transition-all active:scale-[0.98] touch-manipulation"
           >
             + Otro ingreso
           </button>
@@ -415,23 +424,23 @@ export function MoneyControls({
       {/* Bloque principal: Resultado de ventas (con costos reales) vs Flujo de caja */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* 1. Resultado económico de las ventas del mes */}
-        <Card className="lg:col-span-7 p-5 sm:p-6 flex flex-col justify-between gap-5">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+        <Card className="lg:col-span-7 p-4 sm:p-5 flex flex-col justify-between gap-3.5">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   Resultado de tus ventas
                 </span>
-                <p className="text-xs text-muted mt-0.5">
-                  {salesSummary.ordersCount}{" "}
-                  {salesSummary.ordersCount === 1 ? "pedido vendido" : "pedidos vendidos"} ·{" "}
+                <span className="text-xs text-muted md:hidden">
+                  · {salesSummary.ordersCount}{" "}
+                  {salesSummary.ordersCount === 1 ? "pedido" : "pedidos"} ·{" "}
                   {salesSummary.units}{" "}
-                  {salesSummary.units === 1 ? "pieza" : "piezas"} en {formatMonthLabel(view.month)}
-                </p>
+                  {salesSummary.units === 1 ? "pieza" : "piezas"}
+                </span>
               </div>
               {salesSummary.marginPercent !== null && (
                 <Badge tone={marginTone(salesSummary.marginPercent)}>
-                  {salesSummary.marginPercent}% margen real
+                  {salesSummary.marginPercent}% margen{vatPercent > 0 ? " s/neto" : ""}
                 </Badge>
               )}
             </div>
@@ -453,13 +462,16 @@ export function MoneyControls({
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <div>
-                    <span className="text-xs text-muted block">
-                      Ganancia real estimada{vatPercent > 0 ? " (después de IVA y costos)" : " (después de costos)"}
+                    <span className="text-xs text-muted">
+                      Ganancia estimada{" "}
+                      <span className="hidden sm:inline">
+                        ({vatPercent > 0 ? "después de IVA y costos" : "después de costos"})
+                      </span>
                     </span>
                     <span
-                      className={`mt-0.5 block text-3xl sm:text-4xl font-bold tracking-tight tabular-nums ${
+                      className={`block text-3xl sm:text-[34px] font-bold leading-tight tracking-tight tabular-nums ${
                         salesSummary.netProfit >= 0 ? "text-ok" : "text-danger"
                       }`}
                     >
@@ -471,8 +483,8 @@ export function MoneyControls({
 
                 {/* Barra visual proporcional: Ganancia vs Costos vs IVA */}
                 {salesSummary.grossRevenue > 0 && (
-                  <div className="space-y-2">
-                    <div className="h-3 w-full rounded-full bg-raised overflow-hidden flex">
+                  <div className="space-y-1.5">
+                    <div className="h-2.5 w-full rounded-full bg-raised overflow-hidden flex">
                       {salesProfitShare > 0 && (
                         <div
                           className="h-full bg-ok transition-all duration-300"
@@ -495,14 +507,17 @@ export function MoneyControls({
                         />
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+                    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-muted">
+                      {vatPercent > 0 && (
+                        <span className="text-muted/85">Sobre venta total:</span>
+                      )}
                       <span className="inline-flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-ok" aria-hidden="true" />
                         Ganancia: <strong className="text-ink font-semibold">{salesProfitShare}%</strong>
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-                        Costo fabricación: <strong className="text-ink font-semibold">{salesCostShare}%</strong>
+                        Costos: <strong className="text-ink font-semibold">{salesCostShare}%</strong>
                       </span>
                       {salesVatShare > 0 && (
                         <span className="inline-flex items-center gap-1.5">
@@ -514,45 +529,44 @@ export function MoneyControls({
                   </div>
                 )}
 
-                {/* Cascada numérica paso a paso */}
-                <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 py-1 text-sm">
-                  <div className="flex items-center justify-between gap-2 py-2.5">
+                {/* Desglose compacto sin repetir el total ya destacado arriba */}
+                <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 text-sm">
+                  <div className="flex items-baseline justify-between gap-3 py-2">
                     <dt className="text-muted">
                       Ventas del mes
-                      <span className="block text-[11px]">Neto tras descuentos y cargos de ML</span>
+                      <span className="hidden sm:inline text-[11px] text-muted/80">
+                        {" "}· neto tras descuentos y ML
+                      </span>
                     </dt>
-                    <dd className="font-semibold text-ink tabular-nums">
+                    <dd className="font-semibold text-ink tabular-nums shrink-0">
                       {formatMoney(salesSummary.grossRevenue, currency)}
                     </dd>
                   </div>
 
                   {vatPercent > 0 && (
-                    <div className="flex items-center justify-between gap-2 py-2.5">
+                    <div className="flex items-baseline justify-between gap-3 py-2">
                       <dt className="text-muted">
                         − IVA retenido ({vatPercent}%)
-                        <span className="block text-[11px]">Por pagar a impuestos · Neto taller: {formatMoney(salesSummary.netRevenue, currency)}</span>
+                        <span className="hidden sm:inline text-[11px] text-muted/80">
+                          {" "}· neto taller {formatMoney(salesSummary.netRevenue, currency)}
+                        </span>
                       </dt>
-                      <dd className="font-medium text-muted tabular-nums">
+                      <dd className="font-medium text-muted tabular-nums shrink-0">
                         −{formatMoney(salesSummary.vatAmount, currency)}
                       </dd>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between gap-2 py-2.5">
+                  <div className="flex items-baseline justify-between gap-3 py-2">
                     <dt className="text-muted">
-                      − Costo de fabricar lo vendido
-                      <span className="block text-[11px]">Filamento, luz y embalaje de las {salesSummary.units} piezas</span>
+                      − Costo de fabricar ({salesSummary.units}{" "}
+                      {salesSummary.units === 1 ? "pieza" : "piezas"})
+                      <span className="hidden sm:inline text-[11px] text-muted/80">
+                        {" "}· filamento, luz y embalaje
+                      </span>
                     </dt>
-                    <dd className="font-semibold text-ink tabular-nums">
+                    <dd className="font-semibold text-ink tabular-nums shrink-0">
                       −{formatMoney(salesSummary.productionCost, currency)}
-                    </dd>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 py-2.5 font-bold">
-                    <dt className="text-ink">= Ganancia estimada</dt>
-                    <dd className={`tabular-nums ${salesSummary.netProfit >= 0 ? "text-ok" : "text-danger"}`}>
-                      {salesSummary.netProfit >= 0 ? "+" : ""}
-                      {formatMoney(salesSummary.netProfit, currency)}
                     </dd>
                   </div>
                 </dl>
@@ -578,7 +592,7 @@ export function MoneyControls({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 border-t border-line/60 pt-3 text-xs font-semibold">
+          <div className="flex flex-wrap items-center gap-4 border-t border-line/60 pt-2.5 text-xs font-semibold">
             <Link href="/products" className="text-primary hover:underline">
               Ver rendimiento por producto →
             </Link>
@@ -589,26 +603,21 @@ export function MoneyControls({
         </Card>
 
         {/* 2. Flujo de caja en cuenta bancaria */}
-        <Card className="lg:col-span-5 p-5 sm:p-6 flex flex-col justify-between gap-4">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                  Flujo de caja en cuenta
-                </span>
-                <p className="text-xs text-muted mt-0.5">
-                  Dinero líquido que entró y salió en {formatMonthLabel(view.month)}
-                </p>
-              </div>
+        <Card className="lg:col-span-5 p-4 sm:p-5 flex flex-col justify-between gap-3.5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Flujo de caja en cuenta
+              </span>
               <Badge tone={cashAvailable >= 0 ? "ok" : "danger"}>
                 {cashAvailable >= 0 ? "Saldo a favor" : "Déficit"}
               </Badge>
             </div>
 
             <div>
-              <span className="text-xs text-muted block">Te quedó disponible en caja</span>
+              <span className="text-xs text-muted">Disponible en caja</span>
               <span
-                className={`mt-0.5 block text-3xl font-bold tracking-tight tabular-nums ${
+                className={`block text-3xl sm:text-[34px] font-bold leading-tight tracking-tight tabular-nums ${
                   cashAvailable >= 0 ? "text-ok" : "text-danger"
                 }`}
               >
@@ -616,63 +625,58 @@ export function MoneyControls({
               </span>
             </div>
 
-            <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 py-1 text-sm">
-              <div className="flex items-center justify-between gap-2 py-2.5">
+            <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 text-sm">
+              <div className="flex items-baseline justify-between gap-3 py-2">
                 <dt className="text-muted">
                   + Entró a caja
-                  <span className="block text-[11px]">
-                    {incomeCount} {incomeCount === 1 ? "cobro / ingreso" : "cobros / ingresos"}
+                  <span className="hidden sm:inline text-[11px] text-muted/80">
+                    {" "}· {incomeCount} {incomeCount === 1 ? "cobro" : "cobros"}
                   </span>
                 </dt>
-                <dd className="font-semibold text-ok tabular-nums">
+                <dd className="font-semibold text-ok tabular-nums shrink-0">
                   +{formatMoney(grossIncome, currency)}
                 </dd>
               </div>
 
               {vatPercent > 0 && (
-                <div className="flex items-center justify-between gap-2 py-2.5">
+                <div className="flex items-baseline justify-between gap-3 py-2">
                   <dt className="text-muted">
                     − IVA apartado ({vatPercent}%)
-                    <span className="block text-[11px]">Por pagar a impuestos</span>
+                    <span className="hidden sm:inline text-[11px] text-muted/80">
+                      {" "}· impuestos
+                    </span>
                   </dt>
-                  <dd className="font-medium text-muted tabular-nums">
+                  <dd className="font-medium text-muted tabular-nums shrink-0">
                     −{formatMoney(cashVatAmount, currency)}
                   </dd>
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-2 py-2.5">
+              <div className="flex items-baseline justify-between gap-3 py-2">
                 <dt className="text-muted">
-                  − Salió en compras y gastos
-                  <span className="block text-[11px]">
-                    {expenseCount} {expenseCount === 1 ? "compra / egreso" : "compras / egresos"}
+                  − Compras y gastos
+                  <span className="hidden sm:inline text-[11px] text-muted/80">
+                    {" "}· {expenseCount} {expenseCount === 1 ? "egreso" : "egresos"}
                   </span>
                 </dt>
-                <dd className="font-semibold text-ink tabular-nums">
+                <dd className="font-semibold text-ink tabular-nums shrink-0">
                   −{formatMoney(view.summary.expense, currency)}
-                </dd>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 py-2.5 font-bold">
-                <dt className="text-ink">= Disponible en caja</dt>
-                <dd className={`tabular-nums ${cashAvailable >= 0 ? "text-ok" : "text-danger"}`}>
-                  {formatMoney(cashAvailable, currency)}
                 </dd>
               </div>
             </dl>
           </div>
 
-          <p className="rounded-xl border border-line/60 bg-raised/60 p-3 text-[11px] leading-relaxed text-muted">
-            Las compras de bobinas y gastos se restan de tu <strong className="text-ink">Caja</strong> el día que los pagas; los gramos, luz y embalaje de cada venta se descuentan en <strong className="text-ink">Resultado de tus ventas</strong>.
+          <p className="rounded-xl border border-line/60 bg-raised/50 px-3 py-2 text-[11px] leading-snug text-muted">
+            Compras de bobinas y gastos salen de <strong className="text-ink">Caja</strong> al pagarlos; el uso por pieza se descuenta en <strong className="text-ink">Ventas</strong>.
           </p>
         </Card>
       </div>
 
       {/* Desglose por canal y por categoría con barras proporcionales */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4 sm:p-5 space-y-3.5">
+        <Card className="p-4 flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
               Entradas por canal
             </h2>
             <span className="text-xs font-semibold text-ink tabular-nums">
@@ -680,9 +684,9 @@ export function MoneyControls({
             </span>
           </div>
           {incomeChannels.length === 0 ? (
-            <p className="text-xs text-muted py-2">Sin ingresos cobrados en este mes.</p>
+            <p className="text-xs text-muted py-1">Sin ingresos cobrados en este mes.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {incomeChannels.map(([ch, amt]) => {
                 const pct = grossIncome > 0 ? Math.round((amt / grossIncome) * 100) : 0;
                 return (
@@ -696,7 +700,7 @@ export function MoneyControls({
                         <span className="text-xs font-normal text-muted">({pct}%)</span>
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-raised overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full bg-raised overflow-hidden">
                       <div
                         className="h-full rounded-full bg-ok"
                         style={{ width: `${Math.max(4, pct)}%` }}
@@ -709,9 +713,9 @@ export function MoneyControls({
           )}
         </Card>
 
-        <Card className="p-4 sm:p-5 space-y-3.5">
+        <Card className="p-4 flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
               Compras y gastos por categoría
             </h2>
             <span className="text-xs font-semibold text-ink tabular-nums">
@@ -719,7 +723,7 @@ export function MoneyControls({
             </span>
           </div>
           {expenseCategories.length === 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line/60 bg-raised/40 px-3.5 py-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line/60 bg-raised/40 px-3 py-2">
               <p className="text-xs text-muted">Sin compras o gastos registrados este mes.</p>
               <button
                 type="button"
@@ -730,7 +734,7 @@ export function MoneyControls({
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {expenseCategories.map(([cat, amt]) => {
                 const pct =
                   view.summary.expense > 0 ? Math.round((amt / view.summary.expense) * 100) : 0;
@@ -745,7 +749,7 @@ export function MoneyControls({
                         <span className="text-xs font-normal text-muted">({pct}%)</span>
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-raised overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full bg-raised overflow-hidden">
                       <div
                         className="h-full rounded-full bg-line-strong"
                         style={{ width: `${Math.max(4, pct)}%` }}
@@ -760,7 +764,7 @@ export function MoneyControls({
       </div>
 
       {/* Lista de movimientos del mes con filtro y opción de anular */}
-      <Card className="p-4 sm:p-6 space-y-4">
+      <Card className="p-4 sm:p-5 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="text-base sm:text-lg font-bold text-ink">
             Movimientos de {formatMonthLabel(view.month)} ({visibleTransactions.length})
