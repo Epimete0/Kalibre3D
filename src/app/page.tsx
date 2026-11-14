@@ -61,29 +61,29 @@ export default function HomePage() {
     <PublicShell showHowItWorks>
       <main className="text-ink">
         {/* HERO TÉCNICO */}
-        <section className="kalibre-grid-bg relative overflow-hidden border-b border-line py-14 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
-            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] [&>*]:min-w-0">
+        <section className="kalibre-grid-bg relative overflow-hidden border-b border-line py-10 sm:py-14 lg:py-16">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.06fr_0.94fr] lg:gap-12 [&>*]:min-w-0">
               {/* Columna izquierda: Tesis */}
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 shadow-2xs">
                   <span className="h-2 w-2 rounded-full bg-ink" />
-                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-ink">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-ink">
                     Gestión calibrada para talleres de impresión 3D
                   </span>
                 </div>
 
-                <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-[3.35rem]">
+                <h1 className="font-display text-4xl font-bold leading-[1.04] tracking-tight text-ink sm:text-5xl lg:text-[3.25rem]">
                   Mide cada gramo. Cobra cada peso. Entrega a tiempo.
                 </h1>
 
-                <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+                <p className="max-w-xl text-base leading-relaxed text-muted sm:text-[17px]">
                   El sistema operativo en español para makers que venden por{" "}
                   <strong className="font-semibold text-ink">WhatsApp, Instagram y Mercado Libre</strong>.
-                  Conecta tus pedidos, el cotizador con purga multicolor, tus bobinas de filamento y la ganancia real del mes.
+                  Conecta tus pedidos, el cotizador con purga multicolor, tus bobinas y la ganancia real del mes.
                 </p>
 
-                <div className="flex flex-wrap items-center gap-3.5 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link
                     href="/registro"
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -110,7 +110,7 @@ export default function HomePage() {
                 </p>
 
                 {/* Escala de datos clave */}
-                <div className="grid grid-cols-3 gap-4 border-t border-line pt-6 sm:max-w-lg [&>*]:min-w-0">
+                <div className="grid grid-cols-3 gap-4 border-t border-line pt-5 sm:max-w-lg [&>*]:min-w-0">
                   <div>
                     <p className="font-mono text-xl font-bold text-ink sm:text-2xl">&lt; 30 s</p>
                     <p className="mt-0.5 text-xs text-muted">Para anotar una venta desde el celular</p>
@@ -129,12 +129,12 @@ export default function HomePage() {
               {/* Columna derecha: Instrumento / Ficha de Calibración en vivo */}
               <div className="relative">
                 <div className="kalibre-dark-grid overflow-hidden rounded-2xl border border-[#2a2c33] p-5 text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.28)] sm:p-6">
-                  {/* Barra superior estilo calibre digital */}
-                  <div className="flex items-center justify-between border-b border-[#2a2c33] pb-3.5">
+                  {/* Barra superior estilo ficha de taller */}
+                  <div className="flex items-center justify-between gap-2 border-b border-[#2a2c33] pb-3.5">
                     <div className="flex items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#a8a49b]" />
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#f5f2eb]" />
                       <span className="font-mono text-xs font-semibold tracking-wider text-[#d6d3cb]">
-                        KALIBRE · PEDIDO #42
+                        EJEMPLO REAL · PEDIDO #42
                       </span>
                     </div>
                     <span className="rounded-md border border-[#3a3d47] bg-[#26282e] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#f5f2eb]">
@@ -144,16 +144,16 @@ export default function HomePage() {
 
                   {/* Pieza y parámetros técnicos */}
                   <div className="mt-4 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-mono text-[11px] uppercase tracking-wider text-[#a8a49b]">
                           Canal: Mercado Libre · Entrega hoy
                         </p>
-                        <h2 className="mt-1 font-display text-lg font-bold text-[#f5f2eb]">
-                          Emblema Toyota 13×9 cm (Bicolor)
+                        <h2 className="mt-1 font-display text-lg font-bold leading-snug text-[#f5f2eb]">
+                          Soporte para control gamer (Bicolor)
                         </h2>
                       </div>
-                      <span className="rounded bg-[#26282e] px-2 py-1 font-mono text-xs font-semibold text-[#f5f2eb]">
+                      <span className="shrink-0 rounded bg-[#26282e] px-2.5 py-1 font-mono text-xs font-semibold text-[#f5f2eb]">
                         PETG
                       </span>
                     </div>
@@ -161,15 +161,15 @@ export default function HomePage() {
                     <div className="mt-3.5 grid grid-cols-3 gap-2 border-t border-[#2a2c33] pt-3 font-mono text-xs">
                       <div>
                         <span className="block text-[10px] text-[#a8a49b]">PIEZA + PURGA</span>
-                        <strong className="text-[#f5f2eb]">50 g + 14 g</strong>
+                        <strong className="mt-0.5 block text-sm text-[#f5f2eb]">50 g + 14 g</strong>
                       </div>
                       <div>
                         <span className="block text-[10px] text-[#a8a49b]">TIEMPO MÁQUINA</span>
-                        <strong className="text-[#f5f2eb]">1 h 45 min</strong>
+                        <strong className="mt-0.5 block text-sm text-[#f5f2eb]">1 h 45 min</strong>
                       </div>
                       <div>
-                        <span className="block text-[10px] text-[#a8a49b]">COSTO TOTAL</span>
-                        <strong className="text-[#f5f2eb]">$1.105</strong>
+                        <span className="block text-[10px] text-[#a8a49b]">COSTO REAL</span>
+                        <strong className="mt-0.5 block text-sm text-[#f5f2eb]">$1.105</strong>
                       </div>
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function HomePage() {
                   <div className="mt-3.5 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4 font-mono text-xs">
                     <div className="flex items-center justify-between text-[#d6d3cb]">
                       <span>Precio publicado en Mercado Libre</span>
-                      <span className="font-semibold text-[#f5f2eb]">$8.990</span>
+                      <span className="text-sm font-semibold text-[#f5f2eb]">$8.990</span>
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[#a8a49b]">
                       <span>− Comisión ML (19%)</span>
@@ -192,14 +192,14 @@ export default function HomePage() {
                       <span className="font-sans font-semibold text-[#f5f2eb]">Ingreso neto que recibes</span>
                       <strong className="text-[#f5f2eb]">$6.483</strong>
                     </div>
-                    <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-500/10 px-3 py-2 text-sm">
+                    <div className="mt-2.5 flex items-center justify-between rounded-lg bg-emerald-500/12 px-3 py-2 text-sm">
                       <span className="font-sans font-semibold text-emerald-300">Ganancia real (Neto − Costo)</span>
                       <strong className="text-emerald-400">+$5.378</strong>
                     </div>
                   </div>
 
                   {/* Estado de bobina activa */}
-                  <div className="mt-3.5 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
+                  <div className="mt-3.5 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
                     <div className="min-w-0">
                       <p className="font-mono text-[11px] font-semibold text-amber-300">
                         ALERTA DE BOBINA · PETG NEGRO
@@ -219,8 +219,8 @@ export default function HomePage() {
         </section>
 
         {/* MÓDULOS PRINCIPALES (#pilares) */}
-        <section id="pilares" className="py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+        <section id="pilares" className="scroll-mt-16 py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
                 Diseñado para la realidad del taller 3D
@@ -256,8 +256,8 @@ export default function HomePage() {
         </section>
 
         {/* COMPARATIVA MERCADO LIBRE Y COSTEO (#cotizador-real) */}
-        <section id="cotizador-real" className="border-y border-line bg-surface py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+        <section id="cotizador-real" className="scroll-mt-16 border-y border-line bg-surface py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="grid items-center gap-10 lg:grid-cols-12">
               <div className="lg:col-span-5">
                 <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
@@ -335,8 +335,8 @@ export default function HomePage() {
         </section>
 
         {/* FLUJO DE TRABAJO (#flujo) */}
-        <section id="flujo" className="py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+        <section id="flujo" className="scroll-mt-16 py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
                 Flujo operativo
@@ -364,8 +364,8 @@ export default function HomePage() {
         </section>
 
         {/* HERRAMIENTAS GRATIS (#herramientas) */}
-        <section id="herramientas" className="scroll-mt-20 border-t border-line bg-surface py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+        <section id="herramientas" className="scroll-mt-16 border-t border-line bg-surface py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Herramientas gratis</p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -440,8 +440,8 @@ export default function HomePage() {
         </section>
 
         {/* CTA FINAL */}
-        <section className="py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
+        <section className="py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="kalibre-dark-grid rounded-3xl border border-[#2a2c33] px-6 py-12 text-center text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.25)] sm:px-12 sm:py-16">
               <span className="inline-block rounded-md border border-[#3a3d47] bg-[#26282e] px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-[#f5f2eb]">
                 Listo para usar en celular y computador

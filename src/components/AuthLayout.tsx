@@ -82,7 +82,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           {/* Tarjeta de telemetría real */}
           <div className="mt-7 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4 shadow-xl backdrop-blur">
             <div className="flex items-center justify-between border-b border-[#2a2c33] pb-2.5 font-mono text-xs">
-              <span className="text-[#a8a49b]">PIEZA: EMBLEMA 13×9 (PETG · 2 COLORES)</span>
+              <span className="text-[#a8a49b]">PIEZA: SOPORTE CONTROL GAMER (PETG · 2 COLORES)</span>
               <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
                 MARGEN 86%
               </span>

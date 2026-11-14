@@ -133,7 +133,7 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/orders/new"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-primary-hover transition-colors touch-manipulation"
+              className="inline-flex lg:hidden min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-primary-hover transition-colors touch-manipulation"
             >
               + Nueva venta
             </Link>
@@ -210,7 +210,7 @@ export default async function DashboardPage({
               </div>
               <Link
                 href="/spools?onlyLow=1"
-                className="text-xs font-semibold text-primary hover:underline"
+                className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
               >
                 Ver bobinas bajas →
               </Link>
@@ -241,7 +241,7 @@ export default async function DashboardPage({
               </div>
               <Link
                 href="/products"
-                className="text-xs font-semibold text-primary hover:underline"
+                className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
               >
                 Reponer en catálogo →
               </Link>
@@ -293,7 +293,7 @@ export default async function DashboardPage({
               </h2>
               <Link
                 href={`/money?month=${moneyView.month}`}
-                className="text-xs font-semibold text-primary hover:underline"
+                className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
               >
                 Ver caja del mes →
               </Link>
@@ -318,7 +318,7 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-raised/40 px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-2.5 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
             {salesEconomics && salesEconomics.summary.ordersCount > 0 ? (
               <span>
                 <strong className="text-ink font-semibold">Ventas del mes:</strong>{" "}
@@ -339,7 +339,7 @@ export default async function DashboardPage({
             )}
             <Link
               href={`/money?month=${moneyView.month}`}
-              className="text-primary font-semibold hover:underline shrink-0"
+              className="text-ink font-semibold underline decoration-line-strong underline-offset-4 hover:decoration-ink shrink-0"
             >
               Ver ventas, costos y caja →
             </Link>
@@ -408,7 +408,11 @@ export default async function DashboardPage({
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                     Por cobrar
                   </span>
-                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-warn truncate">
+                  <span
+                    className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
+                      (pendingReceivableTotal ?? 0) > 0 ? "text-warn" : "text-ink"
+                    }`}
+                  >
                     {formatMoney(pendingReceivableTotal ?? 0, currency)}
                   </span>
                   <span className="mt-0.5 block text-[11px] text-muted truncate">
@@ -532,7 +536,7 @@ export default async function DashboardPage({
             </div>
             <Link
               href="/orders"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
             >
               Ver todos →
             </Link>
@@ -590,7 +594,7 @@ export default async function DashboardPage({
             </div>
             <Link
               href="/orders"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
             >
               Ir a pedidos →
             </Link>

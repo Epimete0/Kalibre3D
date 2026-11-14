@@ -139,12 +139,12 @@
   animation: kalibre-float 6s ease-in-out infinite;
 }
 
-/* Cuadrícula técnica estilo cama PEI para secciones públicas y panel de acceso */
+/* Cuadrícula técnica sutil para secciones públicas y panel de acceso */
 .kalibre-grid-bg {
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-line-strong) 45%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-line-strong) 45%, transparent) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(to right, color-mix(in srgb, var(--color-line-strong) 22%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-line-strong) 22%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 .kalibre-dark-grid {

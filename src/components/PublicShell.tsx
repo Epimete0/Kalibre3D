@@ -29,43 +29,40 @@ function KalibreMark({ small = false }: { small?: boolean }) {
 
 export function PublicHeader({ showHowItWorks = false }: { showHowItWorks?: boolean }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-10 lg:px-16">
-        <Link href="/" className="inline-flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink">
+    <header className="sticky top-0 z-20 border-b border-line/80 bg-canvas/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-10 lg:px-12">
+        <Link href="/" className="inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap font-display text-xl font-bold tracking-tight text-ink">
           <KalibreMark />
           <span>
             Kalibre<span className="ml-1 rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-ink">3D</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1.5 sm:gap-3" aria-label="Navegación pública">
+        <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="Navegación pública">
           {showHowItWorks ? (
             <>
-              <Link href="/#pilares" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
+              <Link href="/#pilares" className="hidden whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink lg:inline-block">
                 Módulos
               </Link>
-              <Link href="/#cotizador-real" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
-                Mercado Libre y Costos
+              <Link href="/#cotizador-real" className="hidden whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink lg:inline-block">
+                Canales y ML
               </Link>
-              <Link href="/#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
-                Flujo de taller
-              </Link>
-              <Link href="/#herramientas" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink lg:inline-block">
-                Herramientas
+              <Link href="/#flujo" className="hidden whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink xl:inline-block">
+                Cómo funciona
               </Link>
             </>
           ) : null}
           <Link
             href="/herramientas/cotizador"
-            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm sm:font-medium"
+            className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm sm:font-medium"
           >
             Cotizador gratis
           </Link>
-          <Link href="/login" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm">
+          <Link href="/login" className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm">
             Iniciar sesión
           </Link>
           <Link
             href="/registro"
-            className="inline-flex min-h-9 items-center justify-center rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover sm:min-h-10 sm:px-4 sm:py-2 sm:text-sm"
+            className="inline-flex min-h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover sm:min-h-10 sm:px-4 sm:py-2 sm:text-sm"
           >
             <span className="sm:hidden">Crear</span>
             <span className="hidden sm:inline">Abrir mi taller</span>
@@ -79,7 +76,7 @@ export function PublicHeader({ showHowItWorks = false }: { showHowItWorks?: bool
 export function PublicFooter() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-10 lg:px-16">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-10 lg:px-12">
         <div className="flex items-center gap-2.5 font-display text-base font-bold text-ink">
           <KalibreMark small />
           <span>Kalibre</span>
