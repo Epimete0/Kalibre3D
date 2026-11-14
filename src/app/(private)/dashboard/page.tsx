@@ -120,48 +120,51 @@ export default async function DashboardPage({
     : [];
 
   return (
-    <div className="space-y-6 pb-20">
-      <PageHeader
-        title={name ? `Hola, ${name}` : "Hola"}
-        description={
-          centerName
-            ? `Lo que tienes pendiente hoy y cómo va el mes en ${centerName}.`
-            : "Lo que tienes pendiente hoy y cómo va el mes en tu taller."
-        }
-      >
+    <div className="space-y-3 pb-4 lg:space-y-3 lg:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl tracking-[-0.03em] text-ink font-bold leading-tight">
+            {name ? `Hola, ${name}` : "Hola"}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted leading-snug">
+            {centerName
+              ? `Lo que tienes pendiente hoy y cómo va el mes en ${centerName}.`
+              : "Lo que tienes pendiente hoy y cómo va el mes en tu taller."}
+          </p>
+        </div>
         {canOperate && (
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/orders/new"
-              className="inline-flex lg:hidden min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-primary-hover transition-colors touch-manipulation"
+              className="inline-flex lg:hidden min-h-10 items-center justify-center rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] hover:bg-primary-hover transition-colors touch-manipulation"
             >
               + Nueva venta
             </Link>
             <Link
               href="/quote"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-colors touch-manipulation"
+              className="inline-flex min-h-10 lg:min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-ink hover:bg-raised/60 transition-colors touch-manipulation"
             >
               Cotizar pieza
             </Link>
             {isManager && (
               <Link
                 href="/money?new=expense"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-colors touch-manipulation"
+                className="inline-flex min-h-10 lg:min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-ink hover:bg-raised/60 transition-colors touch-manipulation"
               >
                 + Registrar gasto
               </Link>
             )}
           </div>
         )}
-      </PageHeader>
+      </div>
 
       {gettingStarted && <GettingStartedCard gettingStarted={gettingStarted} />}
 
       {/* Banda de alertas operativas: atrasados, poca bobina y stock bajo */}
       {hasAlerts && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 lg:gap-3">
           {overdueOrders.length > 0 && (
-            <Card className="p-4 border-danger/45 bg-danger-soft/10 flex flex-col justify-between gap-2">
+            <Card className="p-3 border-danger/45 bg-danger-soft/10 flex flex-col justify-between gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-danger">
                   Pedidos atrasados
@@ -184,7 +187,7 @@ export default async function DashboardPage({
           )}
 
           {lowSpools.length > 0 && (
-            <Card className="p-4 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-2">
+            <Card className="p-3 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-warn">
                   Bobinas por acabarse
@@ -192,7 +195,7 @@ export default async function DashboardPage({
                 <Badge tone="warn">{lowSpools.length}</Badge>
               </div>
               <div className="space-y-1">
-                {lowSpools.slice(0, 3).map((spool) => (
+                {lowSpools.slice(0, 2).map((spool) => (
                   <Link
                     key={spool.id}
                     href={`/spools/${spool.id}`}
@@ -218,7 +221,7 @@ export default async function DashboardPage({
           )}
 
           {lowStockProducts.length > 0 && (
-            <Card className="p-4 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-2">
+            <Card className="p-3 border-warn/45 bg-warn-soft/10 flex flex-col justify-between gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-warn">
                   Piezas con stock bajo
@@ -226,7 +229,7 @@ export default async function DashboardPage({
                 <Badge tone="warn">{lowStockProducts.length}</Badge>
               </div>
               <div className="space-y-1">
-                {lowStockProducts.slice(0, 3).map((prod) => (
+                {lowStockProducts.slice(0, 2).map((prod) => (
                   <Link
                     key={prod.id}
                     href={`/products/${prod.id}`}
@@ -251,7 +254,7 @@ export default async function DashboardPage({
       )}
 
       {/* Carga operativa por etapa del taller */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-3">
         {(
           [
             { status: "QUOTED" as const, count: statusCounts.QUOTED, hint: "Por confirmar" },
@@ -263,7 +266,7 @@ export default async function DashboardPage({
           <Link
             key={item.status}
             href={`/orders?status=${item.status}`}
-            className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 sm:p-4 hover:border-line-strong transition-colors flex flex-col justify-between gap-2.5"
+            className="min-w-0 overflow-hidden rounded-xl lg:rounded-2xl border border-line bg-surface px-3 py-2.5 sm:px-3.5 sm:py-3 shadow-[0_1px_2px_rgba(28,29,33,0.04)] hover:border-line-strong transition-colors flex flex-col justify-between gap-1.5"
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
               <Badge tone={statusTone(item.status)}>{STATUS_LABEL[item.status]}</Badge>
@@ -272,7 +275,7 @@ export default async function DashboardPage({
               </span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-2xl sm:text-3xl font-bold tabular-nums text-ink">
+              <span className="text-xl sm:text-2xl font-bold tabular-nums leading-none text-ink">
                 {item.count}
               </span>
               <span className="text-xs font-semibold text-muted">
@@ -285,8 +288,8 @@ export default async function DashboardPage({
 
       {/* Panel financiero del mes para OWNER / ADMIN */}
       {isManager && moneyView && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2.5 lg:space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-ink">
                 Caja de {formatMonth(moneyView.month)}
@@ -302,23 +305,23 @@ export default async function DashboardPage({
             <div className={segmentedTrackClass}>
               <Link
                 href={`/dashboard?month=${moneyView.previousMonth}`}
-                className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+                className="min-h-8 lg:min-h-7 px-2.5 inline-flex shrink-0 items-center rounded-xl text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
                 ← {formatMonthName(moneyView.previousMonth)}
               </Link>
-              <span className="px-2.5 shrink-0 text-xs font-bold text-ink">
+              <span className="px-2 shrink-0 text-xs font-bold text-ink">
                 {formatMonthName(moneyView.month)}
               </span>
               <Link
                 href={`/dashboard?month=${moneyView.nextMonth}`}
-                className="min-h-9 px-2.5 inline-flex shrink-0 items-center rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
+                className="min-h-8 lg:min-h-7 px-2.5 inline-flex shrink-0 items-center rounded-xl text-xs font-semibold text-muted hover:text-ink hover:bg-canvas"
               >
                 {formatMonthName(moneyView.nextMonth)} →
               </Link>
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-surface px-3.5 py-2.5 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-2 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
             {salesEconomics && salesEconomics.summary.ordersCount > 0 ? (
               <span>
                 <strong className="text-ink font-semibold">Ventas del mes:</strong>{" "}
@@ -352,12 +355,12 @@ export default async function DashboardPage({
             const netProfit = vatPercent > 0 ? netIncome - moneyView.summary.expense : moneyView.summary.profit;
 
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-                <Card className="p-4 min-w-0">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 lg:gap-3">
+                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
                     Entró a caja
                   </span>
-                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ok truncate">
+                  <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ok truncate">
                     {formatMoney(grossIncome, currency)}
                   </span>
                   {vatPercent > 0 && (
@@ -367,11 +370,11 @@ export default async function DashboardPage({
                   )}
                 </Card>
 
-                <Card className="p-4 min-w-0">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
                     Compras y gastos
                   </span>
-                  <span className="mt-1 block text-xl sm:text-2xl font-bold tabular-nums text-ink truncate">
+                  <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ink truncate">
                     {formatMoney(moneyView.summary.expense, currency)}
                   </span>
                   {vatPercent > 0 && (
@@ -381,9 +384,9 @@ export default async function DashboardPage({
                   )}
                 </Card>
 
-                <Card className="p-4 min-w-0 border-line-strong">
+                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0 border-line-strong">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
                       Quedó en caja
                     </span>
                     <Badge tone={netProfit >= 0 ? "ok" : "danger"}>
@@ -391,7 +394,7 @@ export default async function DashboardPage({
                     </Badge>
                   </div>
                   <span
-                    className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
+                    className={`mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight truncate ${
                       netProfit >= 0 ? "text-ok" : "text-danger"
                     }`}
                   >
@@ -404,12 +407,12 @@ export default async function DashboardPage({
                   </span>
                 </Card>
 
-                <Card className="p-4 min-w-0">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
+                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
                     Por cobrar
                   </span>
                   <span
-                    className={`mt-1 block text-xl sm:text-2xl font-bold tabular-nums truncate ${
+                    className={`mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight truncate ${
                       (pendingReceivableTotal ?? 0) > 0 ? "text-warn" : "text-ink"
                     }`}
                   >
@@ -424,8 +427,8 @@ export default async function DashboardPage({
           })()}
 
           {/* Desglose por canal y por categoría */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="p-4 sm:p-5 space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 lg:gap-3">
+            <Card className="px-3.5 py-3 sm:px-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-ink">
                   Ingresos por canal
@@ -440,7 +443,7 @@ export default async function DashboardPage({
                   Sin ingresos registrados en este mes.
                 </p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {incomeChannelEntries.map(([ch, amount]) => {
                     const pct =
                       moneyView.summary.income > 0
@@ -457,7 +460,7 @@ export default async function DashboardPage({
                             <span className="text-muted font-normal">({pct}%)</span>
                           </span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-canvas overflow-hidden">
+                        <div className="h-1.5 w-full rounded-full bg-canvas overflow-hidden">
                           <div
                             className="h-full rounded-full bg-ok"
                             style={{ width: `${Math.max(4, pct)}%` }}
@@ -470,7 +473,7 @@ export default async function DashboardPage({
               )}
             </Card>
 
-            <Card className="p-4 sm:p-5 space-y-3">
+            <Card className="px-3.5 py-3 sm:px-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-ink">
                   Gastos por categoría
@@ -485,7 +488,7 @@ export default async function DashboardPage({
                   Sin gastos registrados en este mes.
                 </p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {expenseCategoryEntries.map(([cat, amount]) => {
                     const pct =
                       moneyView.summary.expense > 0
@@ -502,7 +505,7 @@ export default async function DashboardPage({
                             <span className="text-muted font-normal">({pct}%)</span>
                           </span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-canvas overflow-hidden">
+                        <div className="h-1.5 w-full rounded-full bg-canvas overflow-hidden">
                           <div
                             className="h-full rounded-full bg-line-strong"
                             style={{ width: `${Math.max(4, pct)}%` }}
@@ -518,16 +521,16 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 lg:gap-3">
         {/* Pedidos atrasados */}
         <Card
-          className={`p-4 sm:p-6 space-y-4 ${
+          className={`px-3.5 py-3 sm:px-4 space-y-2 ${
             overdueOrders.length > 0 ? "border-danger/45 bg-danger-soft/10" : ""
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-ink">
+              <h2 className="text-sm sm:text-base font-bold text-ink">
                 Pedidos atrasados
               </h2>
               <Badge tone={overdueOrders.length > 0 ? "danger" : "ok"}>
@@ -548,11 +551,11 @@ export default async function DashboardPage({
             </p>
           ) : (
             <div className="divide-y divide-line/70">
-              {overdueOrders.slice(0, 6).map((order) => (
+              {overdueOrders.slice(0, 3).map((order) => (
                 <Link
                   key={order.id}
                   href={`/orders/${order.id}`}
-                  className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+                  className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -584,10 +587,10 @@ export default async function DashboardPage({
         </Card>
 
         {/* Próximos por entregar */}
-        <Card className="p-4 sm:p-6 space-y-4">
+        <Card className="px-3.5 py-3 sm:px-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-ink">
+              <h2 className="text-sm sm:text-base font-bold text-ink">
                 Por fabricar / entregar
               </h2>
               <Badge tone="neutral">{upcomingOrders.length}</Badge>
@@ -606,11 +609,11 @@ export default async function DashboardPage({
             </p>
           ) : (
             <div className="divide-y divide-line/70">
-              {upcomingOrders.slice(0, 6).map((order) => (
+              {upcomingOrders.slice(0, 3).map((order) => (
                 <Link
                   key={order.id}
                   href={`/orders/${order.id}`}
-                  className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+                  className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">

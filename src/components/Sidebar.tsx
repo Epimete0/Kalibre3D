@@ -62,7 +62,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
         {canOperate ? (
           <Link
             href="/orders/new"
-            className="mb-2 flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-primary px-3 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="mb-2 flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-primary px-3 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             <span aria-hidden="true" className="text-base leading-none">+</span> Registrar venta
           </Link>

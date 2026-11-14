@@ -8,7 +8,7 @@ export const inputClass =
 
 // Segmented track & item classes for cohesive controls (replacing loose piles of buttons)
 export const segmentedTrackClass =
-  "inline-flex max-w-full items-center gap-1 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner";
+  "inline-flex max-w-full items-center gap-1 rounded-2xl border border-line bg-raised/70 p-1";
 
 export const segmentedItemClass = (active: boolean) =>
   `flex items-center justify-center rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-150 touch-manipulation ${
@@ -57,7 +57,7 @@ export function Card({
   return (
     <div
       {...rest}
-      className={`rounded-[var(--radius-lg)] border border-line/90 bg-surface shadow-[0_1px_3px_rgba(28,29,33,0.05),0_8px_24px_-6px_rgba(28,29,33,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45)] ${className}`}
+      className={`rounded-[var(--radius-lg)] border border-line bg-surface shadow-[0_1px_2px_rgba(28,29,33,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.28)] ${className}`}
     >
       {children}
     </div>
@@ -100,7 +100,7 @@ type LinkButtonProps = {
 export function LinkButton({ href, variant = "primary", children }: LinkButtonProps) {
   const styles =
     variant === "primary"
-      ? "bg-primary text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_16px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] hover:bg-primary-hover"
+      ? "bg-primary text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] hover:bg-primary-hover"
       : "border border-line-strong bg-surface text-ink hover:bg-raised shadow-xs";
   return (
     <Link

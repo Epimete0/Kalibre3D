@@ -38,14 +38,14 @@ export function AccountMenu({ account }: { account: AccountSummary }) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Abrir menú de cuenta"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-canvas text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary-soft"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-sm font-semibold text-ink shadow-[0_1px_2px_rgba(28,29,33,0.04)] transition-colors hover:border-line-strong hover:bg-raised"
       >
         {initial}
       </button>
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-12 z-30 w-56 rounded-xl border border-line bg-surface p-2 shadow-[0_14px_32px_rgba(35,31,26,0.14)]"
+          className="absolute right-0 top-12 z-30 w-56 rounded-xl border border-line bg-surface p-2 shadow-[0_8px_20px_-4px_rgba(28,29,33,0.12)]"
         >
           <div className="border-b border-line px-3 pb-2 pt-1">
             <p className="truncate text-sm font-medium text-ink">{account.displayName || "Mi cuenta"}</p>
