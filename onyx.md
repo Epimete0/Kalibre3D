@@ -6,6 +6,24 @@
 
 ---
 
+## Rediseño de paleta Carbón & Arena + Azul Eléctrico (regla 60-30-10) — 2026-11-14
+
+- **Pedido del usuario:** revisar la paleta de colores y la visualización del sitio aplicando la regla **60-30-10** (dos colores base armónicos y un único color de acento reservado para los botones de acción principal) y el ***Squint Test***, eligiendo finalmente la propuesta **Carbón & Arena + Azul Eléctrico** para todo el sistema.
+- **Hallazgos auditados:**
+  - El naranja térmico (`--color-primary: #d9531e`) competía consigo mismo al aparecer en títulos (`"Cobra cada peso."`), cifras (`100%`, `01`–`03`), badges (`MOD-01`, `3D`, `TOOL-01`), viñetas, enlaces secundarios e íconos activos de navegación (`Sidebar`, `MobileNav`).
+  - Convivían dos colores de acento (`#d9531e` y `#0284c7` en `--color-accent`, más los dos halos radiales de `body::before` y `.stock-progress`).
+  - Varios botones primarios (`ui.tsx`, `MoneyControls.tsx`, `NewOrderForm.tsx`, `ProductControls.tsx`, `SpoolControls.tsx`) mantenían sombras fijas en RGBA naranja (`rgba(217,83,30,0.25)`), y `page.tsx` / `AuthLayout.tsx` tenían tonos `slate-*`, `orange-*` y `sky-*` escritos a mano.
+- **Cambios en sistema de diseño (`globals.css`, `layout.tsx`, `ui.tsx`, `FormButtons.tsx`, `ThemeToggle.tsx`):**
+  - **Modo claro (60-30-10):** 60 % arena cálido (`--color-canvas: #f5f2eb`), 30 % crema/carbón (`--color-surface: #fdfcf9`, `--color-raised: #eae5da`, `--color-ink: #1c1d21`, `--color-muted: #57554f`, `--color-line: #e2ddd2`) y 10 % azul eléctrico (`--color-primary: #2563eb`, hover `#1d4ed8`) reservado para acciones principales.
+  - **Modo oscuro (`html[data-theme="dark"]` y `.kalibre-dark-grid`):** carbón mate (`#121316` / `#1c1d21` / `#26282e`), texto arena (`#f5f2eb`) y azul eléctrico (`#3b82f6`).
+  - **Limpieza visual:** eliminados los halos radiales de `body::before` y el azul cian decorativo (`--color-accent` pasa a neutro estructural `#3f424a` / `#eae5da`). Sombras de botones primarios unificadas con `color-mix(in srgb, var(--color-primary) 26%, transparent)`. Chips de filtro (`filterChipClass`) y enlaces de edición (`EditLink`, `a[href$="/edit"]`) pasados a contraste carbón/arena.
+- **Cambios en páginas públicas y navegación (`page.tsx`, `PublicShell.tsx`, `AuthLayout.tsx`, `AuthForm.tsx`, `LegalPage.tsx`, `PublicQuoteCalculator.tsx`, `Sidebar.tsx`, `MobileNav.tsx`, `dashboard/page.tsx`, `NewOrderForm.tsx`):**
+  - En la landing, cotizador público y accesos se retiró el color de acento de títulos, números de paso, badges y enlaces secundarios; el bloque destacado de Mercado Libre en `#cotizador-real`, la ficha del Hero y el panel de `AuthLayout` adoptan carbón `#1c1d21` con texto arena `#f5f2eb`.
+  - En `Sidebar` y `MobileNav`, los ítems activos usan relieve neutro carbón/arena para que `+ Registrar venta` y el botón central `Vender` sigan siendo el foco principal azul.
+  - Sin cambios en lógica de negocio, esquema Prisma, migraciones ni RLS.
+
+---
+
 ## Rediseño de Nueva venta (`/orders/new`) para múltiples piezas y escritorio — 2026-11-14
 
 - **Pedido del usuario:** mejorar la experiencia de usuario de `/orders/new` (*Nueva venta*), facilitando especialmente visualizar y agregar varias piezas y aprovechando mejor las pantallas de escritorio.

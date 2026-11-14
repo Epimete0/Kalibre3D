@@ -24,11 +24,11 @@ function NavigationIcon({ children }: { children: React.ReactNode }) {
 }
 
 function FeatureLink({ item, helper, active }: { item: NavItem; helper?: string; active: boolean }) {
-  return <Link href={item.href} className={`flex items-center gap-3 rounded-[13px] px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "bg-primary-soft text-primary" : "text-ink hover:bg-accent-soft"}`}><span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] ${active ? "bg-surface shadow-[0_1px_2px_rgba(15,23,42,.06),0_8px_24px_-12px_rgba(15,23,42,.12)]" : "bg-primary-soft text-primary"}`}><NavigationIcon>{item.icon}</NavigationIcon></span><span className="min-w-0"><span className="block text-[13.5px] font-semibold leading-[1.25]">{item.label}</span>{helper ? <span className="mt-0.5 block truncate text-[11px] font-normal text-muted">{helper}</span> : null}</span></Link>;
+  return <Link href={item.href} className={`flex items-center gap-3 rounded-[13px] border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "border-line bg-surface text-ink shadow-xs" : "border-transparent text-ink hover:bg-raised/70"}`}><span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] ${active ? "bg-ink text-surface shadow-xs" : "bg-raised text-ink"}`}><NavigationIcon>{item.icon}</NavigationIcon></span><span className="min-w-0"><span className="block text-[13.5px] font-semibold leading-[1.25]">{item.label}</span>{helper ? <span className="mt-0.5 block truncate text-[11px] font-normal text-muted">{helper}</span> : null}</span></Link>;
 }
 
 function PlainLink({ item, active, compact = false }: { item: NavItem; active: boolean; compact?: boolean }) {
-  return <Link href={item.href} className={`flex ${compact ? "min-h-9" : "min-h-10"} items-center gap-3 rounded-[13px] px-3 text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "bg-primary-soft text-primary" : "text-faint hover:bg-accent-soft hover:text-ink"}`}><NavigationIcon>{item.icon}</NavigationIcon>{item.label}</Link>;
+  return <Link href={item.href} className={`flex ${compact ? "min-h-9" : "min-h-10"} items-center gap-3 rounded-[13px] border px-3 text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? "border-line bg-surface text-ink shadow-xs" : "border-transparent text-muted hover:bg-raised/70 hover:text-ink"}`}><NavigationIcon>{item.icon}</NavigationIcon>{item.label}</Link>;
 }
 
 export function Sidebar({ account }: { account: AccountSummary | null }) {
@@ -45,7 +45,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
       <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
         <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
           <span className="inline-flex items-center gap-2 font-display text-[24px] font-bold leading-none tracking-[-0.03em] text-ink">
-            <span className="inline-grid h-7 w-7 place-items-center rounded-lg bg-slate-900 text-primary">
+            <span className="inline-grid h-7 w-7 place-items-center rounded-lg border border-[#2a2c33] bg-[#1c1d21] text-[#f5f2eb]">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                 <path d="M5 4v16" />
                 <path d="M5 6h10l3 3h-6" />
@@ -53,7 +53,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
               </svg>
             </span>
             <span>Kalibre</span>
-            <span className="rounded bg-primary-soft px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">3D</span>
+            <span className="rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[10px] font-semibold text-ink">3D</span>
           </span>
           <span className="mt-1.5 block truncate text-xs text-muted">{account?.centerName || "Tu taller"}</span>
         </Link>
@@ -62,7 +62,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
         {canOperate ? (
           <Link
             href="/orders/new"
-            className="mb-2 flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-primary px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="mb-2 flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-primary px-3 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             <span aria-hidden="true" className="text-base leading-none">+</span> Registrar venta
           </Link>

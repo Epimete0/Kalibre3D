@@ -20,8 +20,8 @@ export const segmentedItemClass = (active: boolean) =>
 export const filterChipClass = (active: boolean) =>
   `inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-150 touch-manipulation ${
     active
-      ? "border-primary/35 bg-primary-soft text-primary-ink font-bold shadow-xs ring-1 ring-primary/20"
-      : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink hover:bg-raised/50"
+      ? "border-ink bg-ink text-surface font-bold shadow-xs"
+      : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink hover:bg-raised/60"
   }`;
 
 export function PageHeader({
@@ -57,7 +57,7 @@ export function Card({
   return (
     <div
       {...rest}
-      className={`rounded-[var(--radius-lg)] border border-line/80 bg-surface shadow-[0_1px_3px_rgba(15,23,42,0.04),0_6px_20px_-4px_rgba(15,23,42,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] ${className}`}
+      className={`rounded-[var(--radius-lg)] border border-line/90 bg-surface shadow-[0_1px_3px_rgba(28,29,33,0.05),0_8px_24px_-6px_rgba(28,29,33,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45)] ${className}`}
     >
       {children}
     </div>
@@ -100,8 +100,8 @@ type LinkButtonProps = {
 export function LinkButton({ href, variant = "primary", children }: LinkButtonProps) {
   const styles =
     variant === "primary"
-      ? "bg-gradient-to-b from-primary to-primary-hover text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_6px_16px_rgba(217,83,30,0.28)] ring-1 ring-inset ring-white/20 hover:brightness-105"
-      : "border border-line bg-surface text-ink hover:bg-raised shadow-xs";
+      ? "bg-primary text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_16px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] hover:bg-primary-hover"
+      : "border border-line-strong bg-surface text-ink hover:bg-raised shadow-xs";
   return (
     <Link
       href={href}
@@ -117,7 +117,7 @@ export function EditIcon() {
 }
 
 export function EditLink({ href, label }: { href: string; label: string }) {
-  return <Link href={href} aria-label={`Editar ${label}`} title={`Editar ${label}`} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-line bg-raised text-primary transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 touch-manipulation"><EditIcon /></Link>;
+  return <Link href={href} aria-label={`Editar ${label}`} title={`Editar ${label}`} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-line bg-raised text-ink transition-colors hover:bg-ink hover:text-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 touch-manipulation"><EditIcon /></Link>;
 }
 
 export function Badge({
@@ -132,7 +132,7 @@ export function Badge({
     ok: "bg-ok-soft text-ok border-ok/25 font-semibold",
     warn: "bg-warn-soft text-warn border-warn/25 font-semibold",
     danger: "bg-danger-soft text-danger border-danger/25 font-semibold",
-    accent: "bg-accent-soft text-accent border-accent/35 font-semibold",
+    accent: "bg-raised text-ink border-line-strong font-semibold",
   };
   return (
     <span

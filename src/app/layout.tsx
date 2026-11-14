@@ -21,13 +21,13 @@ export function generateMetadata(): Metadata {
   };
 }
 
-// themeColor coincide con --color-surface (claro/oscuro) para teñir la barra del navegador en móviles.
+// themeColor coincide con --color-canvas (claro/oscuro) para teñir la barra del navegador en móviles.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f5f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f17" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f2eb" },
+    { media: "(prefers-color-scheme: dark)", color: "#121316" },
   ],
 };
 

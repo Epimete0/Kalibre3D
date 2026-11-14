@@ -23,7 +23,7 @@ export function AuthForm({
   return (
     <div className="min-w-0 max-w-full rounded-[var(--radius-lg)] border border-line bg-surface p-6 shadow-[0_18px_45px_rgba(35,31,26,0.1)] sm:p-8">
       <div className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">Kalibre</p>
+        <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted">Kalibre</p>
         <h1 className="mt-2 text-3xl text-ink">
           {signup ? "Crea tu acceso" : "Vuelve a tu operación"}
         </h1>
@@ -187,7 +187,7 @@ export function AuthForm({
         {!signup ? (
           <Link
             href="/forgot-password"
-            className="inline-flex items-center text-xs text-primary hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+            className="inline-flex items-center text-xs font-medium text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
           >
             ¿Olvidaste tu contraseña?
           </Link>

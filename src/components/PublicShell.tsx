@@ -4,7 +4,7 @@ function KalibreMark({ small = false }: { small?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-grid shrink-0 place-items-center rounded-lg border border-slate-700/80 bg-slate-900 text-primary shadow-sm ${
+      className={`inline-grid shrink-0 place-items-center rounded-lg border border-[#2a2c33] bg-[#1c1d21] text-[#f5f2eb] shadow-sm ${
         small ? "h-6 w-6" : "h-8 w-8"
       }`}
     >
@@ -21,7 +21,7 @@ function KalibreMark({ small = false }: { small?: boolean }) {
         <path d="M5 4v16" />
         <path d="M5 6h10l3 3h-6" />
         <path d="M5 14h8l2 2H5" />
-        <circle cx="17" cy="17" r="2" className="text-sky-400" stroke="currentColor" />
+        <circle cx="17" cy="17" r="2" className="text-[#60a5fa]" stroke="currentColor" />
       </svg>
     </span>
   );
@@ -34,38 +34,38 @@ export function PublicHeader({ showHowItWorks = false }: { showHowItWorks?: bool
         <Link href="/" className="inline-flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink">
           <KalibreMark />
           <span>
-            Kalibre<span className="ml-1 rounded bg-primary-soft px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-primary">3D</span>
+            Kalibre<span className="ml-1 rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-ink">3D</span>
           </span>
         </Link>
         <nav className="flex items-center gap-1.5 sm:gap-3" aria-label="Navegación pública">
           {showHowItWorks ? (
             <>
-              <Link href="/#pilares" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              <Link href="/#pilares" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
                 Módulos
               </Link>
-              <Link href="/#cotizador-real" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              <Link href="/#cotizador-real" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
                 Mercado Libre y Costos
               </Link>
-              <Link href="/#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
+              <Link href="/#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink md:inline-block">
                 Flujo de taller
               </Link>
-              <Link href="/#herramientas" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink lg:inline-block">
+              <Link href="/#herramientas" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-raised/70 hover:text-ink lg:inline-block">
                 Herramientas
               </Link>
             </>
           ) : null}
           <Link
             href="/herramientas/cotizador"
-            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-soft sm:px-3 sm:py-2 sm:text-sm sm:font-medium sm:text-muted sm:hover:bg-surface sm:hover:text-ink"
+            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm sm:font-medium"
           >
             Cotizador gratis
           </Link>
-          <Link href="/login" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-ink sm:px-3 sm:py-2 sm:text-sm">
+          <Link href="/login" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-raised/70 hover:text-ink sm:px-3 sm:py-2 sm:text-sm">
             Iniciar sesión
           </Link>
           <Link
             href="/registro"
-            className="inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover sm:min-h-10 sm:px-4 sm:py-2 sm:text-sm"
+            className="inline-flex min-h-9 items-center justify-center rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover sm:min-h-10 sm:px-4 sm:py-2 sm:text-sm"
           >
             <span className="sm:hidden">Crear</span>
             <span className="hidden sm:inline">Abrir mi taller</span>

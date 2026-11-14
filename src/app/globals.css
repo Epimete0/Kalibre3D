@@ -14,31 +14,31 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* Tema claro: Aluminio anodizado / papel milimétrico técnico */
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-raised: #f1f5f9;
+  /* Tema claro (Opción B): Arena cálido (60%) · Carbón & Crema (30%) · Azul eléctrico (10%) */
+  --color-canvas: #f5f2eb;
+  --color-surface: #fdfcf9;
+  --color-raised: #eae5da;
 
-  --color-ink: #0f172a;
-  --color-muted: #475569;
-  --color-faint: #64748b;
+  --color-ink: #1c1d21;
+  --color-muted: #57554f;
+  --color-faint: #78756e;
 
-  --color-line: #e2e8f0;
-  --color-line-strong: #cbd5e1;
+  --color-line: #e2ddd2;
+  --color-line-strong: #cfc8b8;
 
-  /* Primario: Naranja cobre de boquilla térmica (Hotend 220°C) */
-  --color-primary: #d9531e;
-  --color-primary-hover: #b84114;
-  --color-primary-soft: #fff7ed;
-  --color-primary-ink: #9a3412;
+  /* Primario (10%): Azul eléctrico exclusivo para acciones principales (CTA) */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-soft: #eff6ff;
+  --color-primary-ink: #1e40af;
 
-  /* Acento: Azul cian de calibración láser / plano CAD */
-  --color-accent: #0284c7;
-  --color-accent-soft: #e0f2fe;
+  /* Acento estructural neutro (sin competir con el botón principal) */
+  --color-accent: #3f424a;
+  --color-accent-soft: #eae5da;
 
   --color-danger: #dc2626;
   --color-danger-soft: #fef2f2;
-  --color-warn: #d97706;
+  --color-warn: #b45309;
   --color-warn-soft: #fffbeb;
   --color-ok: #15803d;
   --color-ok-soft: #f0fdf4;
@@ -61,23 +61,23 @@
     background-color: var(--color-canvas);
   }
 
-  /* Tema oscuro: Cama PEI de carbono texturizado */
+  /* Tema oscuro (Opción B): Carbón mate (60/30%) · Arena claro · Azul eléctrico (10%) */
   html[data-theme="dark"] {
     color-scheme: dark;
-    --color-canvas: #090d16;
-    --color-surface: #0f172a;
-    --color-raised: #1e293b;
-    --color-ink: #f8fafc;
-    --color-muted: #94a3b8;
-    --color-faint: #64748b;
-    --color-line: #1e293b;
-    --color-line-strong: #334155;
-    --color-primary: #f97316;
-    --color-primary-hover: #fb923c;
-    --color-primary-soft: #271406;
-    --color-primary-ink: #fed7aa;
-    --color-accent: #38bdf8;
-    --color-accent-soft: #0c2538;
+    --color-canvas: #121316;
+    --color-surface: #1c1d21;
+    --color-raised: #26282e;
+    --color-ink: #f5f2eb;
+    --color-muted: #a8a49b;
+    --color-faint: #78756e;
+    --color-line: #2a2c33;
+    --color-line-strong: #3a3d47;
+    --color-primary: #3b82f6;
+    --color-primary-hover: #60a5fa;
+    --color-primary-soft: #172554;
+    --color-primary-ink: #bfdbfe;
+    --color-accent: #d6d3cb;
+    --color-accent-soft: #26282e;
     --color-danger: #f87171;
     --color-danger-soft: #3b181c;
     --color-warn: #fbbf24;
@@ -104,26 +104,7 @@
     letter-spacing: -0.025em;
   }
 
-  /* Retícula sutil de cama de impresión / plano técnico */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      radial-gradient(
-        1000px 500px at 95% -5%,
-        rgba(217, 83, 30, 0.06),
-        transparent 60%
-      ),
-      radial-gradient(
-        800px 450px at -5% 105%,
-        rgba(2, 132, 199, 0.06),
-        transparent 60%
-      );
-  }
-
+  /* Fondo limpio sin halos de color que compitan con la jerarquía 60-30-10 */
   :focus-visible {
     outline-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
   }
@@ -167,13 +148,11 @@
 }
 
 .kalibre-dark-grid {
-  background-color: #0b0f17;
+  background-color: #1c1d21;
   background-image:
-    radial-gradient(800px 400px at 85% 10%, rgba(249, 115, 22, 0.14), transparent 60%),
-    radial-gradient(600px 350px at 10% 90%, rgba(56, 189, 248, 0.10), transparent 60%),
-    linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-  background-size: auto, auto, 28px 28px, 28px 28px;
+    linear-gradient(to right, rgba(245, 242, 235, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 242, 235, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -211,12 +190,12 @@
 
 .stock-progress::-webkit-progress-value {
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background-color: var(--color-primary);
 }
 
 .stock-progress::-moz-progress-bar {
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background-color: var(--color-primary);
 }
 
 .dashboard-progress {
@@ -246,14 +225,14 @@
 html:not([data-theme="dark"]) .theme-choice-light,
 html[data-theme="light"] .theme-choice-light,
 html[data-theme="dark"] .theme-choice-dark {
-  background-color: var(--color-primary-soft);
-  color: var(--color-primary);
+  background-color: var(--color-raised);
+  color: var(--color-ink);
 }
 
 .dashboard-card {
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 4%),
-    0 8px 24px -12px rgb(15 23 42 / 8%);
+    0 1px 2px rgb(28 29 33 / 4%),
+    0 8px 24px -12px rgb(28 29 33 / 8%);
 }
 
 .dashboard-home,
@@ -305,14 +284,15 @@ a[href$="/edit"]:not([aria-label]) {
   border: 1px solid var(--color-line);
   border-radius: 0.375rem;
   background-color: var(--color-raised);
-  color: var(--color-primary);
+  color: var(--color-ink);
   font-size: 0;
   line-height: 1;
   transition: background-color 160ms ease, color 160ms ease;
 }
 
 a[href$="/edit"]:not([aria-label]):hover {
-  background-color: var(--color-primary-soft);
+  background-color: var(--color-ink);
+  color: var(--color-surface);
 }
 
 a[href$="/edit"]:not([aria-label]):focus-visible {

@@ -67,16 +67,14 @@ export default function HomePage() {
               {/* Columna izquierda: Tesis */}
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  <span className="h-2 w-2 rounded-full bg-ink" />
                   <span className="font-mono text-xs font-semibold uppercase tracking-wider text-ink">
                     Gestión calibrada para talleres de impresión 3D
                   </span>
                 </div>
 
                 <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-[3.35rem]">
-                  Mide cada gramo.{" "}
-                  <span className="text-primary">Cobra cada peso.</span>{" "}
-                  Entrega a tiempo.
+                  Mide cada gramo. Cobra cada peso. Entrega a tiempo.
                 </h1>
 
                 <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
@@ -88,7 +86,7 @@ export default function HomePage() {
                 <div className="flex flex-wrap items-center gap-3.5 pt-2">
                   <Link
                     href="/registro"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     <span>Crear mi taller gratis</span>
                     <span aria-hidden="true" className="font-mono text-base">→</span>
@@ -105,7 +103,7 @@ export default function HomePage() {
                   ¿Solo quieres calcular el costo de una pieza?{" "}
                   <Link
                     href="/herramientas/cotizador"
-                    className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
+                    className="font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
                   >
                     Prueba el cotizador gratis sin registrarte →
                   </Link>
@@ -118,7 +116,7 @@ export default function HomePage() {
                     <p className="mt-0.5 text-xs text-muted">Para anotar una venta desde el celular</p>
                   </div>
                   <div className="border-l border-line pl-4">
-                    <p className="font-mono text-xl font-bold text-primary sm:text-2xl">100%</p>
+                    <p className="font-mono text-xl font-bold text-ink sm:text-2xl">100%</p>
                     <p className="mt-0.5 text-xs text-muted">Neto real de Mercado Libre calculado</p>
                   </div>
                   <div className="border-l border-line pl-4">
@@ -130,69 +128,69 @@ export default function HomePage() {
 
               {/* Columna derecha: Instrumento / Ficha de Calibración en vivo */}
               <div className="relative">
-                <div className="kalibre-dark-grid overflow-hidden rounded-2xl border border-slate-800 p-5 text-slate-100 shadow-2xl sm:p-6">
+                <div className="kalibre-dark-grid overflow-hidden rounded-2xl border border-[#2a2c33] p-5 text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.28)] sm:p-6">
                   {/* Barra superior estilo calibre digital */}
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
+                  <div className="flex items-center justify-between border-b border-[#2a2c33] pb-3.5">
                     <div className="flex items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-orange-500" />
-                      <span className="font-mono text-xs font-semibold tracking-wider text-slate-300">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#a8a49b]" />
+                      <span className="font-mono text-xs font-semibold tracking-wider text-[#d6d3cb]">
                         KALIBRE · PEDIDO #42
                       </span>
                     </div>
-                    <span className="rounded-md border border-sky-500/30 bg-sky-500/15 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-sky-300">
+                    <span className="rounded-md border border-[#3a3d47] bg-[#26282e] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#f5f2eb]">
                       IMPRIMIENDO · 0.20 mm
                     </span>
                   </div>
 
                   {/* Pieza y parámetros técnicos */}
-                  <div className="mt-4 rounded-xl border border-slate-800/90 bg-slate-900/90 p-4">
+                  <div className="mt-4 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-mono text-[11px] uppercase tracking-wider text-orange-400">
+                        <p className="font-mono text-[11px] uppercase tracking-wider text-[#a8a49b]">
                           Canal: Mercado Libre · Entrega hoy
                         </p>
-                        <h2 className="mt-1 font-display text-lg font-bold text-white">
+                        <h2 className="mt-1 font-display text-lg font-bold text-[#f5f2eb]">
                           Emblema Toyota 13×9 cm (Bicolor)
                         </h2>
                       </div>
-                      <span className="rounded bg-slate-800 px-2 py-1 font-mono text-xs font-semibold text-slate-200">
+                      <span className="rounded bg-[#26282e] px-2 py-1 font-mono text-xs font-semibold text-[#f5f2eb]">
                         PETG
                       </span>
                     </div>
 
-                    <div className="mt-3.5 grid grid-cols-3 gap-2 border-t border-slate-800 pt-3 font-mono text-xs">
+                    <div className="mt-3.5 grid grid-cols-3 gap-2 border-t border-[#2a2c33] pt-3 font-mono text-xs">
                       <div>
-                        <span className="block text-[10px] text-slate-400">PIEZA + PURGA</span>
-                        <strong className="text-white">50 g + 14 g</strong>
+                        <span className="block text-[10px] text-[#a8a49b]">PIEZA + PURGA</span>
+                        <strong className="text-[#f5f2eb]">50 g + 14 g</strong>
                       </div>
                       <div>
-                        <span className="block text-[10px] text-slate-400">TIEMPO MÁQUINA</span>
-                        <strong className="text-white">1 h 45 min</strong>
+                        <span className="block text-[10px] text-[#a8a49b]">TIEMPO MÁQUINA</span>
+                        <strong className="text-[#f5f2eb]">1 h 45 min</strong>
                       </div>
                       <div>
-                        <span className="block text-[10px] text-slate-400">COSTO TOTAL</span>
-                        <strong className="text-orange-300">$1.105</strong>
+                        <span className="block text-[10px] text-[#a8a49b]">COSTO TOTAL</span>
+                        <strong className="text-[#f5f2eb]">$1.105</strong>
                       </div>
                     </div>
                   </div>
 
                   {/* Desglose Mercado Libre vs Ganancia Real */}
-                  <div className="mt-3.5 rounded-xl border border-slate-800/90 bg-slate-900/90 p-4 font-mono text-xs">
-                    <div className="flex items-center justify-between text-slate-300">
+                  <div className="mt-3.5 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4 font-mono text-xs">
+                    <div className="flex items-center justify-between text-[#d6d3cb]">
                       <span>Precio publicado en Mercado Libre</span>
-                      <span className="font-semibold text-white">$8.990</span>
+                      <span className="font-semibold text-[#f5f2eb]">$8.990</span>
                     </div>
-                    <div className="mt-2 flex items-center justify-between text-slate-400">
+                    <div className="mt-2 flex items-center justify-between text-[#a8a49b]">
                       <span>− Comisión ML (19%)</span>
                       <span className="text-rose-400">−$1.708</span>
                     </div>
-                    <div className="mt-1.5 flex items-center justify-between text-slate-400">
+                    <div className="mt-1.5 flex items-center justify-between text-[#a8a49b]">
                       <span>− Envío a cargo del taller</span>
                       <span className="text-rose-400">−$799</span>
                     </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-2.5 text-sm">
-                      <span className="font-sans font-semibold text-slate-200">Ingreso neto que recibes</span>
-                      <strong className="text-sky-300">$6.483</strong>
+                    <div className="mt-3 flex items-center justify-between border-t border-[#2a2c33] pt-2.5 text-sm">
+                      <span className="font-sans font-semibold text-[#f5f2eb]">Ingreso neto que recibes</span>
+                      <strong className="text-[#f5f2eb]">$6.483</strong>
                     </div>
                     <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-500/10 px-3 py-2 text-sm">
                       <span className="font-sans font-semibold text-emerald-300">Ganancia real (Neto − Costo)</span>
@@ -206,7 +204,7 @@ export default function HomePage() {
                       <p className="font-mono text-[11px] font-semibold text-amber-300">
                         ALERTA DE BOBINA · PETG NEGRO
                       </p>
-                      <p className="truncate text-xs text-slate-300">
+                      <p className="truncate text-xs text-[#d6d3cb]">
                         Quedan 120 g de 1.000 g (bajo umbral de 150 g)
                       </p>
                     </div>
@@ -224,7 +222,7 @@ export default function HomePage() {
         <section id="pilares" className="py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary">
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
                 Diseñado para la realidad del taller 3D
               </p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -243,7 +241,7 @@ export default function HomePage() {
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-md bg-primary-soft px-2.5 py-1 font-mono text-xs font-bold text-primary">
+                      <span className="rounded-md border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">
                         {mod.code}
                       </span>
                       <span className="font-mono text-xs text-faint">{mod.metrics}</span>
@@ -262,7 +260,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
             <div className="grid items-center gap-10 lg:grid-cols-12">
               <div className="lg:col-span-5">
-                <p className="font-mono text-xs font-bold uppercase tracking-widest text-accent">
+                <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
                   Cotizador y canales de venta
                 </p>
                 <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -273,11 +271,11 @@ export default function HomePage() {
                 </p>
                 <ul className="mt-6 space-y-2.5 text-sm text-ink">
                   <li className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+                    <span className="inline-block h-2 w-2 rounded-full bg-ink" />
                     <span>Calcula cuánto cobrar en ML para empatar tu ganancia de venta directa.</span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-accent" />
+                    <span className="inline-block h-2 w-2 rounded-full bg-muted" />
                     <span>Registra devoluciones en un paso descontando el reembolso del mes.</span>
                   </li>
                   <li className="flex items-center gap-2.5">
@@ -289,7 +287,7 @@ export default function HomePage() {
 
               <div className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
                 <div className="rounded-2xl border border-line bg-canvas p-5">
-                  <span className="rounded bg-ok-soft px-2.5 py-1 font-mono text-xs font-bold text-ok">
+                  <span className="rounded border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">
                     VENTA DIRECTA (WHATSAPP / IG)
                   </span>
                   <p className="mt-4 font-display text-3xl font-bold text-ink">$6.500</p>
@@ -310,24 +308,24 @@ export default function HomePage() {
                   </dl>
                 </div>
 
-                <div className="rounded-2xl border-2 border-primary/40 bg-canvas p-5">
-                  <span className="rounded bg-primary-soft px-2.5 py-1 font-mono text-xs font-bold text-primary">
+                <div className="rounded-2xl border border-[#2a2c33] bg-[#1c1d21] p-5 text-[#f5f2eb] shadow-lg">
+                  <span className="rounded border border-[#3a3d47] bg-[#26282e] px-2.5 py-1 font-mono text-xs font-bold text-[#f5f2eb]">
                     PRECIO SUGERIDO MERCADO LIBRE
                   </span>
-                  <p className="mt-4 font-display text-3xl font-bold text-ink">$8.990</p>
-                  <p className="mt-1 text-xs text-muted">Incluye 19% comisión ($1.708) + envío ($799)</p>
-                  <dl className="mt-5 space-y-2 border-t border-line pt-4 font-mono text-xs">
+                  <p className="mt-4 font-display text-3xl font-bold text-[#f5f2eb]">$8.990</p>
+                  <p className="mt-1 text-xs text-[#a8a49b]">Incluye 19% comisión ($1.708) + envío ($799)</p>
+                  <dl className="mt-5 space-y-2 border-t border-[#2a2c33] pt-4 font-mono text-xs">
                     <div className="flex justify-between">
-                      <dt className="text-muted">Neto liberado por ML</dt>
-                      <dd className="font-semibold text-accent">$6.483</dd>
+                      <dt className="text-[#a8a49b]">Neto liberado por ML</dt>
+                      <dd className="font-semibold text-[#f5f2eb]">$6.483</dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted">Costo de fabricación</dt>
-                      <dd className="text-ink">−$1.105</dd>
+                      <dt className="text-[#a8a49b]">Costo de fabricación</dt>
+                      <dd className="text-[#d6d3cb]">−$1.105</dd>
                     </div>
-                    <div className="flex justify-between border-t border-line pt-2 text-sm font-bold">
-                      <dt className="font-sans text-ink">Te quedan limpios</dt>
-                      <dd className="text-ok">+$5.378</dd>
+                    <div className="flex justify-between border-t border-[#2a2c33] pt-2 text-sm font-bold">
+                      <dt className="font-sans text-[#f5f2eb]">Te quedan limpios</dt>
+                      <dd className="text-emerald-400">+$5.378</dd>
                     </div>
                   </dl>
                 </div>
@@ -340,7 +338,7 @@ export default function HomePage() {
         <section id="flujo" className="py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary">
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
                 Flujo operativo
               </p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -352,7 +350,7 @@ export default function HomePage() {
               {workflowSteps.map((item) => (
                 <div key={item.step} className="rounded-2xl border border-line bg-surface p-6">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-3xl font-bold text-primary">{item.step}</span>
+                    <span className="font-mono text-3xl font-bold text-ink">{item.step}</span>
                     <span className="rounded bg-raised px-2.5 py-1 font-mono text-[11px] font-semibold text-muted">
                       {item.badge}
                     </span>
@@ -369,7 +367,7 @@ export default function HomePage() {
         <section id="herramientas" className="scroll-mt-20 border-t border-line bg-surface py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary">Herramientas gratis</p>
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Herramientas gratis</p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                 Calcula cuánto cobrar, sin crear cuenta.
               </h2>
@@ -379,9 +377,9 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
-              <article className="flex flex-col justify-between rounded-2xl border border-primary/40 bg-canvas p-6">
+              <article className="flex flex-col justify-between rounded-2xl border border-line-strong bg-canvas p-6">
                 <div>
-                  <span className="rounded-md bg-primary-soft px-2.5 py-1 font-mono text-xs font-bold text-primary">TOOL-01 · COTIZADOR 3D</span>
+                  <span className="rounded-md border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">TOOL-01 · COTIZADOR 3D</span>
                   <h3 className="mt-4 font-display text-2xl font-bold text-ink">Cotizador de impresión 3D</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">
                     Cuánto te cuesta imprimir una pieza y a qué precio venderla, con todo lo que normalmente se olvida.
@@ -396,7 +394,7 @@ export default function HomePage() {
                       "Precio para Mercado Libre",
                     ].map((item) => (
                       <li key={item} className="flex items-center gap-2">
-                        <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-ink" />
                         {item}
                       </li>
                     ))}
@@ -405,7 +403,7 @@ export default function HomePage() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     href="/herramientas/cotizador"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-colors hover:bg-primary-hover"
                   >
                     Usar el cotizador <span aria-hidden="true">→</span>
                   </Link>
@@ -413,8 +411,8 @@ export default function HomePage() {
                 </div>
               </article>
 
-              <div className="kalibre-dark-grid rounded-2xl border border-slate-800 p-5 font-mono text-xs text-slate-200">
-                <p className="text-slate-400">EJEMPLO · LLAVERO CON NFC</p>
+              <div className="kalibre-dark-grid rounded-2xl border border-[#2a2c33] p-5 font-mono text-xs text-[#d6d3cb]">
+                <p className="text-[#a8a49b]">EJEMPLO · LLAVERO CON NFC</p>
                 <dl className="mt-3 space-y-1.5">
                   {[
                     ["Filamento (12 g)", "$180"],
@@ -424,7 +422,7 @@ export default function HomePage() {
                   ].map(([label, value], index, rows) => (
                     <div
                       key={label}
-                      className={`flex justify-between gap-2 ${index === rows.length - 1 ? "border-t border-slate-700 pt-2 font-bold text-white" : ""}`}
+                      className={`flex justify-between gap-2 ${index === rows.length - 1 ? "border-t border-[#2a2c33] pt-2 font-bold text-[#f5f2eb]" : ""}`}
                     >
                       <dt>{label}</dt>
                       <dd>{value}</dd>
@@ -433,7 +431,7 @@ export default function HomePage() {
                 </dl>
                 <div className="mt-4 rounded-lg bg-emerald-500/10 p-3">
                   <p className="text-emerald-300">COBRA (MARGEN 70%)</p>
-                  <p className="mt-1 font-display text-2xl font-bold text-white">$2.144</p>
+                  <p className="mt-1 font-display text-2xl font-bold text-[#f5f2eb]">$2.144</p>
                   <p className="text-emerald-400">Te quedan $1.501 limpios</p>
                 </div>
               </div>
@@ -442,28 +440,28 @@ export default function HomePage() {
         </section>
 
         {/* CTA FINAL */}
-        <section className="pb-16 sm:pb-24">
+        <section className="py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-16">
-            <div className="kalibre-dark-grid rounded-3xl border border-slate-800 px-6 py-12 text-center text-white shadow-xl sm:px-12 sm:py-16">
-              <span className="inline-block rounded-md border border-orange-500/30 bg-orange-500/15 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-orange-300">
+            <div className="kalibre-dark-grid rounded-3xl border border-[#2a2c33] px-6 py-12 text-center text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.25)] sm:px-12 sm:py-16">
+              <span className="inline-block rounded-md border border-[#3a3d47] bg-[#26282e] px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-[#f5f2eb]">
                 Listo para usar en celular y computador
               </span>
-              <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-bold tracking-tight text-[#f5f2eb] sm:text-4xl">
                 Pon en orden los pedidos, las bobinas y los números de tu taller 3D.
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-sm text-slate-300 sm:text-base">
+              <p className="mx-auto mt-3 max-w-xl text-sm text-[#a8a49b] sm:text-base">
                 Crea tu taller en un minuto, configura el costo de tu electricidad y comisión de Mercado Libre, y registra tu primer pedido hoy mismo.
               </p>
               <div className="mt-7 flex flex-wrap justify-center gap-3.5">
                 <Link
                   href="/registro"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2),0_6px_18px_color-mix(in_srgb,var(--color-primary)_35%,transparent)] transition-colors hover:bg-primary-hover"
                 >
                   Crear mi taller ahora
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-700 bg-slate-900/90 px-7 text-sm font-semibold text-slate-100 transition-colors hover:bg-slate-800"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#3a3d47] bg-[#26282e] px-7 text-sm font-semibold text-[#f5f2eb] transition-colors hover:bg-[#31343c]"
                 >
                   Ya tengo una cuenta
                 </Link>

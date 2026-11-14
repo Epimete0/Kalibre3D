@@ -655,7 +655,7 @@ export function NewOrderForm({
             <button
               type="button"
               onClick={addItem}
-              className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/35 bg-primary-soft/35 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary-soft/65 hover:border-primary/55 transition-colors touch-manipulation"
+              className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong bg-raised/50 px-4 py-2.5 text-sm font-bold text-ink hover:bg-raised hover:border-ink/40 transition-colors touch-manipulation"
             >
               <span aria-hidden="true" className="text-base leading-none">+</span>
               <span>Agregar otra pieza</span>
@@ -1032,7 +1032,7 @@ export function NewOrderForm({
               <button
                 type="submit"
                 disabled={pending}
-                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-60 touch-manipulation"
+                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.99] disabled:opacity-60 touch-manipulation"
               >
                 {pending
                   ? "Guardando…"

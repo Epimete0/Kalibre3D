@@ -6,6 +6,10 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Mejorado
+- **Nueva paleta Carbón & Arena + Azul Eléctrico (regla 60-30-10) en toda la plataforma:**
+  - **Jerarquía visual clara (*Squint Test*):** fondo arena cálido (`#f5f2eb`), tarjetas crema y bloques carbón (`#1c1d21`) en modo claro (y carbón mate `#121316`/`#1c1d21` con texto arena en modo oscuro), reservando el azul eléctrico (`#2563eb` / `#3b82f6`) para los botones de acción principal.
+  - **Landing, cotizador público y acceso (`page.tsx`, `PublicShell.tsx`, `AuthLayout.tsx`, `PublicQuoteCalculator.tsx`):** eliminados los acentos múltiples (naranja + cian) en títulos, números de paso, badges y enlaces secundarios; tarjetas destacadas en carbón de alto contraste.
+  - **Navegación y controles internos (`Sidebar.tsx`, `MobileNav.tsx`, `ui.tsx`, `FormButtons.tsx`):** estados activos de menú y chips de filtro en carbón/arena neutro, unificando sombras y foco visual en `+ Registrar venta`, `Guardar` y CTAs principales.
 - **Rediseño de Nueva venta (`/orders/new`) para múltiples piezas y escritorio:**
   - **Carga multi-pieza mucho más clara:** cada pieza tiene cabecera numerada (`#1`, `#2`…), indicador de origen (`Catálogo` con material, gramos y stock disponible, o `Pieza manual`), subtotal en tiempo real, botones **Duplicar** y **Quitar**, detalle opcional de material/gramos en piezas manuales y botón destacado **`+ Agregar otra pieza`** al final de la lista.
   - **Resumen lateral en vivo en escritorio (`lg:grid-cols-12`):** muestra línea por línea las piezas agregadas, descuentos, cargos de Mercado Libre, total o neto ML a recibir, cobro o abono (con botones rápidos `50%` y `Total`) y el botón de guardado en un panel lateral fijo mientras se mantiene el flujo cómodo en móviles.

@@ -19,7 +19,7 @@ import type { SpoolListItem } from "@/lib/spool-queries";
 const initialState: SpoolActionState = {};
 
 const primaryBtn =
-  "inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-hover px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(217,83,30,0.25)] ring-1 ring-inset ring-white/20 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const secondaryBtn =
   "inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink shadow-xs transition-all hover:bg-raised hover:border-line-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 

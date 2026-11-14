@@ -133,7 +133,7 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/orders/new"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-primary-hover transition-colors touch-manipulation"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-primary-hover transition-colors touch-manipulation"
             >
               + Nueva venta
             </Link>
@@ -263,7 +263,7 @@ export default async function DashboardPage({
           <Link
             key={item.status}
             href={`/orders?status=${item.status}`}
-            className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 sm:p-4 hover:border-primary/40 transition-colors flex flex-col justify-between gap-2.5"
+            className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 sm:p-4 hover:border-line-strong transition-colors flex flex-col justify-between gap-2.5"
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
               <Badge tone={statusTone(item.status)}>{STATUS_LABEL[item.status]}</Badge>
@@ -275,7 +275,7 @@ export default async function DashboardPage({
               <span className="text-2xl sm:text-3xl font-bold tabular-nums text-ink">
                 {item.count}
               </span>
-              <span className="text-xs font-semibold text-primary">
+              <span className="text-xs font-semibold text-muted">
                 Ver →
               </span>
             </div>
@@ -381,7 +381,7 @@ export default async function DashboardPage({
                   )}
                 </Card>
 
-                <Card className="p-4 min-w-0 border-primary/25">
+                <Card className="p-4 min-w-0 border-line-strong">
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted block truncate">
                       Quedó en caja

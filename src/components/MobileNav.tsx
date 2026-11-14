@@ -124,7 +124,7 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
         onClick={() => setMoreOpen(false)}
         aria-current={active ? "page" : undefined}
         className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-center text-[11.5px] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 touch-manipulation ${
-          active ? "bg-primary-soft text-primary-ink" : "text-muted hover:bg-primary-soft/70 hover:text-ink"
+          active ? "bg-raised text-ink font-bold" : "text-muted hover:bg-raised/60 hover:text-ink"
         }`}
       >
         <Icon>{item.icon}</Icon>
@@ -162,10 +162,10 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
                   onClick={() => setMoreOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={`flex min-h-12 items-center gap-3 rounded-xl px-3 py-2.5 transition-colors touch-manipulation ${
-                    active ? "bg-primary-soft text-primary-ink" : "text-ink hover:bg-canvas"
+                    active ? "bg-raised text-ink" : "text-ink hover:bg-canvas"
                   }`}
                 >
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${active ? "bg-ink text-surface" : "bg-raised text-ink"}`}>
                     <Icon>{item.icon}</Icon>
                   </span>
                   <div className="min-w-0">
@@ -190,9 +190,9 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
             href="/orders/new"
             onClick={() => setMoreOpen(false)}
             aria-current={saleActive ? "page" : undefined}
-            className="flex min-h-14 flex-col items-center justify-center gap-1 text-center text-[11.5px] font-bold text-primary touch-manipulation focus-visible:outline-none"
+            className="flex min-h-14 flex-col items-center justify-center gap-1 text-center text-[11.5px] font-bold text-ink touch-manipulation focus-visible:outline-none"
           >
-            <span className="-mt-5 grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-lg ring-4 ring-surface transition-transform active:scale-95">
+            <span className="-mt-5 grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary)_35%,transparent)] ring-4 ring-surface transition-transform active:scale-95">
               <Icon className="h-6 w-6">
                 <path d="M12 5v14M5 12h14" />
               </Icon>
@@ -211,7 +211,7 @@ export function MobileNav({ account }: { account?: AccountSummary | null }) {
           aria-expanded={moreOpen}
           aria-haspopup="dialog"
           className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-center text-[11.5px] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 touch-manipulation ${
-            moreOpen || isMoreActive ? "bg-primary-soft text-primary-ink" : "text-muted hover:bg-primary-soft/70 hover:text-ink"
+            moreOpen || isMoreActive ? "bg-raised text-ink font-bold" : "text-muted hover:bg-raised/60 hover:text-ink"
           }`}
         >
           <Icon className="h-[18px] w-[18px]">

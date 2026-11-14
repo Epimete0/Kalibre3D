@@ -35,7 +35,7 @@ export function SubmitButton({
       value={value}
       onClick={onClick}
       disabled={pending || disabled}
-      className={variant === "primary" ? "inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors touch-manipulation hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60" : "inline-flex min-h-11 items-center gap-2 rounded-lg border border-line bg-raised px-4 py-2 text-sm font-medium text-ink shadow-sm transition-colors touch-manipulation hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60"}
+      className={variant === "primary" ? "inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors touch-manipulation hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60" : "inline-flex min-h-11 items-center gap-2 rounded-xl border border-line bg-raised px-4 py-2 text-sm font-medium text-ink shadow-sm transition-colors touch-manipulation hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-60"}
     >
       {showPending ? (
         <span className={`h-3.5 w-3.5 animate-spin rounded-full border-2 ${variant === "primary" ? "border-white/40 border-t-white" : "border-line border-t-primary"}`} />

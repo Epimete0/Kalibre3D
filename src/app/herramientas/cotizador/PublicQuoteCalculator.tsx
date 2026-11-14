@@ -54,7 +54,7 @@ function NumberField({
 function Section({ step, title, description, children }: { step: string; title: string; description: string; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
-      <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary">{step}</p>
+      <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">{step}</p>
       <h2 className="mt-1 font-display text-lg font-bold text-ink">{title}</h2>
       <p className="mt-0.5 text-sm text-muted">{description}</p>
       <div className="mt-4 space-y-4">{children}</div>
@@ -244,7 +244,7 @@ export function PublicQuoteCalculator() {
                   aria-pressed={colors === count}
                   onClick={() => setColors(count)}
                   className={`min-h-10 rounded-full border px-4 text-sm transition-colors ${
-                    colors === count ? "border-primary bg-primary font-semibold text-white" : "border-line bg-raised text-ink hover:bg-canvas"
+                    colors === count ? "border-ink bg-ink font-semibold text-surface" : "border-line bg-raised text-ink hover:bg-canvas"
                   }`}
                 >
                   {count} {count === 1 ? "color" : "colores"}
@@ -272,10 +272,10 @@ export function PublicQuoteCalculator() {
                   aria-pressed={margin === String(option.margin)}
                   onClick={() => setMargin(String(option.margin))}
                   className={`flex min-h-11 items-center justify-between gap-2 rounded-xl border px-3 text-left text-sm transition-colors ${
-                    margin === String(option.margin) ? "border-primary bg-primary-soft/40 text-ink" : "border-line bg-raised text-ink hover:bg-canvas"
+                    margin === String(option.margin) ? "border-ink bg-ink text-surface" : "border-line bg-raised text-ink hover:bg-canvas"
                   }`}
                 >
-                  <span className="text-xs text-muted">{option.label}</span>
+                  <span className={`text-xs ${margin === String(option.margin) ? "text-surface/80" : "text-muted"}`}>{option.label}</span>
                   <strong>{option.margin}%</strong>
                 </button>
               ))}
@@ -323,7 +323,7 @@ export function PublicQuoteCalculator() {
       </div>
 
       <aside id="resultado" aria-live="polite" className="scroll-mt-20 space-y-3 lg:sticky lg:top-24">
-        <div className="rounded-2xl border border-primary/40 bg-surface p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-line-strong bg-surface p-4 shadow-sm sm:p-5">
           <h2 className="font-display text-lg font-bold text-ink">Resultado</h2>
           {!hasPiece ? (
             <p className="mt-2 text-sm text-muted">Escribe el peso de la pieza en el paso 2 para ver su costo y su precio.</p>
