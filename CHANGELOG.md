@@ -5,7 +5,14 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Añadido
+- **Separador de miles automático al escribir (`MoneyInput`, `src/lib/money-input.ts`):** los campos de precios y montos enteros en *Nueva venta*, *Catálogo*, *Dinero*, *Cobros/Devoluciones de pedidos* y *Bobinas* formatean miles automáticamente (`10.000`) en tiempo real.
+- **Buscador único de piezas en *Nueva venta* (`PieceCombobox`):** reemplaza la dupla de selector + campo de texto en cada línea; busca por nombre, categoría o material mostrando precio y stock, permite escribir piezas manuales al instante y se hereda al duplicar o agregar nuevas líneas.
+- **Precio Mercado Libre en modo `Publicado en ML` vs `Lo que recibo neto` (`src/lib/ml-pricing.ts`):** en *Catálogo* permite definir cuánto deseas recibir neto calculando el precio publicado automáticamente; en *Nueva venta* permite cobrar indicando directamente el monto neto recibido sin descontar comisión ni envío dos veces.
+
 ### Mejorado
+- **Nueva venta sin campos ni pasos redundantes (`/orders/new`):** oculta el selector duplicado de `Método de pago` cuando el canal elegido es Mercado Libre, elimina la repetición de subtotal en cada tarjeta y simplifica el resumen cuando hay una sola pieza.
+- **Pantallas internas más directas:** eliminados los encabezados y subtítulos redundantes en *Nueva venta*, *Catálogo*, *Pedidos*, *Bobinas*, *Clientes*, *Cotizador* y *Mis costos* (manteniendo accesibilidad y la guía inicial de onboarding).
 - **Nueva paleta Carbón & Arena + Azul Eléctrico (regla 60-30-10) en toda la plataforma:**
   - **Jerarquía visual clara (*Squint Test*):** fondo arena cálido (`#f5f2eb`), tarjetas crema y bloques carbón (`#1c1d21`) en modo claro (y carbón mate `#121316`/`#1c1d21` con texto arena en modo oscuro), reservando el azul eléctrico (`#2563eb` / `#3b82f6`) para los botones de acción principal.
   - **Landing, cotizador público y acceso (`page.tsx`, `PublicShell.tsx`, `AuthLayout.tsx`, `PublicQuoteCalculator.tsx`):** eliminados los acentos múltiples (naranja + cian) en títulos, números de paso, badges y enlaces secundarios; tarjetas destacadas en carbón de alto contraste.

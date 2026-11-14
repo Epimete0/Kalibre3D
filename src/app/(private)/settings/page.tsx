@@ -23,14 +23,14 @@ export default async function SettingsPage(props: { searchParams?: Promise<{ bie
 
   return (
     <>
-      <PageHeader
-        title={welcome ? "Prepara tu taller" : "Mis costos"}
-        description={
-          welcome
-            ? "Paso 1 de 3 · Tus costos. Después agregas tu primera bobina y registras tu primera venta."
-            : "Tus costos, comisiones, IVA, margen mínimo y datos del taller."
-        }
-      />
+      {welcome ? (
+        <PageHeader
+          title="Prepara tu taller"
+          description="Paso 1 de 3 · Tus costos. Después agregas tu primera bobina y registras tu primera venta."
+        />
+      ) : (
+        <h1 className="sr-only">Mis costos</h1>
+      )}
       <div className="max-w-3xl">
         <SettingsForm settings={settings} welcome={welcome} />
       </div>

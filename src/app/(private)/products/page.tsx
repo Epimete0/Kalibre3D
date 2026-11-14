@@ -1,5 +1,5 @@
 import { NoPermission } from "@/components/NoPermission";
-import { LinkButton, PageHeader } from "@/components/ui";
+import { LinkButton } from "@/components/ui";
 import { canManageCatalog, requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listProducts } from "@/lib/product-queries";
@@ -27,22 +27,21 @@ export default async function ProductsPage() {
   ]);
 
   return (
-    <>
-      <PageHeader
-        title="Catálogo de piezas y stock"
-        description="Las piezas que vendes seguido, su precio, stock y rendimiento real."
-      >
+    <div className="max-w-5xl space-y-4 pb-20 sm:pb-8">
+      <h1 className="sr-only">Catálogo de piezas y stock</h1>
+      <div className="flex items-center justify-end">
         <LinkButton href="/quote" variant="ghost">
           Cotizar pieza
         </LinkButton>
-      </PageHeader>
-      <div className="max-w-5xl pb-20 sm:pb-8">
-        <CreateProductBar
-          currency={settings.currency}
-          defaultPurgeGrams={settings.defaultPurgeGrams}
-          sellsOnMercadoLibre={settings.mlCommissionPercent > 0 || settings.mlDefaultShippingCost > 0}
-        />
-        <ProductList
+      </div>
+      <CreateProductBar
+        currency={settings.currency}
+        defaultPurgeGrams={settings.defaultPurgeGrams}
+        sellsOnMercadoLibre={settings.mlCommissionPercent > 0 || settings.mlDefaultShippingCost > 0}
+        mlCommissionPercent={Number(settings.mlCommissionPercent)}
+        mlDefaultShippingCost={settings.mlDefaultShippingCost}
+      />
+      <ProductList
           products={products}
           currency={settings.currency}
           costSummary={{
@@ -55,7 +54,6 @@ export default async function ProductsPage() {
             materialCostPerGram: spoolsView.materialCostPerGram,
           }}
         />
-      </div>
-    </>
+    </div>
   );
 }

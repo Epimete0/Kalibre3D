@@ -1,4 +1,4 @@
-import { Card, LinkButton, PageHeader } from "@/components/ui";
+import { Card, LinkButton } from "@/components/ui";
 import { requireAuthContext } from "@/lib/auth";
 import { MATERIALS, type Material } from "@/lib/catalog-presentation";
 import { getCenterSettings } from "@/lib/center-settings-service";
@@ -11,11 +11,8 @@ export default async function QuotePage() {
 
   if (role === "VIEWER") {
     return (
-      <div className="space-y-5">
-        <PageHeader
-          title="Cotizador de piezas"
-          description="Cálculo de costos de impresión 3D, márgenes y precios sugeridos."
-        />
+      <div className="space-y-4">
+        <h1 className="sr-only">Cotizador de piezas</h1>
         <Card className="p-5 text-sm text-muted">
           Tu perfil de solo lectura no tiene acceso al cotizador de costos y márgenes del taller.
         </Card>
@@ -48,20 +45,16 @@ export default async function QuotePage() {
   const canEditCatalog = role === "OWNER" || role === "ADMIN";
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Cotizador de piezas 3D"
-        description="Calcula el costo real y el precio de una pieza con los datos de tu taller (luz, comisiones, IVA y margen se cambian en Ajustes)."
-      >
-        <div className="flex items-center gap-2">
-          <LinkButton href="/spools" variant="ghost">
-            Ver bobinas
-          </LinkButton>
-          <LinkButton href="/products" variant="ghost">
-            Ver catálogo
-          </LinkButton>
-        </div>
-      </PageHeader>
+    <div className="space-y-4">
+      <h1 className="sr-only">Cotizador de piezas</h1>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <LinkButton href="/spools" variant="ghost">
+          Ver bobinas
+        </LinkButton>
+        <LinkButton href="/products" variant="ghost">
+          Ver catálogo
+        </LinkButton>
+      </div>
 
       <QuoteCalculator
         currency={settings.currency}

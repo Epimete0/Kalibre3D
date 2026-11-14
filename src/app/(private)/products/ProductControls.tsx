@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useId, useState, useTransition } from "react";
+import { MoneyInput } from "@/components/MoneyInput";
 import {
   Badge,
   Card,
@@ -13,7 +14,13 @@ import {
 } from "@/components/ui";
 import { MATERIALS, MATERIAL_LABEL } from "@/lib/catalog-presentation";
 import { computePieceCost, mercadoLibreNet } from "@/lib/costing";
+import {
+  computeMlNetFromPublished,
+  computeMlPublishedFromNet,
+  type MlPriceInputMode,
+} from "@/lib/ml-pricing";
 import { formatMoney } from "@/lib/money-format";
+import { digitsToInt } from "@/lib/money-input";
 import type { ProductListItem } from "@/lib/product-queries";
 import {
   createProductAction,
@@ -25,7 +32,7 @@ import {
 } from "./actions";
 
 const primaryBtn =
-  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-all hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const secondaryBtn =
   "inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink shadow-xs transition-all hover:bg-raised hover:border-line-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const dangerBtn =
@@ -57,21 +64,130 @@ function Feedback({ state }: { state: ProductActionState }) {
   return null;
 }
 
+function MlPriceField({
+  id,
+  label = "Mercado Libre",
+  mode,
+  onModeChange,
+  publishedDigits,
+  netTargetDigits,
+  onPublishedChange,
+  onNetTargetChange,
+  mlCommissionPercent,
+  mlDefaultShippingCost,
+  currency,
+}: {
+  id?: string;
+  label?: string;
+  mode: MlPriceInputMode;
+  onModeChange: (next: MlPriceInputMode) => void;
+  publishedDigits: string;
+  netTargetDigits: string;
+  onPublishedChange: (digits: string) => void;
+  onNetTargetChange: (digits: string, publishedFromNet: string) => void;
+  mlCommissionPercent: number;
+  mlDefaultShippingCost: number;
+  currency: string;
+}) {
+  const mlSettings = { mlCommissionPercent, mlDefaultShippingCost };
+  const publishedNum = digitsToInt(publishedDigits);
+  const netNum = digitsToInt(netTargetDigits);
+  const estimatedNet =
+    publishedNum > 0 ? computeMlNetFromPublished(publishedNum, mlSettings).net : 0;
+
+  const handleToggleMode = (next: MlPriceInputMode) => {
+    if (next === mode) return;
+    if (next === "NET") {
+      if (publishedNum > 0 && netNum === 0) {
+        const net = computeMlNetFromPublished(publishedNum, mlSettings).net;
+        const netStr = net > 0 ? String(net) : "";
+        onNetTargetChange(netStr, publishedDigits);
+      }
+    }
+    onModeChange(next);
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={id} className="text-xs font-medium text-ink">
+          {label}
+        </label>
+        <div
+          className={`${segmentedTrackClass} p-0.5 text-[10px]`}
+          role="group"
+          aria-label="Modo precio Mercado Libre"
+        >
+          <button
+            type="button"
+            onClick={() => handleToggleMode("PUBLISHED")}
+            className={`${segmentedItemClass(mode === "PUBLISHED")} px-2 py-0.5 text-[10px]`}
+          >
+            Publicado
+          </button>
+          <button
+            type="button"
+            onClick={() => handleToggleMode("NET")}
+            className={`${segmentedItemClass(mode === "NET")} px-2 py-0.5 text-[10px]`}
+          >
+            Recibo neto
+          </button>
+        </div>
+      </div>
+
+      {mode === "PUBLISHED" ? (
+        <MoneyInput
+          id={id}
+          placeholder="10.990"
+          value={publishedDigits}
+          onChangeValue={(digits) => onPublishedChange(digits)}
+        />
+      ) : (
+        <MoneyInput
+          id={id}
+          placeholder="7.990"
+          value={netTargetDigits}
+          onChangeValue={(digits, num) => {
+            const pub = num > 0 ? computeMlPublishedFromNet(num, mlSettings) : 0;
+            onNetTargetChange(digits, pub > 0 ? String(pub) : "");
+          }}
+        />
+      )}
+
+      {mode === "PUBLISHED" && publishedNum > 0 ? (
+        <p className="text-[11px] text-muted tabular-nums">
+          Recibes neto aprox. {formatMoney(estimatedNet, currency)}
+        </p>
+      ) : mode === "NET" && netNum > 0 ? (
+        <p className="text-[11px] text-muted tabular-nums">
+          Publicado sugerido: {formatMoney(publishedNum, currency)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function CreateProductBar({
   currency,
   defaultPurgeGrams = 0,
   sellsOnMercadoLibre = true,
+  mlCommissionPercent = 19,
+  mlDefaultShippingCost = 0,
 }: {
   currency: string;
   defaultPurgeGrams?: number;
   /** Si el taller no vende por Mercado Libre (perfil), no se pide precio ML. */
   sellsOnMercadoLibre?: boolean;
+  mlCommissionPercent?: number;
+  mlDefaultShippingCost?: number;
 }) {
   const [state, run, pending] = useActionState(createProductAction, {});
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [name, setName] = useState("");
   const [salePrice, setSalePrice] = useState("");
   const [mlPrice, setMlPrice] = useState("");
+  const [mlMode, setMlMode] = useState<MlPriceInputMode>("PUBLISHED");
+  const [mlNetTarget, setMlNetTarget] = useState("");
   const [category, setCategory] = useState("");
   const [material, setMaterial] = useState("PETG");
   const [grams, setGrams] = useState("");
@@ -92,6 +208,7 @@ export function CreateProductBar({
       setName("");
       setSalePrice("");
       setMlPrice("");
+      setMlNetTarget("");
       setCategory("");
       setGrams("");
       setPrintMinutes("");
@@ -121,12 +238,7 @@ export function CreateProductBar({
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-ink">Agregar pieza al catálogo</h2>
-          <p className="mt-0.5 text-xs text-muted">
-            Ingresa nombre y precio rápido, o despliega los datos de impresión y stock.
-          </p>
-        </div>
+        <h2 className="text-sm font-bold text-ink">Agregar pieza al catálogo</h2>
         <button
           type="button"
           onClick={() => setShowAdvanced((v) => !v)}
@@ -136,14 +248,14 @@ export function CreateProductBar({
         </button>
       </div>
 
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 sm:items-end">
-          <div className="sm:col-span-2 lg:col-span-5">
+      <form className="mt-3.5 space-y-3" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 sm:items-start">
+          <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Nombre de la pieza" htmlFor={nameId}>
               <input
                 id={nameId}
                 required
-                placeholder="Ej. Emblema Hilux 13x9"
+                placeholder="Ej: Soporte control gamer"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={inputClass}
@@ -153,38 +265,38 @@ export function CreateProductBar({
 
           <div className="sm:col-span-1 lg:col-span-3">
             <Field label={`Precio venta (${currency})`} htmlFor={salePriceId}>
-              <input
+              <MoneyInput
                 id={salePriceId}
                 required
-                type="number"
-                min="0"
-                step="1"
-                placeholder="8990"
+                placeholder="8.990"
                 value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
-                className={inputClass}
+                onChangeValue={(digits) => setSalePrice(digits)}
               />
             </Field>
           </div>
 
           {sellsOnMercadoLibre && (
-            <div className="sm:col-span-1 lg:col-span-2">
-              <Field label="Precio en Mercado Libre (opcional)" htmlFor={mlPriceId}>
-                <input
-                  id={mlPriceId}
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="10990"
-                  value={mlPrice}
-                  onChange={(e) => setMlPrice(e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+            <div className="sm:col-span-1 lg:col-span-3">
+              <MlPriceField
+                id={mlPriceId}
+                label="Mercado Libre (opcional)"
+                mode={mlMode}
+                onModeChange={setMlMode}
+                publishedDigits={mlPrice}
+                netTargetDigits={mlNetTarget}
+                onPublishedChange={setMlPrice}
+                onNetTargetChange={(netDigits, publishedDigits) => {
+                  setMlNetTarget(netDigits);
+                  setMlPrice(publishedDigits);
+                }}
+                mlCommissionPercent={mlCommissionPercent}
+                mlDefaultShippingCost={mlDefaultShippingCost}
+                currency={currency}
+              />
             </div>
           )}
 
-          <div className="sm:col-span-2 lg:col-span-2">
+          <div className={`sm:col-span-2 ${sellsOnMercadoLibre ? "lg:col-span-2" : "lg:col-span-5"} lg:pt-[22px]`}>
             <button
               type="submit"
               disabled={pending || !name.trim() || !salePrice}
@@ -199,7 +311,7 @@ export function CreateProductBar({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-line bg-raised/40 p-3.5 sm:p-4">
             <Field label="Categoría">
               <input
-                placeholder="Ej. Emblemas"
+                placeholder="Ej: Soportes"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className={inputClass}
@@ -296,6 +408,17 @@ function useProductItemLogic(
   const [editSalePrice, setEditSalePrice] = useState(String(product.salePrice));
   const [editMlPrice, setEditMlPrice] = useState(
     product.mlPrice !== null ? String(product.mlPrice) : ""
+  );
+  const [editMlMode, setEditMlMode] = useState<MlPriceInputMode>("PUBLISHED");
+  const [editMlNetTarget, setEditMlNetTarget] = useState(() =>
+    costSummary && product.mlPrice !== null && product.mlPrice > 0
+      ? String(
+          computeMlNetFromPublished(product.mlPrice, {
+            mlCommissionPercent: costSummary.mlCommissionPercent,
+            mlDefaultShippingCost: costSummary.mlDefaultShippingCost,
+          }).net
+        )
+      : ""
   );
   const [editCategory, setEditCategory] = useState(product.category ?? "");
   const [editMaterial, setEditMaterial] = useState(product.material);
@@ -411,6 +534,10 @@ function useProductItemLogic(
     setEditSalePrice,
     editMlPrice,
     setEditMlPrice,
+    editMlMode,
+    setEditMlMode,
+    editMlNetTarget,
+    setEditMlNetTarget,
     editCategory,
     setEditCategory,
     editMaterial,
@@ -461,6 +588,10 @@ function ProductCardItem({
     setEditSalePrice,
     editMlPrice,
     setEditMlPrice,
+    editMlMode,
+    setEditMlMode,
+    editMlNetTarget,
+    setEditMlNetTarget,
     editCategory,
     setEditCategory,
     editMaterial,
@@ -515,27 +646,30 @@ function ProductCardItem({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <Field label={`Precio directo (${currency})`}>
-              <input
+              <MoneyInput
                 required
-                type="number"
-                min="0"
+                allowZeroDisplay
                 value={editSalePrice}
-                onChange={(e) => setEditSalePrice(e.target.value)}
-                className={inputClass}
+                onChangeValue={(digits) => setEditSalePrice(digits)}
               />
             </Field>
-            <Field label="Precio en Mercado Libre">
-              <input
-                type="number"
-                min="0"
-                value={editMlPrice}
-                onChange={(e) => setEditMlPrice(e.target.value)}
-                placeholder="Opcional"
-                className={inputClass}
-              />
-            </Field>
+            <MlPriceField
+              label="Mercado Libre"
+              mode={editMlMode}
+              onModeChange={setEditMlMode}
+              publishedDigits={editMlPrice}
+              netTargetDigits={editMlNetTarget}
+              onPublishedChange={setEditMlPrice}
+              onNetTargetChange={(netDigits, publishedDigits) => {
+                setEditMlNetTarget(netDigits);
+                setEditMlPrice(publishedDigits);
+              }}
+              mlCommissionPercent={costSummary?.mlCommissionPercent ?? 19}
+              mlDefaultShippingCost={costSummary?.mlDefaultShippingCost ?? 0}
+              currency={currency}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
@@ -810,6 +944,10 @@ function ProductRowItem({
     setEditSalePrice,
     editMlPrice,
     setEditMlPrice,
+    editMlMode,
+    setEditMlMode,
+    editMlNetTarget,
+    setEditMlNetTarget,
     editCategory,
     setEditCategory,
     editMaterial,
@@ -845,7 +983,7 @@ function ProductRowItem({
       <tr className="border-b border-line/60 bg-surface/50">
         <td colSpan={5} className="p-3">
           <form onSubmit={handleUpdate} className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-start">
               <Field label="Nombre">
                 <input
                   required
@@ -862,24 +1000,28 @@ function ProductRowItem({
                 />
               </Field>
               <Field label={`Precio normal (${currency})`}>
-                <input
+                <MoneyInput
                   required
-                  type="number"
-                  min="0"
+                  allowZeroDisplay
                   value={editSalePrice}
-                  onChange={(e) => setEditSalePrice(e.target.value)}
-                  className={inputClass}
+                  onChangeValue={(digits) => setEditSalePrice(digits)}
                 />
               </Field>
-              <Field label="Precio ML">
-                <input
-                  type="number"
-                  min="0"
-                  value={editMlPrice}
-                  onChange={(e) => setEditMlPrice(e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <MlPriceField
+                label="Mercado Libre"
+                mode={editMlMode}
+                onModeChange={setEditMlMode}
+                publishedDigits={editMlPrice}
+                netTargetDigits={editMlNetTarget}
+                onPublishedChange={setEditMlPrice}
+                onNetTargetChange={(netDigits, publishedDigits) => {
+                  setEditMlNetTarget(netDigits);
+                  setEditMlPrice(publishedDigits);
+                }}
+                mlCommissionPercent={costSummary?.mlCommissionPercent ?? 19}
+                mlDefaultShippingCost={costSummary?.mlDefaultShippingCost ?? 0}
+                currency={currency}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
               <Field label="Material">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { MoneyInput } from "@/components/MoneyInput";
 import {
   Badge,
   Card,
@@ -330,17 +331,13 @@ export function MoneyControls({
                 <label className="mb-1 block text-xs font-semibold text-ink">
                   Monto *
                 </label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
+                <MoneyInput
                   required
                   value={amountStr}
-                  onChange={(e) => setAmountStr(e.target.value)}
-                  placeholder="Ej. 15000"
+                  onChangeValue={(digits) => setAmountStr(digits)}
+                  placeholder="Ej: 15.000"
                   disabled={isPending}
-                  className={`${inputClass} min-h-11 text-base font-bold`}
+                  className="min-h-11 text-base font-bold"
                 />
               </div>
 

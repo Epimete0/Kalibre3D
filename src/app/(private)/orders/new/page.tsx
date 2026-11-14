@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/ui";
 import { requireOperationalContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listCustomers } from "@/lib/customer-queries";
@@ -38,10 +37,7 @@ export default async function NewOrderPage(props: {
 
   return (
     <div className="space-y-4 pb-24 lg:pb-6">
-      <PageHeader
-        title="Nueva venta"
-        description="Elige o escribe tus piezas y confirma el cobro."
-      />
+      <h1 className="sr-only">Nueva venta</h1>
 
       <NewOrderForm
         operationId={operation.operationId}

@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/ui";
 import { requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listCustomers } from "@/lib/customer-queries";
@@ -27,11 +26,8 @@ export default async function ClientsPage(props: {
   const canDelete = role === "OWNER" || role === "ADMIN";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Clientes"
-        description="Quiénes te compran, qué te han comprado y cuánto te deben."
-      />
+    <div className="space-y-4">
+      <h1 className="sr-only">Clientes</h1>
 
       {canManage && <CreateCustomerBar />}
 

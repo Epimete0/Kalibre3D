@@ -35,24 +35,18 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
   const lowCount = view.spools.filter((s) => s.isLow).length;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-24 sm:pb-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Bobinas de filamento</h1>
-          <p className="text-sm text-muted">
-            Cuánto filamento te queda y cuánto te cuesta cada gramo.
-          </p>
-        </div>
-
-        {view.canManageCatalog && (
+    <div className="mx-auto max-w-5xl space-y-5 pb-24 sm:pb-10">
+      <h1 className="sr-only">Bobinas de filamento</h1>
+      {view.canManageCatalog && (
+        <div className="flex items-center justify-end">
           <SpoolCreateModal
             currency={view.currency}
             defaultCostPerKg={view.defaultCostPerKg}
             initialOpen={params.nueva === "1"}
             welcome={params.bienvenida === "1"}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tarjetas resumen */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

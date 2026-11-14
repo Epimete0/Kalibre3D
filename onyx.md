@@ -6,6 +6,25 @@
 
 ---
 
+## Buscador de piezas, miles automáticos, ML neto sin doble descuento y limpieza de cabeceras — 2026-11-14
+
+- **Pedido del usuario:** eliminar textos y selectores redundantes en páginas internas, agregar formateo automático con separador de miles (`.`) al escribir precios o montos, evitar el doble descuento en Mercado Libre cuando se ingresa lo recibido neto y sustituir la selección rígida de catálogo en *Nueva venta* por un buscador único que permita elegir del catálogo o escribir manualmente.
+- **Hallazgos auditados:**
+  - En `/orders/new`, `/products`, `/orders`, `/spools`, `/clients`, `/quote` y `/settings` (fuera de onboarding `welcome`), `<PageHeader>` repetía el título de la barra lateral junto con subtítulos explicativos obvios que quitaban espacio útil.
+  - Los campos monetarios eran `<input type="number">` sin separador de miles visual mientras se escribe.
+  - En *Catálogo* (`/products`) solo existía `Precio en Mercado Libre` como precio publicado, obligando al usuario a calcular aparte cuánto recibirá neto. En *Nueva venta* (`/orders/new`), elegir canal Mercado Libre mantenía visible el `<select id="payment-method">` redundante y recalculaba comisión/envío incluso cuando la persona ingresaba el monto neto que realmente le llega.
+  - Cada línea de *Nueva venta* mostraba un `<select>` separado + `<input>` manual + doble subtotal en tarjeta + ejemplos heredados de *Emblema* en placeholders.
+- **Cambios implementados:**
+  - **Formateo de miles al escribir (`src/lib/money-input.ts`, `src/components/MoneyInput.tsx`):** componente entero controlado (con `<input type="hidden" name={name}>` opcional para formularios `FormData`) que muestra separadores `.` (`10.000`) preservando el cursor en desktop y teclado numérico móvil (`inputMode="numeric"`). Aplicado en `NewOrderForm.tsx`, `ProductControls.tsx`, `MoneyControls.tsx`, `OrderMoneyControls.tsx` (cobros y devoluciones) y `SpoolControls.tsx` (precio pagado al crear y editar bobina).
+  - **Modo `Publicado en ML` vs `Lo que recibo neto` (`src/lib/ml-pricing.ts`, `ProductControls.tsx`, `NewOrderForm.tsx`, `products/page.tsx`):**
+    - En **Catálogo** (`CreateProductBar` y edición móvil/escritorio vía `MlPriceField`), el usuario puede ingresar el precio publicado en ML o directamente lo que desea recibir neto; el cálculo puro (`suggestMlPriceForTargetNet` / `mercadoLibreNet`) deriva y almacena el `mlPrice` en el esquema existente sin cambios en Prisma ni RLS.
+    - En **Nueva venta**, `Opciones de Mercado Libre` incorpora el selector segmentado **`Publicado en ML`** | **`Lo que recibo neto`**: en modo neto fija `mlCommission = 0` y `mlShippingCost = 0` y carga el neto calculado al seleccionar piezas de catálogo, evitando descuentos dobles. Además, cuando el canal es `MERCADOLIBRE`, se oculta el `<select>` redundante de `Método de pago` manteniendo `Cobro vía Mercado Libre` y enviando `method: "MERCADOLIBRE"`.
+  - **Buscador único por línea y limpieza visual (`src/components/PieceCombobox.tsx`, `NewOrderForm.tsx`):** `PieceCombobox` filtra en tiempo real por nombre, categoría o material (mostrando stock y precio según canal/modo) o conserva cualquier texto manual, y se hereda al usar `+ Agregar otra pieza` y `Duplicar`. Se eliminó el subtotal inferior repetido de cada tarjeta, se muestra el listado de ítems en `Resumen de venta` solo cuando hay más de una línea, se ocultó el precio tachado cuando no hay deducciones ML y se alinearon las insignias/botones con la paleta Carbón & Arena + Azul Eléctrico.
+  - **Cabeceras limpias (`orders/new/page.tsx`, `orders/page.tsx`, `products/page.tsx`, `spools/page.tsx`, `clients/page.tsx`, `quote/page.tsx`, `settings/page.tsx`):** reemplazados los bloques visibles redundantes por `<h1 className="sr-only">` accesible (conservando el paso guiado en `/settings?welcome=1`).
+- **Pruebas añadidas:** [`src/lib/money-input.test.ts`](src/lib/money-input.test.ts) y [`src/lib/ml-pricing.test.ts`](src/lib/ml-pricing.test.ts).
+
+---
+
 ## Rediseño de paleta Carbón & Arena + Azul Eléctrico (regla 60-30-10) — 2026-11-14
 
 - **Pedido del usuario:** revisar la paleta de colores y la visualización del sitio aplicando la regla **60-30-10** (dos colores base armónicos y un único color de acento reservado para los botones de acción principal) y el ***Squint Test***, eligiendo finalmente la propuesta **Carbón & Arena + Azul Eléctrico** para todo el sistema.

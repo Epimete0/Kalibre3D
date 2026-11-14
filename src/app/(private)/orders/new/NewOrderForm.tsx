@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useRef, useState } from "react";
+import { MoneyInput } from "@/components/MoneyInput";
+import { PieceCombobox } from "@/components/PieceCombobox";
 import {
   Badge,
   Card,
@@ -13,9 +15,9 @@ import {
 import { MATERIAL_LABEL, MATERIALS, type Material } from "@/lib/catalog-presentation";
 import type { CustomerListItem } from "@/lib/customer-queries";
 import { effectiveMlCommission, rememberLastChannel } from "@/lib/last-channel";
+import { type MlPriceInputMode, unitPriceForOrderChannel } from "@/lib/ml-pricing";
 import { formatMoney } from "@/lib/money-format";
 import type { OrderChannel } from "@/lib/order-status";
-import { unitPriceFor } from "@/lib/order-totals";
 import type { ProductListItem } from "@/lib/product-queries";
 import { createOrderAction } from "../actions";
 
@@ -101,8 +103,9 @@ export function NewOrderForm({
   const [newCustomerInstagram, setNewCustomerInstagram] = useState("");
 
   // Mercado Libre (D4)
+  const [mlPriceMode, setMlPriceMode] = useState<MlPriceInputMode>("PUBLISHED");
   const [mlOrderRef, setMlOrderRef] = useState("");
-  // null = la comisión sigue al total; un número = la persona la escribió a mano.
+  // null = la comisión sigue al total; un número = la persona la escribió a mano (o 0 en modo NET).
   const [mlCommissionManual, setMlCommissionManual] = useState<number | null>(null);
   const [mlShippingCost, setMlShippingCost] = useState(settings.mlDefaultShippingCost);
 
@@ -124,11 +127,16 @@ export function NewOrderForm({
 
   const isML = channel === "MERCADOLIBRE";
   const productsById = new Map(products.map((p) => [p.id, p]));
+  const resolvedUnitPrice = (
+    product: ProductListItem,
+    targetChannel = channel,
+    targetMode = mlPriceMode
+  ) => unitPriceForOrderChannel(product, targetChannel, targetMode, settings);
 
   const rawSubtotal = items.reduce((sum, it) => sum + it.qty * it.unitPrice, 0);
   const totalUnits = items.reduce((sum, it) => sum + it.qty, 0);
   const total = Math.max(0, rawSubtotal - discount);
-  // La comisión sugerida de Mercado Libre se recalcula sola con el total, salvo que se escriba a mano.
+  // La comisión sugerida de Mercado Libre se recalcula sola con el total, salvo que se escriba a mano o se use modo Neto.
   const mlCommission = effectiveMlCommission(total, settings.mlCommissionPercent, mlCommissionManual);
 
   const handleChannelChange = (newChannel: string) => {
@@ -136,30 +144,46 @@ export function NewOrderForm({
     rememberLastChannel(newChannel as OrderChannel);
     const switchingToML = newChannel === "MERCADOLIBRE";
 
+    setItems((prev) =>
+      prev.map((item) => {
+        if (!item.productId) return item;
+        const found = productsById.get(item.productId);
+        if (!found) return item;
+        return { ...item, unitPrice: resolvedUnitPrice(found, newChannel, mlPriceMode) };
+      })
+    );
+
     if (switchingToML) {
-      setItems((prev) =>
-        prev.map((item) => {
-          if (!item.productId) return item;
-          const found = productsById.get(item.productId);
-          if (!found) return item;
-          return { ...item, unitPrice: unitPriceFor(found, true) };
-        })
-      );
       setPaymentMethod("MERCADOLIBRE");
+      if (mlPriceMode === "NET") {
+        setMlCommissionManual(0);
+        setMlShippingCost(0);
+      } else {
+        setMlCommissionManual(null);
+        setMlShippingCost(settings.mlDefaultShippingCost);
+      }
+    } else if (paymentMethod === "MERCADOLIBRE") {
+      setPaymentMethod("TRANSFER");
+    }
+  };
+
+  const handleMlPriceModeChange = (nextMode: MlPriceInputMode) => {
+    if (nextMode === mlPriceMode) return;
+    setMlPriceMode(nextMode);
+    setItems((prev) =>
+      prev.map((item) => {
+        if (!item.productId) return item;
+        const found = productsById.get(item.productId);
+        if (!found) return item;
+        return { ...item, unitPrice: resolvedUnitPrice(found, "MERCADOLIBRE", nextMode) };
+      })
+    );
+    if (nextMode === "NET") {
+      setMlCommissionManual(0);
+      setMlShippingCost(0);
+    } else {
       setMlCommissionManual(null);
       setMlShippingCost(settings.mlDefaultShippingCost);
-    } else {
-      setItems((prev) =>
-        prev.map((item) => {
-          if (!item.productId) return item;
-          const found = productsById.get(item.productId);
-          if (!found) return item;
-          return { ...item, unitPrice: unitPriceFor(found, false) };
-        })
-      );
-      if (paymentMethod === "MERCADOLIBRE") {
-        setPaymentMethod("TRANSFER");
-      }
     }
   };
 
@@ -173,7 +197,7 @@ export function NewOrderForm({
     const found = productsById.get(productId);
     if (!found) return;
 
-    const price = unitPriceFor(found, isML);
+    const price = resolvedUnitPrice(found);
     setItems((prev) =>
       prev.map((it) =>
         it.localId === localId
@@ -285,7 +309,7 @@ export function NewOrderForm({
           <div
             role="radiogroup"
             aria-label="Tipo de registro"
-            className="grid grid-cols-2 gap-1.5 rounded-2xl border border-line bg-raised/70 p-1 shadow-inner"
+            className="grid grid-cols-2 gap-1.5 rounded-2xl border border-line bg-raised p-1"
           >
             {KINDS.map((option) => {
               const selected = kind === option.id;
@@ -304,7 +328,7 @@ export function NewOrderForm({
                   }}
                   className={`flex min-h-11 flex-col sm:flex-row sm:gap-2 items-center justify-center rounded-xl px-3 py-1.5 text-center transition-all duration-150 touch-manipulation ${
                     selected
-                      ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-line/60 dark:bg-raised"
+                      ? "bg-surface text-ink font-bold shadow-[0_1px_2px_rgba(28,29,33,0.06)] border border-line dark:bg-raised"
                       : "text-muted hover:text-ink hover:bg-canvas/50"
                   }`}
                 >
@@ -322,7 +346,7 @@ export function NewOrderForm({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
-                  ¿Qué vendiste?
+                  Piezas
                 </h2>
                 {(items.length > 1 || totalUnits > 1) && (
                   <Badge tone="neutral">
@@ -331,11 +355,6 @@ export function NewOrderForm({
                   </Badge>
                 )}
               </div>
-              {products.length > 0 && (
-                <span className="text-xs text-muted">
-                  Elige de tu catálogo o escribe manualmente
-                </span>
-              )}
             </div>
 
             <div className="space-y-3">
@@ -358,7 +377,7 @@ export function NewOrderForm({
                     {/* Cabecera clara de cada pieza con subtotal y acciones rápidas */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg bg-primary-soft px-2 text-xs font-bold text-primary-ink">
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-line bg-raised px-2 text-xs font-bold text-ink">
                           #{idx + 1}
                         </span>
 
@@ -414,79 +433,66 @@ export function NewOrderForm({
                       </div>
                     </div>
 
-                    {/* Fila 1: Catálogo (si hay) + Descripción */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                      {products.length > 0 && (
-                        <div className="sm:col-span-5">
-                          <label
-                            htmlFor={`item-${item.localId}-catalog`}
-                            className="text-[11px] font-medium text-muted block mb-1"
-                          >
-                            Catálogo
-                          </label>
-                          <select
-                            id={`item-${item.localId}-catalog`}
-                            aria-label={`Elegir pieza ${idx + 1} de tu catálogo`}
-                            value={item.productId || ""}
-                            onChange={(e) => handleProductSelect(item.localId, e.target.value)}
-                            className={inputClass}
-                          >
-                            <option value="">Escribir manualmente…</option>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} — {formatMoney(unitPriceFor(p, isML), settings.currency)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <div className={products.length > 0 ? "sm:col-span-7" : "sm:col-span-12"}>
-                        <label
-                          htmlFor={`item-${item.localId}-description`}
-                          className="text-[11px] font-medium text-muted block mb-1"
-                        >
-                          Nombre o descripción *
-                        </label>
-                        <input
-                          id={`item-${item.localId}-description`}
-                          type="text"
-                          required
-                          placeholder="Ej: Emblema Toyota Yaris"
-                          value={item.description}
-                          onChange={(e) => updateItem(item.localId, { description: e.target.value })}
-                          className={inputClass}
-                        />
-                      </div>
+                    {/* Fila 1: Buscador único de catálogo o pieza manual */}
+                    <div>
+                      <label
+                        htmlFor={`item-${item.localId}-description`}
+                        className="text-[11px] font-medium text-muted block mb-1"
+                      >
+                        Pieza *
+                      </label>
+                      <PieceCombobox
+                        id={`item-${item.localId}-description`}
+                        products={products}
+                        selectedProductId={item.productId}
+                        value={item.description}
+                        unitPriceForProduct={(p) => resolvedUnitPrice(p)}
+                        currency={settings.currency}
+                        placeholder={
+                          products.length > 0
+                            ? "Buscar pieza o escribir manual…"
+                            : "Ej: Soporte control gamer"
+                        }
+                        onSelectProduct={(found) => handleProductSelect(item.localId, found.id)}
+                        onManualTextChange={(nextText) =>
+                          updateItem(item.localId, {
+                            productId: null,
+                            description: nextText,
+                          })
+                        }
+                        onClearProduct={() =>
+                          updateItem(item.localId, {
+                            productId: null,
+                            description: "",
+                          })
+                        }
+                      />
                     </div>
 
                     {/* Fila 2: Precio unitario y cantidad */}
                     <div className="grid grid-cols-12 gap-2.5 items-end">
-                      <div className="col-span-6 sm:col-span-5">
+                      <div className="col-span-6">
                         <label
                           htmlFor={`item-${item.localId}-price`}
                           className="text-[11px] font-medium text-muted block mb-1"
                         >
-                          Precio unitario ({settings.currency})
+                          {isML && mlPriceMode === "NET"
+                            ? `Neto unitario (${settings.currency})`
+                            : `Precio unitario (${settings.currency})`}
                         </label>
-                        <input
+                        <MoneyInput
                           id={`item-${item.localId}-price`}
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
                           required
                           placeholder="0"
-                          value={item.unitPrice || ""}
-                          onChange={(e) =>
-                            updateItem(item.localId, {
-                              unitPrice: Math.max(0, Number(e.target.value) || 0),
-                            })
+                          value={item.unitPrice}
+                          onChangeValue={(_, num) =>
+                            updateItem(item.localId, { unitPrice: num })
                           }
-                          className={`${inputClass} font-semibold tabular-nums`}
+                          className="font-semibold"
                         />
                       </div>
 
-                      <div className="col-span-6 sm:col-span-4">
+                      <div className="col-span-6">
                         <label
                           htmlFor={`item-${item.localId}-qty`}
                           className="text-[11px] font-medium text-muted block mb-1"
@@ -527,13 +533,6 @@ export function NewOrderForm({
                             +
                           </button>
                         </div>
-                      </div>
-
-                      <div className="hidden sm:flex sm:col-span-3 flex-col items-end justify-center pb-1.5">
-                        <span className="text-[11px] text-muted">Subtotal línea</span>
-                        <span className="text-base font-bold text-ink tabular-nums">
-                          {formatMoney(lineSubtotal, settings.currency)}
-                        </span>
                       </div>
                     </div>
 
@@ -686,11 +685,35 @@ export function NewOrderForm({
             </div>
 
             {isML && (
-              <div className="rounded-xl bg-accent-soft/40 border border-accent/30 p-3.5 space-y-3">
-                <div className="flex items-center justify-between gap-2">
+              <div className="rounded-xl bg-raised/60 border border-line p-3.5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold text-ink">Opciones de Mercado Libre</span>
-                  <span className="text-[11px] font-medium text-muted">Precios ML activos</span>
+                  <div
+                    className={`${segmentedTrackClass} p-0.5 text-[11px]`}
+                    role="group"
+                    aria-label="Modo de precio Mercado Libre"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleMlPriceModeChange("PUBLISHED")}
+                      className={`${segmentedItemClass(mlPriceMode === "PUBLISHED")} px-2.5 py-1 text-[11px]`}
+                    >
+                      Publicado en ML
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMlPriceModeChange("NET")}
+                      className={`${segmentedItemClass(mlPriceMode === "NET")} px-2.5 py-1 text-[11px]`}
+                    >
+                      Lo que recibo neto
+                    </button>
+                  </div>
                 </div>
+                {mlPriceMode === "NET" && (
+                  <p className="text-[11px] text-muted">
+                    Modo neto directo: los montos de arriba se toman tal cual los recibes, sin descontar comisión ni envío otra vez.
+                  </p>
+                )}
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                   <div>
                     <label htmlFor="ml-ref" className="text-[11px] text-muted block mb-1">
@@ -709,26 +732,22 @@ export function NewOrderForm({
                     <label htmlFor="ml-commission" className="text-[11px] text-muted block mb-1">
                       Comisión ML ({settings.mlCommissionPercent}%)
                     </label>
-                    <input
+                    <MoneyInput
                       id="ml-commission"
-                      type="number"
-                      inputMode="numeric"
-                      value={mlCommission || ""}
-                      onChange={(e) => setMlCommissionManual(Number(e.target.value) || 0)}
-                      className={inputClass}
+                      allowZeroDisplay={mlCommissionManual !== null || mlPriceMode === "NET"}
+                      value={mlCommission}
+                      onChangeValue={(_, num) => setMlCommissionManual(num)}
                     />
                   </div>
                   <div>
                     <label htmlFor="ml-shipping" className="text-[11px] text-muted block mb-1">
                       Costo de envío a tu cargo
                     </label>
-                    <input
+                    <MoneyInput
                       id="ml-shipping"
-                      type="number"
-                      inputMode="numeric"
-                      value={mlShippingCost || ""}
-                      onChange={(e) => setMlShippingCost(Number(e.target.value) || 0)}
-                      className={inputClass}
+                      allowZeroDisplay
+                      value={mlShippingCost}
+                      onChangeValue={(_, num) => setMlShippingCost(num)}
                     />
                   </div>
                 </div>
@@ -832,15 +851,11 @@ export function NewOrderForm({
                   <label htmlFor="order-discount" className="text-xs font-semibold text-ink block mb-1">
                     Descuento ({settings.currency})
                   </label>
-                  <input
+                  <MoneyInput
                     id="order-discount"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
                     placeholder="0"
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))}
-                    className={inputClass}
+                    value={discount}
+                    onChangeValue={(_, num) => setDiscount(num)}
                   />
                 </div>
                 <div>
@@ -881,8 +896,8 @@ export function NewOrderForm({
               </span>
             </div>
 
-            {/* Desglose visual de piezas agregadas */}
-            {namedItems.length > 0 ? (
+            {/* Desglose visual de piezas agregadas (solo si hay varias líneas) */}
+            {items.length > 1 ? (
               <ul className="divide-y divide-line/60 text-xs space-y-0">
                 {items.map((it, idx) => (
                   <li key={it.localId} className="flex items-baseline justify-between gap-2 py-1.5 first:pt-0">
@@ -896,15 +911,15 @@ export function NewOrderForm({
                   </li>
                 ))}
               </ul>
-            ) : (
+            ) : namedItems.length === 0 ? (
               <p className="text-xs text-muted">
                 Agrega al menos una pieza y su precio para ver el total.
               </p>
-            )}
+            ) : null}
 
             {/* Desglose económico */}
             <dl className="space-y-1.5 border-t border-line/70 pt-3 text-xs">
-              {(discount > 0 || isML) && (
+              {(discount > 0 || (isML && (mlCommission > 0 || mlShippingCost > 0))) && (
                 <div className="flex items-center justify-between text-muted">
                   <dt>Subtotal piezas</dt>
                   <dd className="tabular-nums font-medium text-ink">
@@ -918,19 +933,17 @@ export function NewOrderForm({
                   <dd className="tabular-nums">−{formatMoney(discount, settings.currency)}</dd>
                 </div>
               )}
-              {isML && (
-                <>
-                  <div className="flex items-center justify-between text-muted">
-                    <dt>− Comisión ML</dt>
-                    <dd className="tabular-nums">−{formatMoney(mlCommission, settings.currency)}</dd>
-                  </div>
-                  {mlShippingCost > 0 && (
-                    <div className="flex items-center justify-between text-muted">
-                      <dt>− Envío a tu cargo</dt>
-                      <dd className="tabular-nums">−{formatMoney(mlShippingCost, settings.currency)}</dd>
-                    </div>
-                  )}
-                </>
+              {isML && mlCommission > 0 && (
+                <div className="flex items-center justify-between text-muted">
+                  <dt>− Comisión ML</dt>
+                  <dd className="tabular-nums">−{formatMoney(mlCommission, settings.currency)}</dd>
+                </div>
+              )}
+              {isML && mlShippingCost > 0 && (
+                <div className="flex items-center justify-between text-muted">
+                  <dt>− Envío a tu cargo</dt>
+                  <dd className="tabular-nums">−{formatMoney(mlShippingCost, settings.currency)}</dd>
+                </div>
               )}
               <div className="flex items-baseline justify-between gap-2 pt-1">
                 <dt className="text-xs font-semibold text-muted">
@@ -961,23 +974,29 @@ export function NewOrderForm({
 
               {hasPayment && (
                 <div className="space-y-2.5">
-                  <div>
-                    <label htmlFor="payment-method" className="text-[11px] text-muted block mb-1">
-                      Método de pago
-                    </label>
-                    <select
-                      id="payment-method"
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className={inputClass}
-                    >
-                      {METHODS.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {isML ? (
+                    <div className="rounded-xl border border-line bg-raised/60 px-3 py-2 text-xs font-medium text-ink">
+                      Cobro vía Mercado Libre
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="payment-method" className="text-[11px] text-muted block mb-1">
+                        Método de pago
+                      </label>
+                      <select
+                        id="payment-method"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className={inputClass}
+                      >
+                        {METHODS.filter((m) => m.id !== "MERCADOLIBRE").map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1">
@@ -1009,18 +1028,14 @@ export function NewOrderForm({
                         </div>
                       )}
                     </div>
-                    <input
+                    <MoneyInput
                       id="payment-amount"
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
                       placeholder={String(expectedReceivable || 0)}
-                      value={paymentAmount || ""}
-                      onChange={(e) => {
-                        const raw = e.target.value.trim();
-                        setCustomPaidAmount(raw === "" ? 0 : Math.max(0, Number(raw) || 0));
-                      }}
-                      className={`${inputClass} font-semibold tabular-nums`}
+                      value={paymentAmount}
+                      onChangeValue={(digits, num) =>
+                        setCustomPaidAmount(digits === "" ? 0 : num)
+                      }
+                      className="font-semibold"
                     />
                   </div>
                 </div>
@@ -1032,7 +1047,7 @@ export function NewOrderForm({
               <button
                 type="submit"
                 disabled={pending}
-                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.99] disabled:opacity-60 touch-manipulation"
+                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-all hover:bg-primary-hover active:scale-[0.99] disabled:opacity-60 touch-manipulation"
               >
                 {pending
                   ? "Guardando…"
@@ -1062,7 +1077,7 @@ export function NewOrderForm({
               <span className="text-xl font-bold tabular-nums text-ink">
                 {formatMoney(expectedReceivable, settings.currency)}
               </span>
-              {isML && (
+              {isML && total !== expectedReceivable && (
                 <span className="text-xs text-muted line-through tabular-nums">
                   {formatMoney(total, settings.currency)}
                 </span>
@@ -1080,7 +1095,7 @@ export function NewOrderForm({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60 touch-manipulation"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-transform active:scale-95 disabled:opacity-60 touch-manipulation"
             >
               {pending ? "Guardando…" : kind === "QUICK_SALE" ? "Guardar venta" : "Crear pedido"}
             </button>

@@ -10,6 +10,7 @@ import {
   updateSpoolAction,
   type SpoolActionState,
 } from "@/app/(private)/spools/actions";
+import { MoneyInput } from "@/components/MoneyInput";
 import { Badge, Card, Field, inputClass } from "@/components/ui";
 import { MATERIALS, MATERIAL_LABEL } from "@/lib/catalog-presentation";
 import { formatMoney } from "@/lib/money-format";
@@ -19,7 +20,7 @@ import type { SpoolListItem } from "@/lib/spool-queries";
 const initialState: SpoolActionState = {};
 
 const primaryBtn =
-  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-all hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 const secondaryBtn =
   "inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink shadow-xs transition-all hover:bg-raised hover:border-line-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 
@@ -56,7 +57,7 @@ const COMMON_COLORS = [
 const chipClass = (selected: boolean) =>
   `inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-150 touch-manipulation ${
     selected
-      ? "border-primary/40 bg-primary-soft text-primary-ink font-bold shadow-xs ring-1 ring-primary/20"
+      ? "border-ink bg-ink text-surface font-bold shadow-[0_1px_2px_rgba(28,29,33,0.12)]"
       : "border-line bg-surface text-ink hover:border-line-strong hover:bg-raised"
   }`;
 
@@ -250,14 +251,13 @@ export function SpoolCreateModal({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label={`¿Cuánto pagaste? (${currency})`} htmlFor="spool-price">
-            <input
+            <MoneyInput
               id="spool-price"
               name="pricePaid"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
               required
-              className={inputClass}
+              allowZeroDisplay
+              value={price}
+              onChangeValue={(digits) => setPrice(digits)}
             />
           </Field>
           <Field label="Fecha de compra (opcional)" htmlFor="spool-date">
@@ -540,6 +540,7 @@ export function SpoolDetailEditControls({
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [editPricePaid, setEditPricePaid] = useState(String(spool.pricePaid ?? 0));
   const [isPendingToggle, startTransition] = useTransition();
   const [toggleError, setToggleError] = useState<string | null>(null);
 
@@ -613,7 +614,13 @@ export function SpoolDetailEditControls({
                 <input name="totalGrams" type="number" min={1} max={50000} defaultValue={spool.totalGrams} required className={inputClass} />
               </Field>
               <Field label={`Precio pagado (${currency})`}>
-                <input name="pricePaid" inputMode="decimal" defaultValue={String(spool.pricePaid ?? 0)} required className={inputClass} />
+                <MoneyInput
+                  name="pricePaid"
+                  required
+                  allowZeroDisplay
+                  value={editPricePaid}
+                  onChangeValue={(digits) => setEditPricePaid(digits)}
+                />
               </Field>
               <Field label="Fecha de compra">
                 <input name="purchasedOn" type="date" defaultValue={spool.purchasedOn} required className={inputClass} />

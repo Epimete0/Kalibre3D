@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PageHeader } from "@/components/ui";
 import { requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
 import { listOrders } from "@/lib/order-queries";
@@ -20,20 +19,18 @@ export default async function OrdersPage() {
   const isViewer = role === "VIEWER";
 
   return (
-    <div className="space-y-6 pb-20">
-      <PageHeader
-        title="Pedidos y Ventas"
-        description="Tus ventas y los encargos que tienes en curso. Toca uno para ver en qué etapa va."
-      >
-        {canManage && (
+    <div className="space-y-4 pb-20">
+      <h1 className="sr-only">Pedidos y Ventas</h1>
+      {canManage && (
+        <div className="flex items-center justify-end lg:hidden">
           <Link
             href="/orders/new"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-primary-hover transition-colors touch-manipulation"
+            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] hover:bg-primary-hover transition-colors touch-manipulation"
           >
             + Nueva venta
           </Link>
-        )}
-      </PageHeader>
+        </div>
+      )}
 
       <OrderListControls
         orders={orders}

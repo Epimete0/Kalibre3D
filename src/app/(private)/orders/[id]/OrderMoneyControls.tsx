@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { MoneyInput } from "@/components/MoneyInput";
 import { Badge, inputClass } from "@/components/ui";
 import { formatMoney } from "@/lib/money-format";
 import {
@@ -272,16 +273,12 @@ export function OrderMoneyControls({
               <label className="mb-1 block text-xs font-semibold text-ink">
                 Monto recibido *
               </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
+              <MoneyInput
                 required
                 value={amountStr}
-                onChange={(e) => setAmountStr(e.target.value)}
+                onChangeValue={(digits) => setAmountStr(digits)}
                 disabled={isPending}
-                className={`${inputClass} min-h-11 text-base font-bold`}
+                className="min-h-11 text-base font-bold"
               />
             </div>
 
@@ -359,16 +356,12 @@ export function OrderMoneyControls({
               <label className="mb-1 block text-xs font-semibold text-ink">
                 Monto devuelto *
               </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
+              <MoneyInput
                 required
                 value={refundAmountStr}
-                onChange={(e) => setRefundAmountStr(e.target.value)}
+                onChangeValue={(digits) => setRefundAmountStr(digits)}
                 disabled={isPending}
-                className={`${inputClass} min-h-11 text-base font-bold`}
+                className="min-h-11 text-base font-bold"
               />
             </div>
 
