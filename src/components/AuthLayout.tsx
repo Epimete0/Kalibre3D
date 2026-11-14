@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KalibreMark } from "@/components/KalibreMark";
 
 const specs = [
   {
@@ -31,14 +32,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div>
           <div className="flex items-center justify-between border-b border-[#2a2c33] pb-4">
             <Link href="/" className="inline-flex items-center gap-2.5 font-display text-2xl font-bold tracking-tight text-[#f5f2eb]">
-              <span className="inline-grid h-8 w-8 place-items-center rounded-lg border border-[#3a3d47] bg-[#26282e] text-[#f5f2eb]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5">
-                  <path d="M5 4v16" />
-                  <path d="M5 6h10l3 3h-6" />
-                  <path d="M5 14h8l2 2H5" />
-                  <circle cx="17" cy="17" r="2" className="text-[#60a5fa]" stroke="currentColor" />
-                </svg>
-              </span>
+              <KalibreMark size="lg" tone="dark" />
               <span>
                 Kalibre<span className="ml-1.5 rounded border border-[#3a3d47] bg-[#26282e] px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#d6d3cb]">3D</span>
               </span>
@@ -125,13 +119,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="w-full max-w-md min-w-0">
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-ink">
-              <span className="inline-grid h-7 w-7 place-items-center rounded-lg border border-[#2a2c33] bg-[#1c1d21] text-[#f5f2eb]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                  <path d="M5 4v16" />
-                  <path d="M5 6h10l3 3h-6" />
-                  <path d="M5 14h8l2 2H5" />
-                </svg>
-              </span>
+              <KalibreMark size="md" />
               <span>Kalibre</span>
             </Link>
             <span className="rounded border border-line bg-raised px-2 py-0.5 font-mono text-[11px] font-semibold text-ink">

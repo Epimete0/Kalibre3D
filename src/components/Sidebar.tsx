@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { KalibreMark } from "@/components/KalibreMark";
 import type { AccountSummary } from "@/lib/auth";
 
 type NavItem = { href: string; label: string; icon: React.ReactNode };
@@ -45,13 +46,7 @@ export function Sidebar({ account }: { account: AccountSummary | null }) {
       <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
         <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
           <span className="inline-flex items-center gap-2 font-display text-[24px] font-bold leading-none tracking-[-0.03em] text-ink">
-            <span className="inline-grid h-7 w-7 place-items-center rounded-lg border border-[#2a2c33] bg-[#1c1d21] text-[#f5f2eb]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                <path d="M5 4v16" />
-                <path d="M5 6h10l3 3h-6" />
-                <path d="M5 14h8l2 2H5" />
-              </svg>
-            </span>
+            <KalibreMark size="md" />
             <span>Kalibre</span>
             <span className="rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[10px] font-semibold text-ink">3D</span>
           </span>
