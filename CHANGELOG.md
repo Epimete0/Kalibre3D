@@ -6,6 +6,16 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Desgaste de impresora y margen de fallos unificados en el taller (`20261114000000_machine_wear_and_failures`):**
+  - `CenterSettings` suma `machineReplacementCost`, `machineLifeHours`, `machineWearCostPerHour` y `failurePercent` (todo opcional, `0` por defecto).
+  - *Mis costos* (`/settings`) incorpora interruptores opcionales para configurar desgaste por reposición ÷ vida útil (con atajos de horas o monto directo por hora) y porcentaje de fallos/reimpresiones (con atajos `3%`, `5%`, `10%`, `15%`).
+  - `computePieceCost`, `estimateUnitCost`, el cotizador interno (`/quote`), la rentabilidad estimada en *Dinero* (`/money`), el costo unitario guardado en pedidos y la ficha/lista de *Catálogo* (`/products`, `/products/[id]`) aplican automáticamente estos costos si el taller los activó.
+- **Carga local en el navegador de `.3mf` laminados y `.gcode` (`src/lib/slicer-file-parser.ts`, `SlicerFileImportButton`):** lee peso, tiempo de impresión, colores, purga, material y nombre sugerido en memoria del navegador (sin subir archivos al servidor) desde Bambu Studio, OrcaSlicer, PrusaSlicer y Cura, disponible en `/herramientas/cotizador`, `/quote` y al agregar piezas en `/products`.
+- **Selector rápido de impresora por watts en `/quote`:** permite ajustar los watts por sesión usando `PRINTER_PRESETS` sin sobreescribir la configuración guardada del taller.
+- **Presupuesto y resumen de pedido en 1 toque para WhatsApp (`src/lib/whatsapp-quote.ts`):** botón **Copiar presupuesto para WhatsApp** en `/herramientas/cotizador` y `/quote` (sin exponer costos internos ni márgenes) y botón **Copiar resumen para WhatsApp** + enlace directo `wa.me` en el detalle de pedido (`/orders/[id]`).
+- **Separador de miles automático en cotizadores y ajustes (`SmartMoneyInput`):** formatea miles (`15.000`, `450.000`) en tiempo real para monedas enteras en `/herramientas/cotizador`, `/quote` y `/settings` manteniendo todos los campos de costos secundarios como opcionales.
+
+### Añadido (previo)
 - **Separador de miles automático al escribir (`MoneyInput`, `src/lib/money-input.ts`):** los campos de precios y montos enteros en *Nueva venta*, *Catálogo*, *Dinero*, *Cobros/Devoluciones de pedidos* y *Bobinas* formatean miles automáticamente (`10.000`) en tiempo real.
 - **Buscador único de piezas en *Nueva venta* (`PieceCombobox`):** reemplaza la dupla de selector + campo de texto en cada línea; busca por nombre, categoría o material mostrando precio y stock, permite escribir piezas manuales al instante y se hereda al duplicar o agregar nuevas líneas.
 - **Precio Mercado Libre en modo `Publicado en ML` vs `Lo que recibo neto` (`src/lib/ml-pricing.ts`):** en *Catálogo* permite definir cuánto deseas recibir neto calculando el precio publicado automáticamente; en *Nueva venta* permite cobrar indicando directamente el monto neto recibido sin descontar comisión ni envío dos veces.

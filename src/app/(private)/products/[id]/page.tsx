@@ -54,6 +54,8 @@ export default async function ProductDetailPage({
     costPerGram,
     printMinutes: product.printMinutes,
     electricityCostPerHour: settings.electricityCostPerHour,
+    machineWearCostPerHour: settings.machineWearCostPerHour,
+    failurePercent: settings.failurePercent,
     packagingCost: settings.defaultPackagingCost,
   });
 
@@ -105,8 +107,11 @@ export default async function ProductDetailPage({
                 {formatMoney(costBreakdown.totalCost, settings.currency)}
               </div>
               <div className="text-[11px] text-muted mt-0.5">
-                Filamento {formatMoney(costBreakdown.materialCost, settings.currency)} + Luz{" "}
-                {formatMoney(costBreakdown.electricityCost, settings.currency)}
+                Filamento {formatMoney(costBreakdown.materialCost, settings.currency)}
+                {costBreakdown.electricityCost > 0 && ` + Luz ${formatMoney(costBreakdown.electricityCost, settings.currency)}`}
+                {costBreakdown.wearCost > 0 && ` + Desgaste ${formatMoney(costBreakdown.wearCost, settings.currency)}`}
+                {costBreakdown.failureCost > 0 && ` + Fallos ${formatMoney(costBreakdown.failureCost, settings.currency)}`}
+                {costBreakdown.packagingCost > 0 && ` + Embalaje ${formatMoney(costBreakdown.packagingCost, settings.currency)}`}
               </div>
             </div>
 

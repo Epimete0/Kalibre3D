@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { startTransition, useActionState, useId, useMemo, useState } from "react";
 import { Card, Field, inputClass } from "@/components/ui";
-import { electricityCostPerHourFromKwh } from "@/lib/costing";
+import { SmartMoneyInput } from "@/components/SmartMoneyInput";
+import { electricityCostPerHourFromKwh, machineWearCostPerHourFromReplacement } from "@/lib/costing";
 import { CURRENCIES, CURRENCY_LABEL, formatMoney, type Currency } from "@/lib/money-format";
 import type { CenterSettingsView } from "@/lib/center-settings-service";
 import { saveCenterSettingsAction } from "./actions";
@@ -127,6 +128,20 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
   const [printerWatts, setPrinterWatts] = useState(settings.printerWatts ? String(settings.printerWatts) : "");
   const [electricityCost, setElectricityCost] = useState(String(settings.electricityCostPerHour));
 
+  // Desgaste de impresora (opcional): costo de reposición ÷ vida útil en horas, o valor directo por hora.
+  const [useWear, setUseWear] = useState(settings.machineWearCostPerHour > 0 || settings.machineReplacementCost > 0);
+  const [machineReplacement, setMachineReplacement] = useState(
+    settings.machineReplacementCost ? String(settings.machineReplacementCost) : "",
+  );
+  const [machineLifeHours, setMachineLifeHours] = useState(
+    settings.machineLifeHours ? String(settings.machineLifeHours) : "",
+  );
+  const [wearCostPerHour, setWearCostPerHour] = useState(String(settings.machineWearCostPerHour));
+
+  // Margen por piezas fallidas o reimpresiones (opcional).
+  const [useFailure, setUseFailure] = useState(settings.failurePercent > 0);
+  const [failurePercent, setFailurePercent] = useState(String(settings.failurePercent || 5));
+
   const [useMercadoLibre, setUseMercadoLibre] = useState(settings.mlCommissionPercent > 0 || settings.mlDefaultShippingCost > 0);
   const [mlCommission, setMlCommission] = useState(String(settings.mlCommissionPercent || 19));
   const [mlShipping, setMlShipping] = useState(String(settings.mlDefaultShippingCost));
@@ -157,6 +172,12 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
   const computedPerHour = electricityCostPerHourFromKwh(Number(kwhPrice) || 0, Number(printerWatts) || 0);
   const perHourShown = computedPerHour > 0 ? String(computedPerHour) : electricityCost;
 
+  const computedWearPerHour = machineWearCostPerHourFromReplacement(
+    Number(machineReplacement) || 0,
+    Number(machineLifeHours) || 0,
+  );
+  const wearPerHourShown = computedWearPerHour > 0 ? String(computedWearPerHour) : wearCostPerHour;
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData();
@@ -166,6 +187,10 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
     data.set("electricityKwhPrice", useElectricity ? kwhPrice || "0" : "0");
     data.set("printerWatts", useElectricity ? printerWatts || "0" : "0");
     data.set("electricityCostPerHour", useElectricity ? perHourShown || "0" : "0");
+    data.set("machineReplacementCost", useWear ? machineReplacement || "0" : "0");
+    data.set("machineLifeHours", useWear ? machineLifeHours || "0" : "0");
+    data.set("machineWearCostPerHour", useWear ? wearPerHourShown || "0" : "0");
+    data.set("failurePercent", useFailure ? failurePercent || "0" : "0");
     data.set("mlCommissionPercent", useMercadoLibre ? mlCommission || "0" : "0");
     data.set("mlDefaultShippingCost", useMercadoLibre ? mlShipping || "0" : "0");
     data.set("extraCommissionPercent", useExtraCommission ? extraCommission || "0" : "0");
@@ -199,16 +224,13 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={`Precio del kWh (${currency})`} htmlFor="settings-kwh-price" hint="Cuánto te cobran por cada kilowatt hora.">
-            <input
+            <SmartMoneyInput
               id="settings-kwh-price"
-              type="number"
-              inputMode="numeric"
-              min="0"
-              step="1"
+              currency={currency}
+              integerOnly
               placeholder="Ej: 200"
               value={kwhPrice}
-              onChange={(e) => setKwhPrice(e.target.value)}
-              className={inputClass}
+              onChangeValue={setKwhPrice}
             />
           </Field>
           <Field label="Consumo de tu impresora (W)" htmlFor="settings-printer-watts" hint="Promedio mientras imprime.">
@@ -250,15 +272,14 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
                 : "Completa el kWh y los watts para calcularlo, o escríbelo directo."
             }
           >
-            <input
+            <SmartMoneyInput
               id="settings-electricity"
-              type="number"
-              inputMode="numeric"
-              min="0"
-              step="1"
+              currency={currency}
+              integerOnly
+              allowZeroDisplay
               value={perHourShown}
-              readOnly={computedPerHour > 0}
-              onChange={(e) => setElectricityCost(e.target.value)}
+              disabled={computedPerHour > 0}
+              onChangeValue={setElectricityCost}
               className={`${inputClass} ${computedPerHour > 0 ? "opacity-80" : ""}`}
             />
           </Field>
@@ -284,6 +305,117 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
       </CostToggle>
 
       <CostToggle
+        title="¿Quieres considerar el desgaste de tu impresora?"
+        description="Repuestos, boquillas y mantención repartidos por cada hora de impresión (opcional)."
+        enabled={useWear}
+        onChange={setUseWear}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field
+            label={`Valor de tu impresora o repuestos (${currency})`}
+            htmlFor="settings-wear-replacement"
+            hint="Ej. lo que costó la máquina o un kit anual de mantención."
+          >
+            <SmartMoneyInput
+              id="settings-wear-replacement"
+              currency={currency}
+              integerOnly
+              placeholder="Ej: 450.000"
+              value={machineReplacement}
+              onChangeValue={setMachineReplacement}
+            />
+          </Field>
+          <Field label="Vida útil estimada (horas)" htmlFor="settings-wear-life" hint="Ej. 3.000 a 5.000 h de impresión.">
+            <input
+              id="settings-wear-life"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              step="100"
+              placeholder="Ej: 4000"
+              value={machineLifeHours}
+              onChange={(e) => setMachineLifeHours(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Vidas útiles típicas">
+          {[2000, 4000, 6000].map((hours) => (
+            <button
+              key={hours}
+              type="button"
+              onClick={() => setMachineLifeHours(String(hours))}
+              className={`min-h-9 rounded-full border px-3 text-xs transition-colors ${
+                machineLifeHours === String(hours) ? "border-primary bg-primary text-white" : "border-line bg-raised text-ink hover:bg-canvas"
+              }`}
+            >
+              {hours.toLocaleString("es-CL")} h
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-xl border border-line bg-raised p-3">
+          <Field
+            label={`Desgaste por hora (${currency})`}
+            htmlFor="settings-wear-per-hour"
+            hint={
+              computedWearPerHour > 0
+                ? `Calculado: ${formatMoney(Number(machineReplacement), currency)} ÷ ${Number(machineLifeHours).toLocaleString("es-CL")} h = ${formatMoney(computedWearPerHour, currency)} por hora.`
+                : "Completa el valor y las horas de arriba para calcularlo, o escribe un monto directo por hora."
+            }
+          >
+            <SmartMoneyInput
+              id="settings-wear-per-hour"
+              currency={currency}
+              integerOnly
+              allowZeroDisplay
+              value={wearPerHourShown}
+              disabled={computedWearPerHour > 0}
+              onChangeValue={setWearCostPerHour}
+              className={`${inputClass} ${computedWearPerHour > 0 ? "opacity-80" : ""}`}
+            />
+          </Field>
+        </div>
+      </CostToggle>
+
+      <CostToggle
+        title="¿Quieres cubrir un porcentaje de fallos?"
+        description="Respaldo opcional por si una impresión falla o requiere reimpresión."
+        enabled={useFailure}
+        onChange={setUseFailure}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {[3, 5, 10, 15].map((pct) => (
+            <button
+              key={pct}
+              type="button"
+              aria-pressed={failurePercent === String(pct)}
+              onClick={() => setFailurePercent(String(pct))}
+              className={`min-h-10 rounded-xl border px-3.5 text-sm transition-colors ${
+                failurePercent === String(pct) ? "border-primary bg-primary text-white font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
+              }`}
+            >
+              {pct}%
+            </button>
+          ))}
+          <label htmlFor="settings-failure-percent" className="sr-only">
+            Porcentaje de fallos (%)
+          </label>
+          <input
+            id="settings-failure-percent"
+            type="number"
+            min="0"
+            max="50"
+            step="0.5"
+            value={failurePercent}
+            onChange={(e) => setFailurePercent(e.target.value)}
+            className={`${inputClass} w-24`}
+          />
+          <span className="text-sm text-muted">% sobre material, luz y desgaste</span>
+        </div>
+      </CostToggle>
+
+      <CostToggle
         title="¿Vendes por Mercado Libre?"
         description="Para calcular cuánto te llega de verdad después de la comisión y el envío."
         enabled={useMercadoLibre}
@@ -303,14 +435,13 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
             />
           </Field>
           <Field label={`Envío a tu cargo (${currency})`} htmlFor="settings-ml-shipping" hint="Si ofreces envío gratis, lo que te descuentan.">
-            <input
+            <SmartMoneyInput
               id="settings-ml-shipping"
-              type="number"
-              min="0"
-              step="1"
+              currency={currency}
+              integerOnly
+              allowZeroDisplay
               value={mlShipping}
-              onChange={(e) => setMlShipping(e.target.value)}
-              className={inputClass}
+              onChangeValue={setMlShipping}
             />
           </Field>
         </div>
@@ -377,14 +508,13 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
         onChange={setUsePackaging}
       >
         <Field label={`Embalaje por pieza (${currency})`} htmlFor="settings-packaging" hint="Si las cajas te salen gratis, déjalo apagado.">
-          <input
+          <SmartMoneyInput
             id="settings-packaging"
-            type="number"
-            min="0"
-            step="1"
+            currency={currency}
+            integerOnly
+            allowZeroDisplay
             value={packaging}
-            onChange={(e) => setPackaging(e.target.value)}
-            className={inputClass}
+            onChangeValue={setPackaging}
           />
         </Field>
       </CostToggle>
@@ -482,14 +612,13 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
             htmlFor="settings-cost-per-kg"
             hint="Se usa mientras no tengas bobinas cargadas de ese material."
           >
-            <input
+            <SmartMoneyInput
               id="settings-cost-per-kg"
-              type="number"
-              min="0"
-              step="1"
+              currency={currency}
+              integerOnly
+              allowZeroDisplay
               value={costPerKg}
-              onChange={(e) => setCostPerKg(e.target.value)}
-              className={inputClass}
+              onChangeValue={setCostPerKg}
             />
           </Field>
 

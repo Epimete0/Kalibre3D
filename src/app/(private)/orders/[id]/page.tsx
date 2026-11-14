@@ -15,7 +15,9 @@ import { getOrderDetail } from "@/lib/order-queries";
 import type { OrderStatus } from "@/lib/order-status";
 import { OrderDetailStatusControls } from "./OrderDetailStatusControls";
 import { OrderMoneyControls } from "./OrderMoneyControls";
+import { CopyWhatsAppButton } from "./CopyWhatsAppButton";
 import { formatDay } from "@/lib/date-labels";
+import { formatWhatsAppOrderSummary } from "@/lib/whatsapp-quote";
 
 export const metadata = {
   title: "Detalle de pedido | Kalibre",
@@ -81,6 +83,23 @@ export default async function OrderDetailPage(props: {
   }
 
   const currency = settings.currency;
+  const whatsAppSummary = formatWhatsAppOrderSummary({
+    orderNumber: order.number,
+    statusLabel: STATUS_LABEL[order.status],
+    customerName: order.customer?.name ?? "cliente",
+    items: order.items.map((item) => ({
+      title: item.description,
+      quantity: item.qty,
+      lineTotal: item.subtotal ?? 0,
+    })),
+    shippingCost: 0,
+    discountAmount: order.discount ?? 0,
+    totalAmount: order.total ?? 0,
+    paidAmount: order.paidAmount ?? 0,
+    balanceDue: order.balance ?? 0,
+    currency,
+    dueDateLabel: order.dueDate ? formatDay(order.dueDate) : null,
+  });
 
   return (
     <div className="space-y-5 pb-24">
@@ -444,6 +463,14 @@ export default async function OrderDetailPage(props: {
                           : "Pagado"
                         : "—"}
                     </span>
+                  </div>
+
+                  <div className="pt-2">
+                    <CopyWhatsAppButton
+                      summaryText={whatsAppSummary}
+                      customerPhone={order.customer?.phone}
+                      customerName={order.customer?.name}
+                    />
                   </div>
                 </div>
 

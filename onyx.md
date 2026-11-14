@@ -6,6 +6,28 @@
 
 ---
 
+## Bloque 1: Desgaste, fallos, lectura local `.3mf`/`.gcode`, miles en cotizadores y WhatsApp en 1 toque — 2026-11-14
+
+- **Pedido del usuario:** cerrar brechas detectadas frente a competidores (SpoolDeck / EiPrint3D) en la capa de cálculo y operación rápida sin obligar a llenar costos opcionales: unificar desgaste de impresora y margen de fallos del cotizador público en todo el taller, leer archivos `.3mf` laminados y `.gcode` 100 % en el navegador sin subirlos al servidor, sumar selector de impresora por watts y miles automáticos en cotizadores/ajustes, y ofrecer resumen listo para copiar a WhatsApp. Los módulos configurables/onboarding personalizado, descuento automático por bobina, recetas/insumos y QR de bobinas quedan pospuestos para **Bloque 2**.
+- **Base de datos y migraciones (`20261114000000_machine_wear_and_failures`):**
+  - Se añaden 4 columnas aditivas (`NOT NULL DEFAULT 0`) a `public."CenterSettings"`: `machineReplacementCost` (`Int`), `machineLifeHours` (`Int`), `machineWearCostPerHour` (`Int`) y `failurePercent` (`DECIMAL(5,2)`), con `CHECK ("CenterSettings_wear_and_failure_non_negative")` (`failurePercent` entre `0` y `100`).
+  - Paquete de producción idempotente en `scripts/production/20261114-apply-machine-wear-and-failures.sql` y test de integridad `scripts/production/package-20261114.test.ts`.
+- **Dominio y cálculo interno (`costing.ts`, `sale-cost.ts`, `center-settings-service.ts`, `order-service.ts`, `insights-queries.ts`):**
+  - `computePieceCost` suma `wearCost` (`printMinutes/60 * machineWearCostPerHour`) y `failureCost` (`(materialCost + electricityCost + wearCost) * failurePercent / 100`) de forma retrocompatible (opcionales, default `0`) y exporta `machineWearCostPerHourFromReplacement`.
+  - `updateCenterSettings` calcula `machineWearCostPerHour` desde reposición ÷ vida útil (o respeta el valor manual por hora si alguno es `0`) y persiste `failurePercent` validado con Zod (`0–50%`).
+  - `estimateUnitCost`, `estimateOrderUnitCosts` y `loadCostRatesAndVat` aplican ambos parámetros al guardar `OrderItem.unitCost` y estimar rentabilidad en *Dinero* (`/money`).
+- **Lectura local en navegador (`slicer-file-parser.ts`, `SlicerFileImportButton.tsx`, `fflate`):**
+  - Extrae gramos, tiempo en minutos, cantidad de colores, purga, material y nombre sugerido desde `Metadata/slice_info.config` / `.gcode` en `.3mf` laminados o cabeceras/pies de `.gcode` (Bambu Studio, OrcaSlicer, PrusaSlicer, Cura) completamente en memoria del navegador (`parseSlicerBytes`, `parseSlicerFile` usando slices de cabecera y pie en archivos grandes). Rechaza con mensaje claro los `.3mf` de geometría cruda sin laminar.
+  - Integrado en `/herramientas/cotizador`, `/quote` y *Agregar pieza al catálogo* (`/products`).
+- **WhatsApp y formato de miles en vivo (`whatsapp-quote.ts`, `SmartMoneyInput.tsx`, `CopyWhatsAppButton.tsx`):**
+  - `formatWhatsAppQuote` genera presupuestos listos para pegar desde `/herramientas/cotizador` y `/quote` sin filtrar costos internos ni márgenes; `formatWhatsAppOrderSummary` y `CopyWhatsAppButton` permiten copiar el resumen del pedido o abrir chat `wa.me` en `/orders/[id]`.
+  - `SmartMoneyInput` aplica `MoneyInput` con separador `.` en vivo para monedas enteras (`CLP`, `PYG`) y admite decimales sin perder precisión en `/herramientas/cotizador`, `/quote` y `/settings`. Todos los costos secundarios siguen siendo opcionales (vacío o `0` nunca bloquea guardar ni cotizar).
+  - `/quote` incorpora además selector opcional de `PRINTER_PRESETS` por sesión para ajustar watts sin alterar la configuración guardada del taller.
+- **Pruebas nuevas:** `src/lib/costing-wear.test.ts`, `src/lib/slicer-file-parser.test.ts`, `src/lib/whatsapp-quote.test.ts`, `scripts/production/package-20261114.test.ts`, además de extensión de `sale-cost.test.ts` y `center-settings-service.test.ts`.
+- **Pendiente Bloque 2:** cuestionario de onboarding y toggles de módulos (`Clientes`, `Bobinas/Stock`, `Máquinas`), descuento opcional por bobina, recetas multi-pieza/insumos no impresos y etiquetas QR para bobinas.
+
+---
+
 ## Buscador de piezas, miles automáticos, ML neto sin doble descuento y limpieza de cabeceras — 2026-11-14
 
 - **Pedido del usuario:** eliminar textos y selectores redundantes en páginas internas, agregar formateo automático con separador de miles (`.`) al escribir precios o montos, evitar el doble descuento en Mercado Libre cuando se ingresa lo recibido neto y sustituir la selección rígida de catálogo en *Nueva venta* por un buscador único que permita elegir del catálogo o escribir manualmente.

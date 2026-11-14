@@ -47,6 +47,8 @@ export default async function ProductsPage() {
           costSummary={{
             currency: settings.currency,
             electricityCostPerHour: settings.electricityCostPerHour,
+            machineWearCostPerHour: settings.machineWearCostPerHour,
+            failurePercent: settings.failurePercent,
             defaultPackagingCost: settings.defaultPackagingCost,
             defaultPurgeGrams: settings.defaultPurgeGrams,
             mlCommissionPercent: Number(settings.mlCommissionPercent),

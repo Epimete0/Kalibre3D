@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
+import { SlicerFileImportButton } from "@/components/SlicerFileImportButton";
+import { SmartMoneyInput } from "@/components/SmartMoneyInput";
 import { CURRENCIES, CURRENCY_LABEL, currencyDecimals, formatMoney, type Currency } from "@/lib/money-format";
 import { MARGIN_GUIDE, PRINTER_PRESETS, computePublicQuote } from "@/lib/public-quote";
+import type { ParsedSlicerFile } from "@/lib/slicer-file-parser";
+import { formatWhatsAppQuote } from "@/lib/whatsapp-quote";
 
 const inputClass =
   "w-full min-h-11 rounded-xl border border-line bg-surface px-3 text-sm text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35";
 
-/** Campo numérico con etiqueta conectada y ayuda opcional. */
+/** Campo numérico con etiqueta conectada, separador de miles en monedas enteras y ayuda opcional. */
 function NumberField({
   label,
   value,
@@ -17,6 +21,7 @@ function NumberField({
   suffix,
   step = "1",
   placeholder,
+  currency,
 }: {
   label: string;
   value: string;
@@ -25,6 +30,7 @@ function NumberField({
   suffix?: string;
   step?: string;
   placeholder?: string;
+  currency?: string;
 }) {
   const id = useId();
   return (
@@ -33,17 +39,28 @@ function NumberField({
         {label}
       </label>
       <div className="relative">
-        <input
-          id={id}
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step={step}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-          className={`${inputClass} ${suffix ? "pr-14" : ""}`}
-        />
+        {currency ? (
+          <SmartMoneyInput
+            id={id}
+            currency={currency}
+            value={value}
+            placeholder={placeholder}
+            onChangeValue={onChange}
+            className={`${inputClass} ${suffix ? "pr-14" : ""}`}
+          />
+        ) : (
+          <input
+            id={id}
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step={step}
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+            className={`${inputClass} ${suffix ? "pr-14" : ""}`}
+          />
+        )}
         {suffix && <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">{suffix}</span>}
       </div>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
@@ -113,6 +130,19 @@ export function PublicQuoteCalculator() {
   const [useMl, setUseMl] = useState(false);
   const [mlCommission, setMlCommission] = useState("19");
   const [mlShipping, setMlShipping] = useState("");
+  const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
+
+  function handleSlicerParsed(parsed: ParsedSlicerFile) {
+    if (parsed.grams !== null) setGrams(String(parsed.grams));
+    if (parsed.printMinutes !== null) {
+      setHours(String(Math.floor(parsed.printMinutes / 60)));
+      setMinutes(String(parsed.printMinutes % 60));
+    }
+    if (parsed.colorsCount !== null) {
+      setColors(Math.min(4, Math.max(1, parsed.colorsCount)));
+    }
+    if (parsed.purgeGrams !== null) setPurge(String(parsed.purgeGrams));
+  }
 
   // Los montos se escriben en unidades normales y se calculan en la unidad mínima de la moneda.
   const factor = 10 ** currencyDecimals(currency);
@@ -138,6 +168,26 @@ export function PublicQuoteCalculator() {
     mlShippingCost: useMl ? money(mlShipping) : 0,
   });
 
+  async function handleCopyWhatsApp() {
+    const text = formatWhatsAppQuote({
+      quantity: 1,
+      grams: toNumber(grams),
+      colorsCount: colors,
+      printMinutes: toNumber(hours) * 60 + toNumber(minutes),
+      unitPrice: result.directPrice,
+      totalPrice: result.directPrice,
+      currency,
+      includeVat: useVat,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedWhatsApp(true);
+      setTimeout(() => setCopiedWhatsApp(false), 2500);
+    } catch {
+      // Portapapeles restringido por el navegador
+    }
+  }
+
   const fmt = (value: number) => formatMoney(value, currency);
   const hasPiece = toNumber(grams) > 0;
   const kwhLabel = new Intl.NumberFormat("es-CL", { maximumFractionDigits: result.kwh < 0.1 ? 3 : 2 }).format(result.kwh);
@@ -154,7 +204,7 @@ export function PublicQuoteCalculator() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start [&>*]:min-w-0">
       <div className="space-y-4">
-        <Section step="Paso 1" title="Tus costos" description="Lo que pagas por el filamento y la luz. Escríbelos una vez y prueba distintas piezas.">
+        <Section step="Paso 1" title="Tus costos" description="Lo que pagas por el filamento y la luz (solo el filamento es indispensable; el resto es opcional).">
           <div>
             <label htmlFor="public-currency" className="mb-1.5 block text-sm font-medium text-ink">
               Moneda
@@ -168,9 +218,10 @@ export function PublicQuoteCalculator() {
             </select>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <NumberField label="Precio del filamento" suffix="por kg" value={filamentPerKg} onChange={setFilamentPerKg} hint="Lo que pagaste por un rollo de 1 kg." />
+            <NumberField label="Precio del filamento" suffix="por kg" currency={currency} value={filamentPerKg} onChange={setFilamentPerKg} hint="Lo que pagaste por un rollo de 1 kg." />
             <NumberField
-              label="Precio del kWh"
+              label="Precio del kWh (opcional)"
+              currency={currency}
               value={kwhPrice}
               onChange={setKwhPrice}
               placeholder="Ej: 200"
@@ -201,7 +252,7 @@ export function PublicQuoteCalculator() {
               </select>
             </div>
             <NumberField
-              label="Consumo mientras imprime"
+              label="Consumo mientras imprime (opcional)"
               suffix="W"
               value={watts}
               onChange={setWatts}
@@ -220,7 +271,7 @@ export function PublicQuoteCalculator() {
             </div>
             {showAdvanced && (
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <NumberField label="Repuestos" value={spareParts} onChange={setSpareParts} placeholder="Ej: 150000" hint="Boquillas, cama, correas…" />
+                <NumberField label="Repuestos" currency={currency} value={spareParts} onChange={setSpareParts} placeholder="Ej: 150.000" hint="Boquillas, cama, correas…" />
                 <NumberField label="Vida útil" suffix="horas" value={lifeHours} onChange={setLifeHours} placeholder="Ej: 3000" hint="Horas hasta cambiarlos." />
                 <NumberField label="Fallas" suffix="%" value={failure} onChange={setFailure} placeholder="Ej: 10" hint="De cada 10 piezas, ¿cuántas fallan?" />
               </div>
@@ -228,7 +279,8 @@ export function PublicQuoteCalculator() {
           </div>
         </Section>
 
-        <Section step="Paso 2" title="La pieza" description="Los datos que te da tu laminador (Bambu Studio, OrcaSlicer, Cura, PrusaSlicer).">
+        <Section step="Paso 2" title="La pieza" description="Importa tu archivo laminado o escribe peso y tiempo de tu laminador.">
+          <SlicerFileImportButton onParsed={handleSlicerParsed} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <NumberField label="Peso" suffix="g" value={grams} onChange={setGrams} placeholder="Ej: 50" />
             <NumberField label="Tiempo" suffix="horas" value={hours} onChange={setHours} placeholder="Ej: 1" />
@@ -256,8 +308,8 @@ export function PublicQuoteCalculator() {
             <NumberField label="Purga multicolor" suffix="g" value={purge} onChange={setPurge} hint="Lo que se bota en la torre de purga al cambiar de color. Tu laminador lo muestra." />
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <NumberField label="Insumos (opcional)" value={supplies} onChange={setSupplies} placeholder="Ej: 500" hint="Argolla, imán, tag NFC… por pieza." />
-            <NumberField label="Embalaje (opcional)" value={packaging} onChange={setPackaging} placeholder="Ej: 200" hint="Caja, bolsa o etiqueta por pieza." />
+            <NumberField label="Insumos (opcional)" currency={currency} value={supplies} onChange={setSupplies} placeholder="Ej: 500" hint="Argolla, imán, tag NFC… por pieza." />
+            <NumberField label="Embalaje (opcional)" currency={currency} value={packaging} onChange={setPackaging} placeholder="Ej: 200" hint="Caja, bolsa o etiqueta por pieza." />
           </div>
         </Section>
 
@@ -316,7 +368,7 @@ export function PublicQuoteCalculator() {
           {useMl && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <NumberField label="Comisión de Mercado Libre" suffix="%" value={mlCommission} onChange={setMlCommission} />
-              <NumberField label="Envío a tu cargo" value={mlShipping} onChange={setMlShipping} placeholder="Ej: 799" hint="Si ofreces envío gratis." />
+              <NumberField label="Envío a tu cargo" currency={currency} value={mlShipping} onChange={setMlShipping} placeholder="Ej: 799" hint="Si ofreces envío gratis." />
             </div>
           )}
         </Section>
@@ -367,6 +419,14 @@ export function PublicQuoteCalculator() {
                   </p>
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => void handleCopyWhatsApp()}
+                className="mt-3 w-full min-h-11 rounded-xl border border-line bg-raised px-4 text-sm font-semibold text-ink transition hover:bg-canvas"
+              >
+                {copiedWhatsApp ? "Presupuesto copiado para WhatsApp" : "Copiar presupuesto para WhatsApp"}
+              </button>
             </>
           )}
         </div>

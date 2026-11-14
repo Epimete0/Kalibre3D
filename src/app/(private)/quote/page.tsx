@@ -61,6 +61,8 @@ export default async function QuotePage() {
         electricityCostPerHour={settings.electricityCostPerHour}
         electricityKwhPrice={settings.electricityKwhPrice}
         printerWatts={settings.printerWatts}
+        machineWearCostPerHour={settings.machineWearCostPerHour}
+        failurePercent={settings.failurePercent}
         defaultPackagingCost={settings.defaultPackagingCost}
         defaultPurgeGrams={settings.defaultPurgeGrams}
         mlCommissionPercent={settings.mlCommissionPercent}

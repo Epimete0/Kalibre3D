@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SlicerFileImportButton } from "@/components/SlicerFileImportButton";
+import { SmartMoneyInput } from "@/components/SmartMoneyInput";
 import { Badge, Card, Field, inputClass } from "@/components/ui";
 import {
   MATERIAL_LABEL,
@@ -12,14 +14,18 @@ import {
 import {
   computePieceCost,
   directSaleBreakdown,
+  electricityCostPerHourFromKwh,
   printEnergyKwh,
   suggestDirectPrice,
   suggestMlPriceKeeping,
   vatIncluded,
 } from "@/lib/costing";
-import { formatMoney, toMinorUnits, type Currency } from "@/lib/money-format";
+import { currencyDecimals, formatMoney, toMinorUnits, type Currency } from "@/lib/money-format";
 import { CHANNEL_LABEL } from "@/lib/order-presentation";
 import { ORDER_CHANNELS, type OrderChannel } from "@/lib/order-status";
+import { PRINTER_PRESETS } from "@/lib/public-quote";
+import type { ParsedSlicerFile } from "@/lib/slicer-file-parser";
+import { formatWhatsAppQuote } from "@/lib/whatsapp-quote";
 import { createQuotedOrderAction, saveQuoteAsProductAction } from "./actions";
 
 export type MaterialRateInfo = {
@@ -41,6 +47,8 @@ export function QuoteCalculator({
   electricityCostPerHour,
   electricityKwhPrice = 0,
   printerWatts = 0,
+  machineWearCostPerHour = 0,
+  failurePercent = 0,
   defaultPackagingCost,
   defaultPurgeGrams,
   mlCommissionPercent,
@@ -57,6 +65,9 @@ export function QuoteCalculator({
   /** Precio del kWh y watts de la impresora del perfil, para mostrar cuánta energía usa la pieza. */
   electricityKwhPrice?: number;
   printerWatts?: number;
+  /** Desgaste de impresora por hora y % de fallos configurados en el taller (0 = desactivado). */
+  machineWearCostPerHour?: number;
+  failurePercent?: number;
   defaultPackagingCost: number;
   defaultPurgeGrams: number;
   mlCommissionPercent: number;
@@ -74,8 +85,10 @@ export function QuoteCalculator({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const decimals = currencyDecimals(currency);
+  const factor = 10 ** decimals;
   const defaultPackagingMajor =
-    currency === "CLP" ? defaultPackagingCost : defaultPackagingCost / 100;
+    decimals === 0 ? defaultPackagingCost : defaultPackagingCost / factor;
 
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -85,9 +98,12 @@ export function QuoteCalculator({
   const [colorsCount, setColorsCount] = useState("1");
   const [purgeGrams, setPurgeGrams] = useState(String(defaultPurgeGrams));
   const [packagingInput, setPackagingInput] = useState(String(defaultPackagingMajor));
+  const [printerPreset, setPrinterPreset] = useState("");
+  const [sessionWatts, setSessionWatts] = useState(printerWatts > 0 ? String(printerWatts) : "");
   const [marginTarget, setMarginTarget] = useState(defaultMarginPercent);
   const [qty, setQty] = useState("1");
   const [customUnitPriceInput, setCustomUnitPriceInput] = useState("");
+  const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
 
   // Estado para convertir en pedido cotizado
   const [showOrderPanel, setShowOrderPanel] = useState(false);
@@ -105,25 +121,36 @@ export function QuoteCalculator({
     linkLabel?: string;
   } | null>(null);
 
+  const activeWatts = Math.max(0, Number(sessionWatts) || 0);
+  const effectiveElectricityPerHour =
+    printerPreset && electricityKwhPrice > 0
+      ? electricityCostPerHourFromKwh(electricityKwhPrice, activeWatts)
+      : electricityCostPerHour;
+
   // Lo que el taller desactivó en su perfil no aparece en el cotizador (se calcula en 0).
-  const usesElectricity = electricityCostPerHour > 0;
+  const usesElectricity = effectiveElectricityPerHour > 0 || electricityCostPerHour > 0;
+  const usesWear = machineWearCostPerHour > 0;
+  const usesFailure = failurePercent > 0;
   const usesPackaging = defaultPackagingCost > 0;
   const sellsOnMercadoLibre = mlCommissionPercent > 0 || mlDefaultShippingCost > 0;
 
-  const parsedGrams = Math.max(0, Math.round(Number(grams) || 0));
+  const parsedGrams = Math.max(0, Number(grams.replace(",", ".")) || 0);
   const parsedMinutes = Math.max(0, Math.round(Number(printMinutes) || 0));
   const parsedColors = Math.min(16, Math.max(1, Math.round(Number(colorsCount) || 1)));
   const parsedPurge = parsedColors > 1 ? Math.max(0, Math.round(Number(purgeGrams) || 0)) : 0;
   const parsedQty = Math.max(1, Math.round(Number(qty) || 1));
 
-  let packagingMinor = defaultPackagingCost;
-  try {
-    packagingMinor = usesPackaging ? toMinorUnits(packagingInput || "0", currency) ?? 0 : 0;
-  } catch {
-    packagingMinor = 0;
-  }
+  const parseInputMinor = (raw: string): number | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (decimals === 0) return toMinorUnits(trimmed, currency);
+    const num = Number(trimmed.replace(",", "."));
+    return Number.isFinite(num) && num >= 0 ? Math.round(num * factor) : null;
+  };
 
-  const energyKwh = printEnergyKwh(printerWatts, parsedMinutes);
+  const packagingMinor = usesPackaging ? (parseInputMinor(packagingInput) ?? 0) : 0;
+
+  const energyKwh = printEnergyKwh(activeWatts || printerWatts, parsedMinutes);
   const kwhLabel = (kwh: number) =>
     new Intl.NumberFormat("es-CL", { maximumFractionDigits: kwh < 0.1 ? 3 : 2 }).format(kwh);
 
@@ -132,7 +159,9 @@ export function QuoteCalculator({
     grams: parsedGrams,
     costPerGram: currentMaterialRate.costPerGram,
     printMinutes: parsedMinutes,
-    electricityCostPerHour,
+    electricityCostPerHour: effectiveElectricityPerHour,
+    machineWearCostPerHour,
+    failurePercent,
     colorsCount: parsedColors,
     purgeGrams: parsedPurge,
     packagingCost: packagingMinor,
@@ -152,16 +181,20 @@ export function QuoteCalculator({
   }
 
   // Si el usuario escribió un precio manual, usamos ese; si no, usamos el sugerido
-  let activeUnitPriceMinor = suggestedDirectMinor;
-  if (customUnitPriceInput.trim() !== "") {
-    try {
-      const parsedCustom = toMinorUnits(customUnitPriceInput, currency);
-      if (parsedCustom !== null) {
-        activeUnitPriceMinor = parsedCustom;
-      }
-    } catch {
-      activeUnitPriceMinor = suggestedDirectMinor;
+  const parsedCustom = parseInputMinor(customUnitPriceInput);
+  const activeUnitPriceMinor = parsedCustom !== null ? parsedCustom : suggestedDirectMinor;
+
+  function handleSlicerParsed(parsed: ParsedSlicerFile) {
+    if (!description.trim() && parsed.suggestedName) {
+      setDescription(parsed.suggestedName);
     }
+    if (parsed.material) setMaterial(parsed.material);
+    if (parsed.grams !== null) setGrams(String(parsed.grams));
+    if (parsed.printMinutes !== null) setPrintMinutes(String(parsed.printMinutes));
+    if (parsed.colorsCount !== null) {
+      setColorsCount(String(Math.min(16, Math.max(1, parsed.colorsCount))));
+    }
+    if (parsed.purgeGrams !== null) setPurgeGrams(String(parsed.purgeGrams));
   }
 
   const directSale = directSaleBreakdown({
@@ -209,20 +242,20 @@ export function QuoteCalculator({
     }
 
     const saleMajor =
-      currency === "CLP"
+      decimals === 0
         ? String(activeUnitPriceMinor)
-        : (activeUnitPriceMinor / 100).toFixed(2);
+        : (activeUnitPriceMinor / factor).toFixed(decimals);
     const mlMajor =
-      currency === "CLP"
+      decimals === 0
         ? String(suggestedMlMinor)
-        : (suggestedMlMinor / 100).toFixed(2);
+        : (suggestedMlMinor / factor).toFixed(decimals);
 
     const fd = new FormData();
     fd.set("operationId", crypto.randomUUID());
     fd.set("name", trimmedName);
     fd.set("category", category.trim());
     fd.set("material", material);
-    fd.set("grams", String(parsedGrams));
+    fd.set("grams", String(Math.round(parsedGrams)));
     fd.set("printMinutes", String(parsedMinutes));
     fd.set("colorsCount", String(parsedColors));
     fd.set("purgeGrams", String(parsedPurge));
@@ -250,11 +283,33 @@ export function QuoteCalculator({
     });
   }
 
+  async function handleCopyWhatsApp() {
+    const text = formatWhatsAppQuote({
+      pieceName: description.trim() || null,
+      material: MATERIAL_LABEL[material],
+      quantity: parsedQty,
+      grams: parsedGrams,
+      colorsCount: parsedColors,
+      printMinutes: parsedMinutes,
+      unitPrice: activeUnitPriceMinor,
+      totalPrice: totalOrderMinor,
+      currency,
+      includeVat: vatPercent > 0,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedWhatsApp(true);
+      setTimeout(() => setCopiedWhatsApp(false), 2500);
+    } catch {
+      // Portapapeles restringido por el navegador
+    }
+  }
+
   function handleCreateQuotedOrder(e: React.FormEvent) {
     e.preventDefault();
     setFeedback(null);
 
-    const trimmedDesc = description.trim() || `Pieza ${MATERIAL_LABEL[material]} (${parsedGrams} g)`;
+    const trimmedDesc = description.trim() || `Pieza ${MATERIAL_LABEL[material]} (${Math.round(parsedGrams)} g)`;
 
     startTransition(async () => {
       const res = await createQuotedOrderAction({
@@ -273,7 +328,7 @@ export function QuoteCalculator({
             qty: parsedQty,
             unitPrice: activeUnitPriceMinor,
             material,
-            grams: costBreakdown.totalGrams,
+            grams: Math.round(costBreakdown.totalGrams),
             colorsCount: parsedColors,
           },
         ],
@@ -300,6 +355,8 @@ export function QuoteCalculator({
             <Badge tone="neutral">En vivo</Badge>
           </div>
 
+          <SlicerFileImportButton onParsed={handleSlicerParsed} />
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <Field label="Nombre o descripción de la pieza">
@@ -324,6 +381,35 @@ export function QuoteCalculator({
               </Field>
             </div>
           </div>
+
+          {PRINTER_PRESETS.length > 0 && (
+            <Field
+              label="Impresora para esta cotización (opcional)"
+              hint={
+                electricityKwhPrice > 0
+                  ? "Ajusta la potencia solo para calcular esta pieza; no modifica tu configuración guardada."
+                  : "Activa el precio del kWh en Ajustes si deseas que ajuste el cálculo eléctrico."
+              }
+            >
+              <select
+                value={printerPreset}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPrinterPreset(val);
+                  const found = PRINTER_PRESETS.find((item) => item.name === val);
+                  setSessionWatts(found ? String(found.watts) : String(printerWatts || ""));
+                }}
+                className={inputClass}
+              >
+                <option value="">Usar configuración del taller{printerWatts > 0 ? ` (${printerWatts} W)` : ""}</option>
+                {PRINTER_PRESETS.map((preset) => (
+                  <option key={preset.name} value={preset.name}>
+                    {preset.name} · ≈{preset.watts} W
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           {/* Selección táctil de material */}
           <div className="space-y-1.5">
@@ -455,13 +541,11 @@ export function QuoteCalculator({
           <div className={`grid grid-cols-1 gap-3 pt-1 ${usesPackaging ? "sm:grid-cols-2" : ""}`}>
             {usesPackaging && (
               <Field label={`Embalaje unitario (${currency})`}>
-                <input
-                  type="number"
-                  min={0}
-                  step={currency === "CLP" ? 50 : 0.1}
+                <SmartMoneyInput
+                  currency={currency}
                   value={packagingInput}
-                  onChange={(e) => setPackagingInput(e.target.value)}
-                  className={inputClass}
+                  onChangeValue={setPackagingInput}
+                  placeholder="0"
                 />
               </Field>
             )}
@@ -512,20 +596,17 @@ export function QuoteCalculator({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field
               label={`Precio unitario final (${currency})`}
-              hint="Puedes redondearlo (ej. 8990) y ver el margen real."
+              hint="Puedes redondearlo (ej. 8.990) y ver el margen real."
             >
-              <input
-                type="number"
-                min={0}
-                step={currency === "CLP" ? 100 : 0.5}
+              <SmartMoneyInput
+                currency={currency}
                 value={customUnitPriceInput}
-                onChange={(e) => setCustomUnitPriceInput(e.target.value)}
+                onChangeValue={setCustomUnitPriceInput}
                 placeholder={
-                  currency === "CLP"
+                  decimals === 0
                     ? String(suggestedDirectMinor)
-                    : (suggestedDirectMinor / 100).toFixed(2)
+                    : (suggestedDirectMinor / factor).toFixed(decimals)
                 }
-                className={inputClass}
               />
             </Field>
 
@@ -578,6 +659,22 @@ export function QuoteCalculator({
                 </span>
                 <span className="text-ink font-medium tabular-nums">
                   {formatMoney(costBreakdown.electricityCost, currency)}
+                </span>
+              </div>
+            )}
+            {usesWear && (
+              <div className="flex justify-between gap-2 text-muted">
+                <span>Desgaste de impresora ({parsedMinutes} min)</span>
+                <span className="text-ink font-medium tabular-nums">
+                  {formatMoney(costBreakdown.wearCost, currency)}
+                </span>
+              </div>
+            )}
+            {usesFailure && (
+              <div className="flex justify-between gap-2 text-muted">
+                <span>Respaldo por fallos ({failurePercent}%)</span>
+                <span className="text-ink font-medium tabular-nums">
+                  {formatMoney(costBreakdown.failureCost, currency)}
                 </span>
               </div>
             )}
@@ -699,6 +796,14 @@ export function QuoteCalculator({
                 {isPending ? "Guardando…" : "2. Guardar como pieza en el catálogo"}
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => void handleCopyWhatsApp()}
+              className="w-full min-h-11 rounded-xl border border-ok/35 bg-ok-soft hover:brightness-95 text-ok font-semibold text-sm px-4 py-2.5 transition"
+            >
+              {copiedWhatsApp ? "Presupuesto copiado para WhatsApp" : "Copiar presupuesto para WhatsApp"}
+            </button>
           </div>
 
           {/* Panel rápido para crear el pedido cotizado */}
