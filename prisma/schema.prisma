@@ -106,6 +106,10 @@ model CenterSettings {
   extraCommissionPercent Decimal  @default(0) @db.Decimal(5, 2)
   vatPercent             Decimal  @default(0) @db.Decimal(5, 2)
   defaultMarginPercent   Int      @default(60)
+  machineReplacementCost Int      @default(0)
+  machineLifeHours       Int      @default(0)
+  machineWearCostPerHour Int      @default(0)
+  failurePercent         Decimal  @default(0) @db.Decimal(5, 2)
   createdAt              DateTime @default(now()) @db.Timestamptz(6)
   updatedAt              DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 }

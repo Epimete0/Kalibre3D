@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DomainError } from "@/lib/action-errors";
 import { requireCatalogContext, requireOperationalContext } from "@/lib/auth";
 import { validateIanaTimeZone } from "@/lib/center-time-zone";
-import { electricityCostPerHourFromKwh } from "@/lib/costing";
+import { electricityCostPerHourFromKwh, machineWearCostPerHourFromReplacement } from "@/lib/costing";
 import { CURRENCIES, type Currency } from "@/lib/money-format";
 import { prisma } from "@/lib/prisma";
 
@@ -22,6 +22,10 @@ export type CenterSettingsView = {
   extraCommissionPercent: number;
   vatPercent: number;
   defaultMarginPercent: number;
+  machineReplacementCost: number;
+  machineLifeHours: number;
+  machineWearCostPerHour: number;
+  failurePercent: number;
   currencyLocked: boolean;
 };
 
@@ -79,9 +83,38 @@ const centerSettingsSchema = z.object({
     .int("El margen mínimo debe ser un número entero.")
     .min(0, "El margen mínimo no puede ser negativo.")
     .max(95, "El margen mínimo no puede superar el 95%."),
+  machineReplacementCost: z.coerce
+    .number({ error: "El costo de reposición no es válido." })
+    .int("El costo de reposición debe ser un número entero.")
+    .min(0, "El costo de reposición no puede ser negativo.")
+    .max(100_000_000, "El costo de reposición parece demasiado alto. Revísalo."),
+  machineLifeHours: z.coerce
+    .number({ error: "La vida útil en horas no es válida." })
+    .int("La vida útil debe ser un número entero de horas.")
+    .min(0, "La vida útil no puede ser negativa.")
+    .max(1_000_000, "La vida útil parece demasiado alta. Revísala."),
+  machineWearCostPerHour: z.coerce
+    .number({ error: "El desgaste por hora no es válido." })
+    .int("El desgaste por hora debe ser un número entero.")
+    .min(0, "El desgaste por hora no puede ser negativo.")
+    .max(10_000_000, "El desgaste por hora parece demasiado alto. Revísalo."),
+  failurePercent: z.coerce
+    .number({ error: "El porcentaje de fallos no es válido." })
+    .min(0, "El porcentaje de fallos no puede ser negativo.")
+    .max(50, "El porcentaje de fallos no puede superar el 50%."),
 });
 
-const DEFAULT_GUIDED = { electricityKwhPrice: "0", printerWatts: "0", extraCommissionPercent: "0", vatPercent: "0", defaultMarginPercent: "60" };
+const DEFAULT_GUIDED = {
+  electricityKwhPrice: "0",
+  printerWatts: "0",
+  extraCommissionPercent: "0",
+  vatPercent: "0",
+  defaultMarginPercent: "60",
+  machineReplacementCost: "0",
+  machineLifeHours: "0",
+  machineWearCostPerHour: "0",
+  failurePercent: "0",
+};
 
 /** Obtiene la configuración del taller activo. Si no existe, crea los valores por defecto (CLP, 19%, etc.). */
 export async function getCenterSettings(): Promise<CenterSettingsView> {
@@ -118,6 +151,10 @@ export async function getCenterSettings(): Promise<CenterSettingsView> {
     extraCommissionPercent: Number(settings.extraCommissionPercent),
     vatPercent: Number(settings.vatPercent),
     defaultMarginPercent: settings.defaultMarginPercent,
+    machineReplacementCost: settings.machineReplacementCost,
+    machineLifeHours: settings.machineLifeHours,
+    machineWearCostPerHour: settings.machineWearCostPerHour,
+    failurePercent: Number(settings.failurePercent),
     currencyLocked: txCount > 0,
   };
 }
@@ -145,6 +182,10 @@ export async function updateCenterSettings(formData: FormData) {
     extraCommissionPercent: formData.get("extraCommissionPercent") ?? DEFAULT_GUIDED.extraCommissionPercent,
     vatPercent: formData.get("vatPercent") ?? DEFAULT_GUIDED.vatPercent,
     defaultMarginPercent: formData.get("defaultMarginPercent") ?? DEFAULT_GUIDED.defaultMarginPercent,
+    machineReplacementCost: formData.get("machineReplacementCost") ?? DEFAULT_GUIDED.machineReplacementCost,
+    machineLifeHours: formData.get("machineLifeHours") ?? DEFAULT_GUIDED.machineLifeHours,
+    machineWearCostPerHour: formData.get("machineWearCostPerHour") ?? DEFAULT_GUIDED.machineWearCostPerHour,
+    failurePercent: formData.get("failurePercent") ?? DEFAULT_GUIDED.failurePercent,
   };
 
   const parsed = centerSettingsSchema.safeParse(raw);
@@ -179,12 +220,21 @@ export async function updateCenterSettings(formData: FormData) {
   // Con precio del kWh y watts, el costo por hora se calcula en el servidor; si no, se respeta el escrito a mano.
   const fromKwh = electricityCostPerHourFromKwh(parsed.data.electricityKwhPrice, parsed.data.printerWatts);
   const electricityCostPerHour = fromKwh > 0 ? fromKwh : parsed.data.electricityCostPerHour;
+  const fromReplacement = machineWearCostPerHourFromReplacement(
+    parsed.data.machineReplacementCost,
+    parsed.data.machineLifeHours,
+  );
+  const machineWearCostPerHour = fromReplacement > 0 ? fromReplacement : parsed.data.machineWearCostPerHour;
   const guided = {
     electricityKwhPrice: parsed.data.electricityKwhPrice,
     printerWatts: parsed.data.printerWatts,
     extraCommissionPercent: round2(parsed.data.extraCommissionPercent),
     vatPercent: round2(parsed.data.vatPercent),
     defaultMarginPercent: parsed.data.defaultMarginPercent,
+    machineReplacementCost: parsed.data.machineReplacementCost,
+    machineLifeHours: parsed.data.machineLifeHours,
+    machineWearCostPerHour,
+    failurePercent: round2(parsed.data.failurePercent),
   };
 
   await prisma.$transaction([

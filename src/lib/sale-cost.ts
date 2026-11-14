@@ -16,6 +16,8 @@ export type CostRates = {
   spools: readonly SpoolCostSample[];
   defaultCostPerKg: number;
   electricityCostPerHour: number;
+  machineWearCostPerHour?: number;
+  failurePercent?: number;
   packagingCost: number;
   defaultPurgeGrams: number;
 };
@@ -37,6 +39,8 @@ export function estimateUnitCost(spec: PieceSpec, rates: CostRates): number | nu
     costPerGram,
     printMinutes: Math.max(0, spec.printMinutes ?? 0),
     electricityCostPerHour: rates.electricityCostPerHour,
+    machineWearCostPerHour: rates.machineWearCostPerHour ?? 0,
+    failurePercent: rates.failurePercent ?? 0,
     packagingCost: rates.packagingCost,
   }).totalCost;
 }

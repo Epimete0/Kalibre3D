@@ -20,6 +20,16 @@ describe("costo unitario al vender", () => {
     expect(estimateUnitCost({ material: "PLA", grams: 50, colorsCount: 2 }, rates)).toBe(1380);
   });
 
+  it("suma desgaste por hora y margen de fallos cuando el taller los configura", () => {
+    const withWear: CostRates = {
+      ...rates,
+      machineWearCostPerHour: 200,
+      failurePercent: 10,
+    };
+    // 50g × 15 = 750; 1h × 39 = 39; 1h × 200 = 200; base = 989; 10% fallo = 99; embalaje = 100 -> 1188
+    expect(estimateUnitCost({ material: "PETG", grams: 50, printMinutes: 60 }, withWear)).toBe(1188);
+  });
+
   it("no inventa un costo si faltan el material o los gramos", () => {
     expect(estimateUnitCost({ material: null, grams: 50 }, rates)).toBeNull();
     expect(estimateUnitCost({ material: "PETG", grams: 0 }, rates)).toBeNull();

@@ -376,7 +376,14 @@ async function estimateOrderUnitCosts(
   const [settings, spools, products] = await Promise.all([
     prisma.centerSettings.findUnique({
       where: { centerId },
-      select: { defaultCostPerKg: true, electricityCostPerHour: true, defaultPackagingCost: true, defaultPurgeGrams: true },
+      select: {
+        defaultCostPerKg: true,
+        electricityCostPerHour: true,
+        machineWearCostPerHour: true,
+        failurePercent: true,
+        defaultPackagingCost: true,
+        defaultPurgeGrams: true,
+      },
     }),
     prisma.spool.findMany({
       where: { centerId, active: true },
@@ -393,6 +400,8 @@ async function estimateOrderUnitCosts(
     spools,
     defaultCostPerKg: settings?.defaultCostPerKg ?? 15000,
     electricityCostPerHour: settings?.electricityCostPerHour ?? 0,
+    machineWearCostPerHour: settings?.machineWearCostPerHour ?? 0,
+    failurePercent: Number(settings?.failurePercent ?? 0),
     packagingCost: settings?.defaultPackagingCost ?? 0,
     defaultPurgeGrams: settings?.defaultPurgeGrams ?? 0,
   };

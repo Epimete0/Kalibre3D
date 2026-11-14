@@ -132,7 +132,41 @@ describe("center-settings-service", () => {
     it("sin kWh respeta el costo por hora escrito, y un formulario antiguo usa los valores por defecto", async () => {
       await updateCenterSettings(validForm());
       const upsert = prisma.centerSettings.upsert.mock.calls[0][0];
-      expect(upsert.update).toMatchObject({ electricityCostPerHour: 150, vatPercent: 0, extraCommissionPercent: 0, defaultMarginPercent: 60 });
+      expect(upsert.update).toMatchObject({
+        electricityCostPerHour: 150,
+        vatPercent: 0,
+        extraCommissionPercent: 0,
+        defaultMarginPercent: 60,
+        machineWearCostPerHour: 0,
+        failurePercent: 0,
+      });
+    });
+
+    it("calcula el desgaste por hora desde reposición y vida útil, o respeta el manual", async () => {
+      const f = validForm();
+      f.set("machineReplacementCost", "600000");
+      f.set("machineLifeHours", "4000");
+      f.set("machineWearCostPerHour", "999");
+      f.set("failurePercent", "7.5");
+      await updateCenterSettings(f);
+      const first = prisma.centerSettings.upsert.mock.calls[0][0];
+      expect(first.update).toMatchObject({
+        machineReplacementCost: 600000,
+        machineLifeHours: 4000,
+        machineWearCostPerHour: 150,
+        failurePercent: 7.5,
+      });
+
+      const f2 = validForm();
+      f2.set("machineReplacementCost", "0");
+      f2.set("machineLifeHours", "0");
+      f2.set("machineWearCostPerHour", "280");
+      await updateCenterSettings(f2);
+      const second = prisma.centerSettings.upsert.mock.calls[1][0];
+      expect(second.update).toMatchObject({
+        machineWearCostPerHour: 280,
+        failurePercent: 0,
+      });
     });
 
     it("rechaza IVA, comisión adicional o margen fuera de rango", async () => {

@@ -10,6 +10,8 @@ export type CostInput = {
   costPerGram: number;
   printMinutes: number;
   electricityCostPerHour: number;
+  machineWearCostPerHour?: number;
+  failurePercent?: number;
   packagingCost: number;
   otherCosts?: number;
 };
@@ -18,10 +20,20 @@ export type CostBreakdown = {
   totalGrams: number;
   materialCost: number;
   electricityCost: number;
+  wearCost: number;
+  failureCost: number;
   packagingCost: number;
   otherCosts: number;
   totalCost: number;
 };
+
+/** Calcula el desgaste por hora redondeado desde costo de reposición y vida útil en horas. */
+export function machineWearCostPerHourFromReplacement(replacementCost: number, lifeHours: number): number {
+  if (!Number.isFinite(replacementCost) || !Number.isFinite(lifeHours) || replacementCost <= 0 || lifeHours <= 0) {
+    return 0;
+  }
+  return Math.round(replacementCost / lifeHours);
+}
 
 export function costPerGramFromKg(costPerKg: number): number {
   return costPerKg / 1000;
@@ -61,14 +73,19 @@ export function computePieceCost(input: CostInput): CostBreakdown {
   const totalGrams = input.grams + (input.colorsCount > 1 ? input.purgeGrams : 0);
   const materialCost = Math.round(totalGrams * input.costPerGram);
   const electricityCost = Math.round((input.printMinutes / 60) * input.electricityCostPerHour);
+  const wearCost = Math.round((input.printMinutes / 60) * Math.max(0, input.machineWearCostPerHour ?? 0));
+  const failurePercent = Math.max(0, Math.min(100, input.failurePercent ?? 0));
+  const failureCost = Math.round(((materialCost + electricityCost + wearCost) * failurePercent) / 100);
   const otherCosts = input.otherCosts ?? 0;
   return {
     totalGrams,
     materialCost,
     electricityCost,
+    wearCost,
+    failureCost,
     packagingCost: input.packagingCost,
     otherCosts,
-    totalCost: materialCost + electricityCost + input.packagingCost + otherCosts,
+    totalCost: materialCost + electricityCost + wearCost + failureCost + input.packagingCost + otherCosts,
   };
 }
 

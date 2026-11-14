@@ -98,6 +98,8 @@ async function loadCostRatesAndVat(centerId: string): Promise<{ rates: CostRates
       select: {
         defaultCostPerKg: true,
         electricityCostPerHour: true,
+        machineWearCostPerHour: true,
+        failurePercent: true,
         defaultPackagingCost: true,
         defaultPurgeGrams: true,
         vatPercent: true,
@@ -114,6 +116,8 @@ async function loadCostRatesAndVat(centerId: string): Promise<{ rates: CostRates
       spools,
       defaultCostPerKg: settings?.defaultCostPerKg ?? 15000,
       electricityCostPerHour: settings?.electricityCostPerHour ?? 0,
+      machineWearCostPerHour: settings?.machineWearCostPerHour ?? 0,
+      failurePercent: Number(settings?.failurePercent ?? 0),
       packagingCost: settings?.defaultPackagingCost ?? 0,
       defaultPurgeGrams: settings?.defaultPurgeGrams ?? 0,
     },
