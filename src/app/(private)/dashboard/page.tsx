@@ -10,6 +10,7 @@ import { getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
 import { vatIncluded } from "@/lib/costing";
 import { getDashboardOverview } from "@/lib/dashboard-queries";
+import { getMonthlySalesEconomics } from "@/lib/insights-queries";
 import { GettingStartedCard } from "./GettingStartedCard";
 import { formatMoney } from "@/lib/money-format";
 import { CATEGORY_LABEL, type MoneyCategory } from "@/lib/money-presentation";
@@ -97,6 +98,10 @@ export default async function DashboardPage({
     lowStockProducts,
     gettingStarted,
   } = overview;
+
+  const salesEconomics = isManager
+    ? await getMonthlySalesEconomics({ month: resolvedParams.month })
+    : null;
 
   const hasAlerts =
     overdueOrders.length > 0 ||
@@ -314,14 +319,29 @@ export default async function DashboardPage({
           </div>
 
           <div className="rounded-xl border border-line bg-raised/40 px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
-            <span>
-              Flujo de caja del taller: dinero real disponible tras ventas, compras y gastos.
-            </span>
+            {salesEconomics && salesEconomics.summary.ordersCount > 0 ? (
+              <span>
+                <strong className="text-ink font-semibold">Ventas del mes:</strong>{" "}
+                {formatMoney(salesEconomics.summary.grossRevenue, currency)} · Costo fabricación:{" "}
+                <strong className="text-ink font-semibold">
+                  {formatMoney(salesEconomics.summary.productionCost, currency)}
+                </strong>{" "}
+                · Ganancia estimada:{" "}
+                <strong className={salesEconomics.summary.netProfit >= 0 ? "text-ok font-semibold" : "text-danger font-semibold"}>
+                  {salesEconomics.summary.netProfit >= 0 ? "+" : ""}
+                  {formatMoney(salesEconomics.summary.netProfit, currency)}
+                </strong>
+              </span>
+            ) : (
+              <span>
+                Flujo de caja del taller: dinero disponible tras cobros, compras, gastos e impuestos.
+              </span>
+            )}
             <Link
-              href="/money/rentabilidad"
+              href={`/money?month=${moneyView.month}`}
               className="text-primary font-semibold hover:underline shrink-0"
             >
-              Ver margen por modelo fabricado →
+              Ver ventas, costos y caja →
             </Link>
           </div>
 

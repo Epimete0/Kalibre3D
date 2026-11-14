@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { aggregateProfitability, OTHER_SALES_KEY, summarizePurchases, type SaleLine } from "./insights";
+import {
+  aggregateProductPerformance,
+  aggregateProfitability,
+  computeOrderEconomics,
+  computeSalesEconomicsSummary,
+  OTHER_SALES_KEY,
+  summarizePurchases,
+  type SaleLine,
+} from "./insights";
 
 describe("compras del mes", () => {
   it("suma por tipo sin contar devoluciones ni lo anulado, y resume las bobinas agregadas", () => {
@@ -96,5 +104,120 @@ describe("rentabilidad por pieza", () => {
     expect(netRevenue).toBe(10000);
     expect(netProfit).toBe(8000);
     expect(margin).toBe(80);
+  });
+});
+
+describe("economía de ventas, pedido y rendimiento de producto", () => {
+  it("resume ventas del mes descontando IVA incluido y costo de fabricación", () => {
+    const rows = aggregateProfitability(
+      [
+        {
+          orderId: "o1",
+          productId: "p1",
+          productName: "Emblema",
+          qty: 2,
+          unitPrice: 11900,
+          unitCost: 1500,
+          currentUnitCost: null,
+        },
+        {
+          orderId: "o2",
+          productId: null,
+          productName: null,
+          qty: 1,
+          unitPrice: 5950,
+          unitCost: null,
+          currentUnitCost: null,
+        },
+      ],
+      [
+        { id: "o1", discount: 0, mlCommission: 0, mlShippingCost: 0 },
+        { id: "o2", discount: 0, mlCommission: 0, mlShippingCost: 0 },
+      ]
+    );
+
+    const summary = computeSalesEconomicsSummary({ rows, ordersCount: 2, vatPercent: 19 });
+    // gross = 23800 + 5950 = 29750; IVA 19% = 4750; net = 25000; cost = 3000; profit = 22000; margin = 88%
+    expect(summary).toEqual({
+      grossRevenue: 29750,
+      vatAmount: 4750,
+      netRevenue: 25000,
+      productionCost: 3000,
+      netProfit: 22000,
+      marginPercent: 88,
+      units: 3,
+      ordersCount: 2,
+      unitsWithoutCost: 1,
+      unitsEstimatedToday: 0,
+    });
+  });
+
+  it("calcula costos y margen por pedido con costos guardados, estimados y faltantes", () => {
+    const result = computeOrderEconomics({
+      expectedReceivable: 11900,
+      vatPercent: 19,
+      items: [
+        { id: "i1", qty: 2, unitCost: 900, currentUnitCost: null },
+        { id: "i2", qty: 1, unitCost: null, currentUnitCost: 700 },
+        { id: "i3", qty: 1, unitCost: null, currentUnitCost: null },
+      ],
+    });
+
+    expect(result.vatAmount).toBe(1900);
+    expect(result.netRevenue).toBe(10000);
+    expect(result.productionCost).toBe(2500); // 1800 + 700
+    expect(result.profit).toBe(7500);
+    expect(result.marginPercent).toBe(75);
+    expect(result.units).toBe(4);
+    expect(result.unitsWithoutCost).toBe(1);
+    expect(result.unitsEstimatedToday).toBe(1);
+    expect(result.itemsById["i1"]).toEqual({ id: "i1", unitCost: 900, totalCost: 1800, source: "stored" });
+    expect(result.itemsById["i2"]).toEqual({ id: "i2", unitCost: 700, totalCost: 700, source: "estimated" });
+    expect(result.itemsById["i3"]).toEqual({ id: "i3", unitCost: null, totalCost: null, source: "unknown" });
+  });
+
+  it("agrega rendimiento de un producto en pedidos mixtos y ordena del más reciente al más antiguo", () => {
+    const perf = aggregateProductPerformance({
+      productId: "p-target",
+      vatPercent: 0,
+      orders: [
+        {
+          id: "o1",
+          number: 1,
+          channel: "WHATSAPP",
+          createdAt: new Date("2026-11-01T12:00:00Z"),
+          discount: 1000,
+          mlCommission: 0,
+          mlShippingCost: 0,
+          items: [
+            { productId: "p-target", qty: 1, unitPrice: 6000, unitCost: 1000, currentUnitCost: null },
+            { productId: "p-other", qty: 1, unitPrice: 4000, unitCost: 500, currentUnitCost: null },
+          ],
+        },
+        {
+          id: "o2",
+          number: 2,
+          channel: "MERCADOLIBRE",
+          createdAt: new Date("2026-11-05T12:00:00Z"),
+          discount: 0,
+          mlCommission: 1900,
+          mlShippingCost: 800,
+          items: [
+            { productId: "p-target", qty: 2, unitPrice: 5000, unitCost: 1000, currentUnitCost: null },
+          ],
+        },
+      ],
+    });
+
+    // o1: 6000 de 10000 -> 60% del descuento (600) => revenue 5400, cost 1000, profit 4400
+    // o2: 10000 - 2700 = 7300, cost 2000, profit 5300
+    expect(perf.units).toBe(3);
+    expect(perf.ordersCount).toBe(2);
+    expect(perf.grossRevenue).toBe(12700);
+    expect(perf.netRevenue).toBe(12700);
+    expect(perf.productionCost).toBe(3000);
+    expect(perf.profit).toBe(9700);
+    expect(perf.marginPercent).toBe(76);
+    expect(perf.recentOrders.map((r) => r.orderNumber)).toEqual([2, 1]);
   });
 });

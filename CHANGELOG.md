@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Rediseño de Dinero del taller (`/money`), costos por pedido y rendimiento por producto:**
+  - **Dinero en una sola vista clara:** reemplaza las dos pestañas anteriores por una página unificada con dos bloques principales: **Resultado de tus ventas** (ventas netas − IVA − costo real de fabricación de las piezas vendidas = ganancia estimada, con barra proporcional) y **Flujo de caja en cuenta** (cobros, compras/gastos, IVA apartado y disponible líquido), además de barras por canal/categoría y filtro rápido en movimientos (`Todos` · `Ingresos` · `Gastos`).
+  - **Costos y ganancia en cada pedido (`/orders/[id]`):** el resumen financiero de cada pedido ahora muestra el costo de fabricación (filamento, luz y embalaje), IVA incluido y ganancia estimada del pedido, junto con el costo por línea y enlace directo a cada producto del catálogo.
+  - **Rendimiento real en cada producto (`/products/[id]`):** nueva tarjeta con selector entre *Todo el historial* y *Este mes*, mostrando unidades vendidas, ingresos netos reales, costo de fabricación acumulado, ganancia, porcentaje de margen y listado de los pedidos recientes donde se vendió.
+  - **Coherencia en el panel de inicio (`/dashboard`):** muestra en el resumen financiero del mes tanto las ventas y su costo de fabricación estimado como el flujo de caja.
+- **Acceso al cotizador 3D público en la landing:** enlace directo en el Hero (*«Prueba el cotizador gratis sin registrarte»*), enlace visible en el header móvil y en el pie de página (`PublicShell.tsx`).
 - **Elevación de la paleta visual, profundidad y controles segmentados:**
   - Modernización de la paleta de tokens en `globals.css`: fondo claro en slate técnico (`#f8fafc`) con mayor contraste sobre tarjetas blancas puras, y fondo oscuro OLED slate (`#090d16`).
   - Tarjetas (`Card`) con profundidad táctil, relieve superior y sombra multicapa suave (`shadow-[0_1px_3px_rgba(15,23,42,0.04),0_6px_20px_-4px_rgba(15,23,42,0.04)]`).

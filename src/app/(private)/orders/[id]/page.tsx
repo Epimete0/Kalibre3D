@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
+import { getOrderEconomics } from "@/lib/insights-queries";
 import { formatMoney } from "@/lib/money-format";
 import {
   CHANNEL_LABEL,
@@ -65,18 +66,20 @@ export default async function OrderDetailPage(props: {
   const { role, timeZone } = await requireAuthContext();
   const tz = timeZone ?? "America/Santiago";
 
-  const [order, settings] = await Promise.all([
+  const canManage = role === "OWNER" || role === "ADMIN" || role === "PROFESSIONAL";
+  const canManageMoney = role === "OWNER" || role === "ADMIN";
+  const isViewer = role === "VIEWER";
+
+  const [order, settings, economics] = await Promise.all([
     getOrderDetail(id),
     getCenterSettings(),
+    canManageMoney ? getOrderEconomics(id) : Promise.resolve(null),
   ]);
 
   if (!order) {
     notFound();
   }
 
-  const canManage = role === "OWNER" || role === "ADMIN" || role === "PROFESSIONAL";
-  const canManageMoney = role === "OWNER" || role === "ADMIN";
-  const isViewer = role === "VIEWER";
   const currency = settings.currency;
 
   return (
@@ -173,47 +176,67 @@ export default async function OrderDetailPage(props: {
             </div>
 
             <div className="divide-y divide-line/70">
-              {order.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="inline-flex items-center justify-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                        {item.qty}×
-                      </span>
-                      <span className="font-semibold text-ink text-sm sm:text-base break-words">
-                        {item.description}
-                      </span>
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                      {item.material && (
-                        <span className="rounded bg-raised px-1.5 py-0.5 font-medium text-ink/80 border border-line/60">
-                          {item.material}
+              {order.items.map((item) => {
+                const itemEcon = economics?.itemsById[item.id];
+                return (
+                  <div
+                    key={item.id}
+                    className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="inline-flex items-center justify-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                          {item.qty}×
                         </span>
-                      )}
-                      <span>
-                        {item.colorsCount}{" "}
-                        {item.colorsCount === 1 ? "color" : "colores"}
-                      </span>
-                      {item.grams !== null && <span>• {item.grams} g</span>}
-                      {!isViewer && item.unitPrice !== null && (
+                        {item.productId && canManageMoney ? (
+                          <Link
+                            href={`/products/${item.productId}`}
+                            className="font-semibold text-ink hover:text-primary hover:underline text-sm sm:text-base break-words"
+                          >
+                            {item.description}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold text-ink text-sm sm:text-base break-words">
+                            {item.description}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                        {item.material && (
+                          <span className="rounded bg-raised px-1.5 py-0.5 font-medium text-ink/80 border border-line/60">
+                            {item.material}
+                          </span>
+                        )}
                         <span>
-                          • {formatMoney(item.unitPrice, currency)} c/u
+                          {item.colorsCount}{" "}
+                          {item.colorsCount === 1 ? "color" : "colores"}
                         </span>
-                      )}
+                        {item.grams !== null && <span>• {item.grams} g</span>}
+                        {!isViewer && item.unitPrice !== null && (
+                          <span>
+                            • {formatMoney(item.unitPrice, currency)} c/u
+                          </span>
+                        )}
+                        {itemEcon && (
+                          <span className="text-ink/80">
+                            •{" "}
+                            {itemEcon.totalCost !== null
+                              ? `Costo fab.: ${formatMoney(itemEcon.totalCost, currency)}`
+                              : "Sin costo calculado"}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {!isViewer && item.subtotal !== null && (
-                    <div className="text-right shrink-0 font-bold text-ink text-sm sm:text-base">
-                      {formatMoney(item.subtotal, currency)}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {!isViewer && item.subtotal !== null && (
+                      <div className="text-right shrink-0 font-bold text-ink text-sm sm:text-base tabular-nums">
+                        {formatMoney(item.subtotal, currency)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {order.notes && (
@@ -423,6 +446,119 @@ export default async function OrderDetailPage(props: {
                     </span>
                   </div>
                 </div>
+
+                {economics && (
+                  <div className="border-t border-line/70 pt-3 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                        Costos y ganancia del pedido
+                      </span>
+                      {economics.marginPercent !== null && (
+                        <Badge
+                          tone={
+                            economics.marginPercent >= 50
+                              ? "ok"
+                              : economics.marginPercent >= 25
+                                ? "warn"
+                                : "danger"
+                          }
+                        >
+                          {economics.marginPercent}% margen
+                        </Badge>
+                      )}
+                    </div>
+
+                    {(() => {
+                      const base = Math.max(1, economics.expectedReceivable);
+                      const profitPct =
+                        economics.expectedReceivable > 0
+                          ? Math.max(0, Math.min(100, Math.round((Math.max(0, economics.profit) / base) * 100)))
+                          : 0;
+                      const vatPct =
+                        economics.expectedReceivable > 0 && economics.vatAmount > 0
+                          ? Math.max(0, Math.min(100 - profitPct, Math.round((economics.vatAmount / base) * 100)))
+                          : 0;
+                      const costPct = Math.max(0, 100 - profitPct - vatPct);
+
+                      return economics.expectedReceivable > 0 ? (
+                        <div className="h-2 w-full rounded-full bg-raised overflow-hidden flex">
+                          {profitPct > 0 && (
+                            <div
+                              className="h-full bg-ok"
+                              style={{ width: `${profitPct}%` }}
+                              title={`Ganancia ${profitPct}%`}
+                            />
+                          )}
+                          {costPct > 0 && (
+                            <div
+                              className="h-full bg-primary"
+                              style={{ width: `${costPct}%` }}
+                              title={`Costo ${costPct}%`}
+                            />
+                          )}
+                          {vatPct > 0 && (
+                            <div
+                              className="h-full bg-line-strong"
+                              style={{ width: `${vatPct}%` }}
+                              title={`IVA ${vatPct}%`}
+                            />
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
+
+                    <div className="space-y-1.5 text-xs">
+                      {settings.vatPercent > 0 && (
+                        <>
+                          <div className="flex items-center justify-between text-muted">
+                            <span>IVA incluido ({settings.vatPercent}%)</span>
+                            <span className="tabular-nums">
+                              −{formatMoney(economics.vatAmount, currency)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-muted">
+                            <span>Neto taller</span>
+                            <span className="font-medium text-ink tabular-nums">
+                              {formatMoney(economics.netRevenue, currency)}
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="flex items-center justify-between text-muted">
+                        <span>Costo de fabricación</span>
+                        <span className="font-medium text-ink tabular-nums">
+                          −{formatMoney(economics.productionCost, currency)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-line/50 pt-1.5 text-sm font-bold">
+                        <span className="text-ink">Ganancia estimada</span>
+                        <span
+                          className={`tabular-nums ${
+                            economics.profit >= 0 ? "text-ok" : "text-danger"
+                          }`}
+                        >
+                          {economics.profit >= 0 ? "+" : ""}
+                          {formatMoney(economics.profit, currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {economics.unitsWithoutCost > 0 && (
+                      <p className="rounded-lg border border-warn/30 bg-warn/10 px-2.5 py-1.5 text-[11px] text-ink">
+                        {economics.unitsWithoutCost}{" "}
+                        {economics.unitsWithoutCost === 1 ? "pieza" : "piezas"} sin gramos ni material; su costo no se incluyó.
+                      </p>
+                    )}
+
+                    {economics.unitsEstimatedToday > 0 && (
+                      <p className="text-[11px] text-muted">
+                        Costo calculado con tarifas actuales del taller.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </Card>
           )}

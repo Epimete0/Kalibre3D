@@ -2,6 +2,7 @@
  * Compras del mes y rentabilidad por pieza. Módulo puro: recibe filas ya filtradas por taller y calcula.
  * Montos enteros en la unidad mínima de la moneda del taller.
  */
+import { vatIncluded } from "./costing";
 import type { ExpenseCategory } from "./money-presentation";
 
 // ---------------------------------------------------------------------------
@@ -152,4 +153,260 @@ export function aggregateProfitability(lines: readonly SaleLine[], orders: reado
     // Piezas del catálogo de mayor a menor ganancia; "Otras ventas" siempre al final, porque sin costo
     // calculado su ganancia aparece inflada y no es una pieza que se pueda empujar.
     .sort((a, b) => Number(a.key === OTHER_SALES_KEY) - Number(b.key === OTHER_SALES_KEY) || b.profit - a.profit);
+}
+
+// ---------------------------------------------------------------------------
+// Resumen económico de ventas, por pedido y por producto
+// ---------------------------------------------------------------------------
+
+export type SalesEconomicsSummary = {
+  grossRevenue: number;
+  vatAmount: number;
+  netRevenue: number;
+  productionCost: number;
+  netProfit: number;
+  marginPercent: number | null;
+  units: number;
+  ordersCount: number;
+  unitsWithoutCost: number;
+  unitsEstimatedToday: number;
+};
+
+/** Resume ingresos netos de ML/descuentos, IVA incluido, costo de fabricación y ganancia real del período. */
+export function computeSalesEconomicsSummary(input: {
+  rows: readonly ProductProfitability[];
+  ordersCount: number;
+  vatPercent: number;
+}): SalesEconomicsSummary {
+  let grossRevenue = 0;
+  let productionCost = 0;
+  let units = 0;
+  let unitsWithoutCost = 0;
+  let unitsEstimatedToday = 0;
+
+  for (const row of input.rows) {
+    grossRevenue += row.revenue;
+    productionCost += row.cost;
+    units += row.units;
+    unitsWithoutCost += row.unitsWithoutCost;
+    unitsEstimatedToday += row.unitsEstimatedToday;
+  }
+
+  const vatAmount = vatIncluded(grossRevenue, input.vatPercent);
+  const netRevenue = grossRevenue - vatAmount;
+  const netProfit = netRevenue - productionCost;
+  const marginPercent = netRevenue > 0 ? Math.round((netProfit / netRevenue) * 100) : null;
+
+  return {
+    grossRevenue,
+    vatAmount,
+    netRevenue,
+    productionCost,
+    netProfit,
+    marginPercent,
+    units,
+    ordersCount: input.ordersCount,
+    unitsWithoutCost,
+    unitsEstimatedToday,
+  };
+}
+
+export type OrderEconomicsItemInput = {
+  id: string;
+  qty: number;
+  unitCost: number | null;
+  currentUnitCost: number | null;
+};
+
+export type OrderEconomicsItemResult = {
+  id: string;
+  unitCost: number | null;
+  totalCost: number | null;
+  source: "stored" | "estimated" | "unknown";
+};
+
+export type OrderEconomics = {
+  expectedReceivable: number;
+  vatAmount: number;
+  netRevenue: number;
+  productionCost: number;
+  profit: number;
+  marginPercent: number | null;
+  units: number;
+  unitsWithoutCost: number;
+  unitsEstimatedToday: number;
+  itemsById: Record<string, OrderEconomicsItemResult>;
+};
+
+/** Calcula el costo de fabricación, IVA y ganancia estimada de un pedido individual. */
+export function computeOrderEconomics(input: {
+  expectedReceivable: number;
+  vatPercent: number;
+  items: readonly OrderEconomicsItemInput[];
+}): OrderEconomics {
+  let productionCost = 0;
+  let units = 0;
+  let unitsWithoutCost = 0;
+  let unitsEstimatedToday = 0;
+  const itemsById: Record<string, OrderEconomicsItemResult> = {};
+
+  for (const item of input.items) {
+    units += item.qty;
+    const resolvedUnit = item.unitCost ?? item.currentUnitCost;
+    if (resolvedUnit === null) {
+      unitsWithoutCost += item.qty;
+      itemsById[item.id] = { id: item.id, unitCost: null, totalCost: null, source: "unknown" };
+    } else {
+      const totalCost = resolvedUnit * item.qty;
+      productionCost += totalCost;
+      const source = item.unitCost !== null ? "stored" : "estimated";
+      if (source === "estimated") unitsEstimatedToday += item.qty;
+      itemsById[item.id] = { id: item.id, unitCost: resolvedUnit, totalCost, source };
+    }
+  }
+
+  const vatAmount = vatIncluded(input.expectedReceivable, input.vatPercent);
+  const netRevenue = input.expectedReceivable - vatAmount;
+  const profit = netRevenue - productionCost;
+  const marginPercent = netRevenue > 0 ? Math.round((profit / netRevenue) * 100) : null;
+
+  return {
+    expectedReceivable: input.expectedReceivable,
+    vatAmount,
+    netRevenue,
+    productionCost,
+    profit,
+    marginPercent,
+    units,
+    unitsWithoutCost,
+    unitsEstimatedToday,
+    itemsById,
+  };
+}
+
+export type ProductPerformanceOrderInput = {
+  id: string;
+  number: number;
+  channel: string;
+  createdAt: Date;
+  discount: number;
+  mlCommission: number;
+  mlShippingCost: number;
+  items: readonly {
+    productId: string | null;
+    qty: number;
+    unitPrice: number;
+    unitCost: number | null;
+    currentUnitCost: number | null;
+  }[];
+};
+
+export type ProductPerformanceOrderRow = {
+  orderId: string;
+  orderNumber: number;
+  channel: string;
+  createdAt: Date;
+  qty: number;
+  grossRevenue: number;
+  netRevenue: number;
+  cost: number;
+  profit: number;
+  hasMissingCost: boolean;
+};
+
+export type ProductPerformanceSummary = {
+  units: number;
+  ordersCount: number;
+  grossRevenue: number;
+  vatAmount: number;
+  netRevenue: number;
+  productionCost: number;
+  profit: number;
+  marginPercent: number | null;
+  unitsWithoutCost: number;
+  unitsEstimatedToday: number;
+  recentOrders: ProductPerformanceOrderRow[];
+};
+
+/** Agrega ventas, costos y margen real de un producto del catálogo con sus pedidos recientes. */
+export function aggregateProductPerformance(input: {
+  productId: string;
+  vatPercent: number;
+  orders: readonly ProductPerformanceOrderInput[];
+}): ProductPerformanceSummary {
+  let units = 0;
+  let grossRevenue = 0;
+  let productionCost = 0;
+  let unitsWithoutCost = 0;
+  let unitsEstimatedToday = 0;
+  const recentOrders: ProductPerformanceOrderRow[] = [];
+
+  for (const order of input.orders) {
+    const matching = order.items.filter((item) => item.productId === input.productId);
+    if (matching.length === 0) continue;
+
+    const orderSubtotal = order.items.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+    const lineSubtotal = matching.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+    const deductions =
+      order.discount + (order.channel === "MERCADOLIBRE" ? order.mlCommission + order.mlShippingCost : 0);
+    const share = orderSubtotal > 0 ? Math.round((deductions * lineSubtotal) / orderSubtotal) : 0;
+
+    const orderGross = lineSubtotal - share;
+    const orderVat = vatIncluded(orderGross, input.vatPercent);
+    const orderNet = orderGross - orderVat;
+
+    let orderQty = 0;
+    let orderCost = 0;
+    let hasMissingCost = false;
+
+    for (const item of matching) {
+      orderQty += item.qty;
+      const resolvedUnit = item.unitCost ?? item.currentUnitCost;
+      if (resolvedUnit === null) {
+        unitsWithoutCost += item.qty;
+        hasMissingCost = true;
+      } else {
+        orderCost += resolvedUnit * item.qty;
+        if (item.unitCost === null) unitsEstimatedToday += item.qty;
+      }
+    }
+
+    units += orderQty;
+    grossRevenue += orderGross;
+    productionCost += orderCost;
+
+    recentOrders.push({
+      orderId: order.id,
+      orderNumber: order.number,
+      channel: order.channel,
+      createdAt: order.createdAt,
+      qty: orderQty,
+      grossRevenue: orderGross,
+      netRevenue: orderNet,
+      cost: orderCost,
+      profit: orderNet - orderCost,
+      hasMissingCost,
+    });
+  }
+
+  recentOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const vatAmount = vatIncluded(grossRevenue, input.vatPercent);
+  const netRevenue = grossRevenue - vatAmount;
+  const profit = netRevenue - productionCost;
+  const marginPercent = netRevenue > 0 ? Math.round((profit / netRevenue) * 100) : null;
+
+  return {
+    units,
+    ordersCount: recentOrders.length,
+    grossRevenue,
+    vatAmount,
+    netRevenue,
+    productionCost,
+    profit,
+    marginPercent,
+    unitsWithoutCost,
+    unitsEstimatedToday,
+    recentOrders,
+  };
 }

@@ -2,13 +2,15 @@ import { NoPermission } from "@/components/NoPermission";
 import { PageHeader } from "@/components/ui";
 import { canManageCatalog, requireAuthContext } from "@/lib/auth";
 import { getCenterSettings } from "@/lib/center-settings-service";
+import { getMonthlySalesEconomics } from "@/lib/insights-queries";
 import { getMonthlyMoneyView } from "@/lib/money-queries";
 import { MoneyControls } from "./MoneyControls";
-import { MoneyTabs } from "./MoneyTabs";
 
 export const metadata = {
   title: "Dinero | Kalibre",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function MoneyPage(props: {
   searchParams?: Promise<{ month?: string; new?: string }>;
@@ -25,9 +27,10 @@ export default async function MoneyPage(props: {
   }
 
   const searchParams = props.searchParams ? await props.searchParams : {};
-  const [view, settings] = await Promise.all([
+  const [view, settings, salesEconomics] = await Promise.all([
     getMonthlyMoneyView({ month: searchParams.month }),
     getCenterSettings(),
+    getMonthlySalesEconomics({ month: searchParams.month }),
   ]);
 
   const initialMode =
@@ -41,13 +44,13 @@ export default async function MoneyPage(props: {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Dinero del taller"
-        description="Lo que entró a tu cuenta, lo que gastaste en compras y lo que te quedó en caja este mes."
+        description="Cuánto vendiste, cuánto costó fabricarlo, qué gastaste y cuánto te queda disponible este mes."
       />
-      <MoneyTabs active="caja" month={view.month} />
 
       <MoneyControls
         key={`${view.month}-${initialMode ?? "none"}`}
         view={view}
+        salesSummary={salesEconomics.summary}
         currency={settings.currency}
         vatPercent={settings.vatPercent}
         initialMode={initialMode}

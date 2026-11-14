@@ -30,7 +30,7 @@ export default async function ProductsPage() {
     <>
       <PageHeader
         title="Catálogo de piezas y stock"
-        description="Las piezas que vendes seguido, con su precio y cuántas tienes listas."
+        description="Las piezas que vendes seguido, su precio, stock y rendimiento real."
       >
         <LinkButton href="/quote" variant="ghost">
           Cotizar pieza

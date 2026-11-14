@@ -13,6 +13,7 @@ import {
   segmentedTrackClass,
 } from "@/components/ui";
 import { vatIncluded } from "@/lib/costing";
+import type { SalesEconomicsSummary } from "@/lib/insights";
 import { formatMoney } from "@/lib/money-format";
 import {
   CATEGORY_LABEL,
@@ -62,13 +63,22 @@ function formatMonthLabel(monthStr: string): string {
   return `${monthName} ${y}`;
 }
 
+function marginTone(margin: number | null): "ok" | "warn" | "danger" | "neutral" {
+  if (margin === null) return "neutral";
+  if (margin >= 50) return "ok";
+  if (margin >= 25) return "warn";
+  return "danger";
+}
+
 export function MoneyControls({
   view,
+  salesSummary,
   currency,
   vatPercent = 0,
   initialMode = null,
 }: {
   view: MonthlyMoneyView;
+  salesSummary: SalesEconomicsSummary;
   currency: string;
   vatPercent?: number;
   initialMode?: "EXPENSE" | "INCOME" | null;
@@ -86,6 +96,7 @@ export function MoneyControls({
   const [occurredOn, setOccurredOn] = useState(view.todayStr);
   const [notes, setNotes] = useState("");
 
+  const [txFilter, setTxFilter] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
 
@@ -170,13 +181,28 @@ export function MoneyControls({
   );
 
   const grossIncome = view.summary.income;
-  const vatAmount = vatIncluded(grossIncome, vatPercent);
-  const netIncome = grossIncome - vatAmount;
-  const netProfit = netIncome - view.summary.expense;
+  const cashVatAmount = vatIncluded(grossIncome, vatPercent);
+  const netCashIncome = grossIncome - cashVatAmount;
+  const cashAvailable = netCashIncome - view.summary.expense;
 
   const validTransactions = view.transactions.filter((t) => t.voidedAt === null);
   const expenseCount = validTransactions.filter((t) => t.type === "EXPENSE").length;
   const incomeCount = validTransactions.filter((t) => t.type === "INCOME").length;
+
+  const visibleTransactions =
+    txFilter === "ALL"
+      ? view.transactions
+      : view.transactions.filter((t) => t.type === txFilter);
+
+  const salesProfitShare =
+    salesSummary.grossRevenue > 0
+      ? Math.max(0, Math.min(100, Math.round((Math.max(0, salesSummary.netProfit) / salesSummary.grossRevenue) * 100)))
+      : 0;
+  const salesVatShare =
+    salesSummary.grossRevenue > 0 && salesSummary.vatAmount > 0
+      ? Math.max(0, Math.min(100 - salesProfitShare, Math.round((salesSummary.vatAmount / salesSummary.grossRevenue) * 100)))
+      : 0;
+  const salesCostShare = Math.max(0, 100 - salesProfitShare - salesVatShare);
 
   return (
     <div className="space-y-5">
@@ -386,196 +412,403 @@ export function MoneyControls({
         </Card>
       )}
 
-      {/* Tarjetas de caja del mes */}
-      {vatPercent > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-          <Card className="p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Entró a caja
-              </span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
-                {formatMoney(grossIncome, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              Neto taller: <strong className="text-ink font-semibold">{formatMoney(netIncome, currency)}</strong>
-            </span>
-          </Card>
-
-          <Card className="p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                IVA retenido ({vatPercent}%)
-              </span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
-                {formatMoney(vatAmount, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              Por pagar a impuestos · No es ganancia
-            </span>
-          </Card>
-
-          <Card className="p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Salió en compras y gastos
-              </span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
-                {formatMoney(view.summary.expense, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              {expenseCount} {expenseCount === 1 ? "compra / egreso registrado" : "compras / egresos registrados"}
-            </span>
-          </Card>
-
-          <Card className="p-4 sm:p-5 border-primary/25 bg-surface flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-1">
+      {/* Bloque principal: Resultado de ventas (con costos reales) vs Flujo de caja */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* 1. Resultado económico de las ventas del mes */}
+        <Card className="lg:col-span-7 p-5 sm:p-6 flex flex-col justify-between gap-5">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                  Quedó en caja
+                  Resultado de tus ventas
                 </span>
-                <Badge tone={netProfit >= 0 ? "ok" : "danger"}>
-                  {netProfit >= 0 ? "Saldo a favor" : "Déficit del mes"}
-                </Badge>
+                <p className="text-xs text-muted mt-0.5">
+                  {salesSummary.ordersCount}{" "}
+                  {salesSummary.ordersCount === 1 ? "pedido vendido" : "pedidos vendidos"} ·{" "}
+                  {salesSummary.units}{" "}
+                  {salesSummary.units === 1 ? "pieza" : "piezas"} en {formatMonthLabel(view.month)}
+                </p>
               </div>
-              <span
-                className={`mt-1 block text-2xl font-bold tabular-nums ${
-                  netProfit >= 0 ? "text-ok" : "text-danger"
-                }`}
-              >
-                {formatMoney(netProfit, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              Dinero disponible tras pagar gastos e IVA
-            </span>
-          </Card>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <Card className="p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Entró a caja
-              </span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ok">
-                {formatMoney(view.summary.income, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              {incomeCount} {incomeCount === 1 ? "cobro de venta registrado" : "cobros de ventas registrados"}
-            </span>
-          </Card>
-
-          <Card className="p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                Salió en compras y gastos
-              </span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
-                {formatMoney(view.summary.expense, currency)}
-              </span>
-            </div>
-            <span className="mt-2 block text-xs text-muted">
-              {expenseCount} {expenseCount === 1 ? "compra / egreso registrado" : "compras / egresos registrados"}
-            </span>
-          </Card>
-
-          <Card className="p-4 sm:p-5 border-primary/25 bg-surface flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
-                  Quedó en caja
-                </span>
-                <Badge tone={view.summary.profit >= 0 ? "ok" : "danger"}>
-                  {view.summary.profit >= 0 ? "Saldo a favor" : "Déficit del mes"}
+              {salesSummary.marginPercent !== null && (
+                <Badge tone={marginTone(salesSummary.marginPercent)}>
+                  {salesSummary.marginPercent}% margen real
                 </Badge>
-              </div>
-              <span
-                className={`mt-1 block text-2xl font-bold tabular-nums ${
-                  view.summary.profit >= 0 ? "text-ok" : "text-danger"
-                }`}
-              >
-                {formatMoney(view.summary.profit, currency)}
-              </span>
+              )}
             </div>
-            <span className="mt-2 block text-xs text-muted">
-              Dinero disponible en tu cuenta tras restar egresos
-            </span>
-          </Card>
-        </div>
-      )}
 
-      {/* Desglose por canal y por categoría */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4 sm:p-5 space-y-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
-            Ingresos por canal
-          </h2>
-          {incomeChannels.length === 0 ? (
-            <p className="text-xs text-muted">Sin ingresos activos en este mes.</p>
-          ) : (
-            <div className="space-y-2">
-              {incomeChannels.map(([ch, amt]) => (
-                <div
-                  key={ch}
-                  className="flex items-center justify-between text-sm border-b border-line/50 pb-1.5 last:border-b-0 last:pb-0"
+            {salesSummary.ordersCount === 0 ? (
+              <div className="rounded-xl border border-line/70 bg-raised/40 p-4 space-y-2.5">
+                <p className="text-sm font-medium text-ink">
+                  Todavía no hay pedidos confirmados en {formatMonthLabel(view.month)}.
+                </p>
+                <p className="text-xs text-muted">
+                  Cuando registres ventas, aquí verás cuánto te dejó cada pedido después de descontar el filamento, la luz y el embalaje.
+                </p>
+                <Link
+                  href="/orders/new"
+                  className="inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-white hover:bg-primary-hover transition-colors"
                 >
-                  <span className="font-medium text-ink">
-                    {CHANNEL_LABEL[ch as OrderChannel] ?? ch}
-                  </span>
-                  <span className="font-bold text-ok">
-                    {formatMoney(amt, currency)}
-                  </span>
+                  + Registrar venta
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <span className="text-xs text-muted block">
+                      Ganancia real estimada{vatPercent > 0 ? " (después de IVA y costos)" : " (después de costos)"}
+                    </span>
+                    <span
+                      className={`mt-0.5 block text-3xl sm:text-4xl font-bold tracking-tight tabular-nums ${
+                        salesSummary.netProfit >= 0 ? "text-ok" : "text-danger"
+                      }`}
+                    >
+                      {salesSummary.netProfit >= 0 ? "+" : ""}
+                      {formatMoney(salesSummary.netProfit, currency)}
+                    </span>
+                  </div>
                 </div>
-              ))}
+
+                {/* Barra visual proporcional: Ganancia vs Costos vs IVA */}
+                {salesSummary.grossRevenue > 0 && (
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded-full bg-raised overflow-hidden flex">
+                      {salesProfitShare > 0 && (
+                        <div
+                          className="h-full bg-ok transition-all duration-300"
+                          style={{ width: `${salesProfitShare}%` }}
+                          title={`Ganancia ${salesProfitShare}%`}
+                        />
+                      )}
+                      {salesCostShare > 0 && (
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${salesCostShare}%` }}
+                          title={`Costo de fabricación ${salesCostShare}%`}
+                        />
+                      )}
+                      {salesVatShare > 0 && (
+                        <div
+                          className="h-full bg-line-strong transition-all duration-300"
+                          style={{ width: `${salesVatShare}%` }}
+                          title={`IVA retenido ${salesVatShare}%`}
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-ok" aria-hidden="true" />
+                        Ganancia: <strong className="text-ink font-semibold">{salesProfitShare}%</strong>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                        Costo fabricación: <strong className="text-ink font-semibold">{salesCostShare}%</strong>
+                      </span>
+                      {salesVatShare > 0 && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-line-strong" aria-hidden="true" />
+                          IVA: <strong className="text-ink font-semibold">{salesVatShare}%</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cascada numérica paso a paso */}
+                <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 py-1 text-sm">
+                  <div className="flex items-center justify-between gap-2 py-2.5">
+                    <dt className="text-muted">
+                      Ventas del mes
+                      <span className="block text-[11px]">Neto tras descuentos y cargos de ML</span>
+                    </dt>
+                    <dd className="font-semibold text-ink tabular-nums">
+                      {formatMoney(salesSummary.grossRevenue, currency)}
+                    </dd>
+                  </div>
+
+                  {vatPercent > 0 && (
+                    <div className="flex items-center justify-between gap-2 py-2.5">
+                      <dt className="text-muted">
+                        − IVA retenido ({vatPercent}%)
+                        <span className="block text-[11px]">Por pagar a impuestos · Neto taller: {formatMoney(salesSummary.netRevenue, currency)}</span>
+                      </dt>
+                      <dd className="font-medium text-muted tabular-nums">
+                        −{formatMoney(salesSummary.vatAmount, currency)}
+                      </dd>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 py-2.5">
+                    <dt className="text-muted">
+                      − Costo de fabricar lo vendido
+                      <span className="block text-[11px]">Filamento, luz y embalaje de las {salesSummary.units} piezas</span>
+                    </dt>
+                    <dd className="font-semibold text-ink tabular-nums">
+                      −{formatMoney(salesSummary.productionCost, currency)}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 py-2.5 font-bold">
+                    <dt className="text-ink">= Ganancia estimada</dt>
+                    <dd className={`tabular-nums ${salesSummary.netProfit >= 0 ? "text-ok" : "text-danger"}`}>
+                      {salesSummary.netProfit >= 0 ? "+" : ""}
+                      {formatMoney(salesSummary.netProfit, currency)}
+                    </dd>
+                  </div>
+                </dl>
+
+                {(salesSummary.unitsWithoutCost > 0 || salesSummary.unitsEstimatedToday > 0) && (
+                  <div className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-[11px] text-ink space-y-0.5">
+                    {salesSummary.unitsWithoutCost > 0 && (
+                      <p>
+                        {salesSummary.unitsWithoutCost}{" "}
+                        {salesSummary.unitsWithoutCost === 1 ? "pieza manual no tenía" : "piezas manuales no tenían"}{" "}
+                        gramos ni material; su costo quedó en $0 y la ganancia real podría ser menor.
+                      </p>
+                    )}
+                    {salesSummary.unitsEstimatedToday > 0 && (
+                      <p className="text-muted">
+                        Para {salesSummary.unitsEstimatedToday}{" "}
+                        {salesSummary.unitsEstimatedToday === 1 ? "pieza" : "piezas"} sin costo guardado se usaron tus tarifas actuales.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 border-t border-line/60 pt-3 text-xs font-semibold">
+            <Link href="/products" className="text-primary hover:underline">
+              Ver rendimiento por producto →
+            </Link>
+            <Link href="/orders" className="text-muted hover:text-ink hover:underline">
+              Revisar pedidos del mes →
+            </Link>
+          </div>
+        </Card>
+
+        {/* 2. Flujo de caja en cuenta bancaria */}
+        <Card className="lg:col-span-5 p-5 sm:p-6 flex flex-col justify-between gap-4">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted block">
+                  Flujo de caja en cuenta
+                </span>
+                <p className="text-xs text-muted mt-0.5">
+                  Dinero líquido que entró y salió en {formatMonthLabel(view.month)}
+                </p>
+              </div>
+              <Badge tone={cashAvailable >= 0 ? "ok" : "danger"}>
+                {cashAvailable >= 0 ? "Saldo a favor" : "Déficit"}
+              </Badge>
+            </div>
+
+            <div>
+              <span className="text-xs text-muted block">Te quedó disponible en caja</span>
+              <span
+                className={`mt-0.5 block text-3xl font-bold tracking-tight tabular-nums ${
+                  cashAvailable >= 0 ? "text-ok" : "text-danger"
+                }`}
+              >
+                {formatMoney(cashAvailable, currency)}
+              </span>
+            </div>
+
+            <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 py-1 text-sm">
+              <div className="flex items-center justify-between gap-2 py-2.5">
+                <dt className="text-muted">
+                  + Entró a caja
+                  <span className="block text-[11px]">
+                    {incomeCount} {incomeCount === 1 ? "cobro / ingreso" : "cobros / ingresos"}
+                  </span>
+                </dt>
+                <dd className="font-semibold text-ok tabular-nums">
+                  +{formatMoney(grossIncome, currency)}
+                </dd>
+              </div>
+
+              {vatPercent > 0 && (
+                <div className="flex items-center justify-between gap-2 py-2.5">
+                  <dt className="text-muted">
+                    − IVA apartado ({vatPercent}%)
+                    <span className="block text-[11px]">Por pagar a impuestos</span>
+                  </dt>
+                  <dd className="font-medium text-muted tabular-nums">
+                    −{formatMoney(cashVatAmount, currency)}
+                  </dd>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-2 py-2.5">
+                <dt className="text-muted">
+                  − Salió en compras y gastos
+                  <span className="block text-[11px]">
+                    {expenseCount} {expenseCount === 1 ? "compra / egreso" : "compras / egresos"}
+                  </span>
+                </dt>
+                <dd className="font-semibold text-ink tabular-nums">
+                  −{formatMoney(view.summary.expense, currency)}
+                </dd>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 py-2.5 font-bold">
+                <dt className="text-ink">= Disponible en caja</dt>
+                <dd className={`tabular-nums ${cashAvailable >= 0 ? "text-ok" : "text-danger"}`}>
+                  {formatMoney(cashAvailable, currency)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <p className="rounded-xl border border-line/60 bg-raised/60 p-3 text-[11px] leading-relaxed text-muted">
+            Las compras de bobinas y gastos se restan de tu <strong className="text-ink">Caja</strong> el día que los pagas; los gramos, luz y embalaje de cada venta se descuentan en <strong className="text-ink">Resultado de tus ventas</strong>.
+          </p>
+        </Card>
+      </div>
+
+      {/* Desglose por canal y por categoría con barras proporcionales */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-4 sm:p-5 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+              Entradas por canal
+            </h2>
+            <span className="text-xs font-semibold text-ink tabular-nums">
+              {formatMoney(grossIncome, currency)}
+            </span>
+          </div>
+          {incomeChannels.length === 0 ? (
+            <p className="text-xs text-muted py-2">Sin ingresos cobrados en este mes.</p>
+          ) : (
+            <div className="space-y-3">
+              {incomeChannels.map(([ch, amt]) => {
+                const pct = grossIncome > 0 ? Math.round((amt / grossIncome) * 100) : 0;
+                return (
+                  <div key={ch} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-ink">
+                        {CHANNEL_LABEL[ch as OrderChannel] ?? ch}
+                      </span>
+                      <span className="font-semibold text-ink tabular-nums">
+                        {formatMoney(amt, currency)}{" "}
+                        <span className="text-xs font-normal text-muted">({pct}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-raised overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-ok"
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Card>
 
-        <Card className="p-4 sm:p-5 space-y-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
-            Gastos por categoría
-          </h2>
+        <Card className="p-4 sm:p-5 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+              Compras y gastos por categoría
+            </h2>
+            <span className="text-xs font-semibold text-ink tabular-nums">
+              {formatMoney(view.summary.expense, currency)}
+            </span>
+          </div>
           {expenseCategories.length === 0 ? (
-            <p className="text-xs text-muted">Sin gastos activos en este mes.</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line/60 bg-raised/40 px-3.5 py-2.5">
+              <p className="text-xs text-muted">Sin compras o gastos registrados este mes.</p>
+              <button
+                type="button"
+                onClick={() => openForm("EXPENSE")}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                + Registrar gasto
+              </button>
+            </div>
           ) : (
-            <div className="space-y-2">
-              {expenseCategories.map(([cat, amt]) => (
-                <div
-                  key={cat}
-                  className="flex items-center justify-between text-sm border-b border-line/50 pb-1.5 last:border-b-0 last:pb-0"
-                >
-                  <span className="font-medium text-ink">
-                    {CATEGORY_LABEL[cat as MoneyCategory] ?? cat}
-                  </span>
-                  <span className="font-bold text-danger">
-                    {formatMoney(amt, currency)}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {expenseCategories.map(([cat, amt]) => {
+                const pct =
+                  view.summary.expense > 0 ? Math.round((amt / view.summary.expense) * 100) : 0;
+                return (
+                  <div key={cat} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-ink">
+                        {CATEGORY_LABEL[cat as MoneyCategory] ?? cat}
+                      </span>
+                      <span className="font-semibold text-ink tabular-nums">
+                        {formatMoney(amt, currency)}{" "}
+                        <span className="text-xs font-normal text-muted">({pct}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-raised overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-line-strong"
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Card>
       </div>
 
-      {/* Lista de movimientos del mes con opción de anular */}
+      {/* Lista de movimientos del mes con filtro y opción de anular */}
       <Card className="p-4 sm:p-6 space-y-4">
-        <h2 className="text-base sm:text-lg font-bold text-ink">
-          Movimientos de {formatMonthLabel(view.month)} ({view.transactions.length})
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-base sm:text-lg font-bold text-ink">
+            Movimientos de {formatMonthLabel(view.month)} ({visibleTransactions.length})
+          </h2>
 
-        {view.transactions.length === 0 ? (
+          {view.transactions.length > 0 && (
+            <div className={segmentedTrackClass} role="tablist" aria-label="Filtrar movimientos">
+              <button
+                type="button"
+                onClick={() => setTxFilter("ALL")}
+                className={`min-h-8 ${segmentedItemClass(txFilter === "ALL")}`}
+              >
+                Todos ({view.transactions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTxFilter("INCOME")}
+                className={`min-h-8 ${segmentedItemClass(txFilter === "INCOME")}`}
+              >
+                Ingresos ({view.transactions.filter((t) => t.type === "INCOME").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTxFilter("EXPENSE")}
+                className={`min-h-8 ${segmentedItemClass(txFilter === "EXPENSE")}`}
+              >
+                Gastos ({view.transactions.filter((t) => t.type === "EXPENSE").length})
+              </button>
+            </div>
+          )}
+        </div>
+
+        {visibleTransactions.length === 0 ? (
           <EmptyState
-            title="Todavía no hay movimientos este mes"
-            description="Cada venta cobrada se anota sola aquí. Los gastos (filamento, envíos, repuestos) los agregas con «Registrar gasto» para saber tu ganancia real."
+            title={
+              view.transactions.length === 0
+                ? "Todavía no hay movimientos este mes"
+                : "No hay movimientos en este filtro"
+            }
+            description={
+              view.transactions.length === 0
+                ? "Cada venta cobrada se anota sola aquí. Los gastos (filamento, envíos, repuestos) los agregas con «Registrar gasto»."
+                : "Cambia el filtro a «Todos» para ver los demás movimientos del mes."
+            }
           />
         ) : (
           <div className="divide-y divide-line/70">
-            {view.transactions.map((tx) => {
+            {visibleTransactions.map((tx) => {
               const isVoided = tx.voidedAt !== null;
               const isVoidingThis = voidingId === tx.id;
               const categoryLabel =
@@ -622,11 +855,11 @@ export function MoneyControls({
 
                     <div className="flex items-center gap-2.5 shrink-0">
                       <span
-                        className={`text-sm sm:text-base font-bold ${
+                        className={`text-sm sm:text-base font-bold tabular-nums ${
                           isVoided
                             ? "line-through text-muted"
                             : tx.type === "EXPENSE"
-                              ? "text-danger"
+                              ? "text-ink"
                               : "text-ok"
                         }`}
                       >

@@ -1,12 +1,27 @@
 /**
- * Consultas de Compras y Rentabilidad (pestañas de Dinero). Solo Dueño/Administrador (requireCatalogContext)
+ * Consultas de Compras, Rentabilidad y Economía de ventas. Solo Dueño/Administrador (requireCatalogContext)
  * y siempre filtradas por el taller activo.
  */
 import { requireCatalogContext } from "@/lib/auth";
-import { aggregateProfitability, summarizePurchases, type ProductProfitability, type PurchasesSummary } from "@/lib/insights";
+import {
+  aggregateProductPerformance,
+  aggregateProfitability,
+  computeOrderEconomics,
+  computeSalesEconomicsSummary,
+  summarizePurchases,
+  type OrderEconomics,
+  type ProductPerformanceSummary,
+  type ProductProfitability,
+  type PurchasesSummary,
+  type SalesEconomicsSummary,
+} from "@/lib/insights";
 import { currentMonth, isValidMonth, monthDateRange, shiftMonth, todayInTimeZone } from "@/lib/money-summary";
+import type { OrderChannel } from "@/lib/order-status";
+import { expectedReceivable } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
 import { estimateUnitCost, type CostRates } from "@/lib/sale-cost";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type MonthNavigation = { month: string; previousMonth: string; nextMonth: string };
 
@@ -62,13 +77,64 @@ export type ProfitabilityView = {
 /** Pedidos que cuentan como venta: confirmados en adelante, sin cancelados ni devueltos. */
 const SOLD_STATUSES = ["CONFIRMED", "PRINTING", "READY", "DELIVERED"];
 
+type ItemCostFields = {
+  unitCost: number | null;
+  material: string | null;
+  grams: number | null;
+  colorsCount: number;
+  product: {
+    material: string | null;
+    grams: number | null;
+    printMinutes: number | null;
+    colorsCount: number | null;
+    purgeGrams: number | null;
+  } | null;
+};
+
+async function loadCostRatesAndVat(centerId: string): Promise<{ rates: CostRates; vatPercent: number }> {
+  const [settings, spools] = await Promise.all([
+    prisma.centerSettings.findUnique({
+      where: { centerId },
+      select: {
+        defaultCostPerKg: true,
+        electricityCostPerHour: true,
+        defaultPackagingCost: true,
+        defaultPurgeGrams: true,
+        vatPercent: true,
+      },
+    }),
+    prisma.spool.findMany({
+      where: { centerId, active: true },
+      select: { material: true, active: true, totalGrams: true, pricePaid: true },
+    }),
+  ]);
+
+  return {
+    rates: {
+      spools,
+      defaultCostPerKg: settings?.defaultCostPerKg ?? 15000,
+      electricityCostPerHour: settings?.electricityCostPerHour ?? 0,
+      packagingCost: settings?.defaultPackagingCost ?? 0,
+      defaultPurgeGrams: settings?.defaultPurgeGrams ?? 0,
+    },
+    vatPercent: Number(settings?.vatPercent ?? 0),
+  };
+}
+
+function resolveFallbackUnitCost(item: ItemCostFields, rates: CostRates): number | null {
+  if (item.unitCost !== null) return null;
+  return item.product
+    ? estimateUnitCost(item.product, rates)
+    : estimateUnitCost({ material: item.material, grams: item.grams, colorsCount: item.colorsCount }, rates);
+}
+
 export async function getProductProfitability(options?: { month?: string; all?: boolean }): Promise<ProfitabilityView> {
   const { centerId, timeZone } = await requireCatalogContext();
   const tz = timeZone ?? "America/Santiago";
   const nav = resolveMonth(options?.month, tz);
   const period = options?.all ? "all" : "month";
 
-  const [orders, settings, spools] = await Promise.all([
+  const [orders, { rates }] = await Promise.all([
     prisma.order.findMany({
       where: { centerId, status: { in: SOLD_STATUSES } },
       select: {
@@ -92,23 +158,11 @@ export async function getProductProfitability(options?: { month?: string; all?: 
         },
       },
     }),
-    prisma.centerSettings.findUnique({
-      where: { centerId },
-      select: { defaultCostPerKg: true, electricityCostPerHour: true, defaultPackagingCost: true, defaultPurgeGrams: true },
-    }),
-    prisma.spool.findMany({ where: { centerId, active: true }, select: { material: true, active: true, totalGrams: true, pricePaid: true } }),
+    loadCostRatesAndVat(centerId),
   ]);
 
   // El mes de cada venta es el día local del taller en que se registró.
   const inPeriod = period === "all" ? orders : orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
-
-  const rates: CostRates = {
-    spools,
-    defaultCostPerKg: settings?.defaultCostPerKg ?? 15000,
-    electricityCostPerHour: settings?.electricityCostPerHour ?? 0,
-    packagingCost: settings?.defaultPackagingCost ?? 0,
-    defaultPurgeGrams: settings?.defaultPurgeGrams ?? 0,
-  };
 
   const lines = inPeriod.flatMap((order) =>
     order.items.map((item) => ({
@@ -118,12 +172,7 @@ export async function getProductProfitability(options?: { month?: string; all?: 
       qty: item.qty,
       unitPrice: item.unitPrice,
       unitCost: item.unitCost,
-      currentUnitCost:
-        item.unitCost !== null
-          ? null
-          : item.product
-            ? estimateUnitCost(item.product, rates)
-            : estimateUnitCost({ material: item.material, grams: item.grams, colorsCount: item.colorsCount }, rates),
+      currentUnitCost: resolveFallbackUnitCost(item, rates),
     }))
   );
   const rows = aggregateProfitability(lines, inPeriod);
@@ -138,4 +187,218 @@ export async function getProductProfitability(options?: { month?: string; all?: 
   );
 
   return { period, nav, rows, totals, ordersCount: inPeriod.length };
+}
+
+export type MonthlySalesEconomicsView = {
+  nav: MonthNavigation;
+  summary: SalesEconomicsSummary;
+};
+
+/** Resumen mensual de ventas, costo de fabricación de lo vendido y ganancia real para Dinero/Dashboard. */
+export async function getMonthlySalesEconomics(options?: { month?: string }): Promise<MonthlySalesEconomicsView> {
+  const { centerId, timeZone } = await requireCatalogContext();
+  const tz = timeZone ?? "America/Santiago";
+  const nav = resolveMonth(options?.month, tz);
+
+  const [orders, { rates, vatPercent }] = await Promise.all([
+    prisma.order.findMany({
+      where: { centerId, status: { in: SOLD_STATUSES } },
+      select: {
+        id: true,
+        createdAt: true,
+        discount: true,
+        mlCommission: true,
+        mlShippingCost: true,
+        items: {
+          select: {
+            productId: true,
+            description: true,
+            qty: true,
+            unitPrice: true,
+            unitCost: true,
+            material: true,
+            grams: true,
+            colorsCount: true,
+            product: { select: { name: true, material: true, grams: true, printMinutes: true, colorsCount: true, purgeGrams: true } },
+          },
+        },
+      },
+    }),
+    loadCostRatesAndVat(centerId),
+  ]);
+
+  const inPeriod = orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
+  const lines = inPeriod.flatMap((order) =>
+    order.items.map((item) => ({
+      orderId: order.id,
+      productId: item.productId,
+      productName: item.product?.name ?? item.description,
+      qty: item.qty,
+      unitPrice: item.unitPrice,
+      unitCost: item.unitCost,
+      currentUnitCost: resolveFallbackUnitCost(item, rates),
+    }))
+  );
+  const rows = aggregateProfitability(lines, inPeriod);
+
+  return {
+    nav,
+    summary: computeSalesEconomicsSummary({
+      rows,
+      ordersCount: inPeriod.length,
+      vatPercent,
+    }),
+  };
+}
+
+/** Costo de fabricación, IVA y ganancia estimada de un pedido individual (solo Dueño/Admin). */
+export async function getOrderEconomics(orderId: string): Promise<OrderEconomics | null> {
+  const { centerId } = await requireCatalogContext();
+  if (!UUID_REGEX.test(orderId)) return null;
+
+  const [order, { rates, vatPercent }] = await Promise.all([
+    prisma.order.findFirst({
+      where: { centerId, id: orderId },
+      select: {
+        channel: true,
+        total: true,
+        mlCommission: true,
+        mlShippingCost: true,
+        items: {
+          select: {
+            id: true,
+            qty: true,
+            unitCost: true,
+            material: true,
+            grams: true,
+            colorsCount: true,
+            product: {
+              select: {
+                material: true,
+                grams: true,
+                printMinutes: true,
+                colorsCount: true,
+                purgeGrams: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    loadCostRatesAndVat(centerId),
+  ]);
+
+  if (!order) return null;
+
+  const receivable = expectedReceivable({
+    channel: order.channel as OrderChannel,
+    total: order.total,
+    mlCommission: order.mlCommission,
+    mlShippingCost: order.mlShippingCost,
+  });
+
+  return computeOrderEconomics({
+    expectedReceivable: receivable,
+    vatPercent,
+    items: order.items.map((item) => ({
+      id: item.id,
+      qty: item.qty,
+      unitCost: item.unitCost,
+      currentUnitCost: resolveFallbackUnitCost(item, rates),
+    })),
+  });
+}
+
+export type ProductPerformanceView = {
+  period: "month" | "all";
+  nav: MonthNavigation;
+  vatPercent: number;
+  summary: ProductPerformanceSummary;
+};
+
+/** Rendimiento real (ventas, costos, margen e historial de pedidos) de una pieza del catálogo. */
+export async function getProductPerformance(
+  productId: string,
+  options?: { month?: string; all?: boolean }
+): Promise<ProductPerformanceView | null> {
+  const { centerId, timeZone } = await requireCatalogContext();
+  if (!UUID_REGEX.test(productId)) return null;
+
+  const tz = timeZone ?? "America/Santiago";
+  const nav = resolveMonth(options?.month, tz);
+  const period = options?.all ? "all" : "month";
+
+  const [orders, { rates, vatPercent }] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        centerId,
+        status: { in: SOLD_STATUSES },
+        items: { some: { productId } },
+      },
+      select: {
+        id: true,
+        number: true,
+        channel: true,
+        createdAt: true,
+        discount: true,
+        mlCommission: true,
+        mlShippingCost: true,
+        items: {
+          select: {
+            productId: true,
+            qty: true,
+            unitPrice: true,
+            unitCost: true,
+            material: true,
+            grams: true,
+            colorsCount: true,
+            product: {
+              select: {
+                material: true,
+                grams: true,
+                printMinutes: true,
+                colorsCount: true,
+                purgeGrams: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ createdAt: "desc" }],
+    }),
+    loadCostRatesAndVat(centerId),
+  ]);
+
+  const inPeriod =
+    period === "all"
+      ? orders
+      : orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
+
+  const summary = aggregateProductPerformance({
+    productId,
+    vatPercent,
+    orders: inPeriod.map((order) => ({
+      id: order.id,
+      number: order.number,
+      channel: order.channel,
+      createdAt: order.createdAt,
+      discount: order.discount,
+      mlCommission: order.mlCommission,
+      mlShippingCost: order.mlShippingCost,
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        qty: item.qty,
+        unitPrice: item.unitPrice,
+        unitCost: item.unitCost,
+        currentUnitCost: resolveFallbackUnitCost(item, rates),
+      })),
+    })),
+  });
+
+  return {
+    period,
+    nav,
+    vatPercent,
+    summary,
+  };
 }

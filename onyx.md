@@ -6,6 +6,41 @@
 
 ---
 
+## Rediseño de Dinero (ventas vs costos vs caja), costos por pedido y rendimiento por producto — 2026-11-14
+
+- **Pedido del usuario:** resolver la confusión en `/money` donde se veía lo que entró y lo que había en caja sin mostrar los costos reales de fabricar lo vendido; retirar la pestaña densa de `Margen por pieza` y llevar esa información directamente al detalle de cada pedido (`/orders/[id]`) y de cada producto (`/products/[id]`), mejorando además la calidad visual de Dinero.
+- **Cambios en lógica pura (`src/lib/insights.ts`) y consultas (`src/lib/insights-queries.ts`):**
+  - `computeSalesEconomicsSummary`: resume las ventas del mes (netas de descuentos y comisiones ML), IVA incluido (`vatIncluded`), costo de fabricación de las piezas vendidas y ganancia real estimada con su porcentaje de margen.
+  - `computeOrderEconomics` / `getOrderEconomics`: calcula por pedido individual el costo unitario y total de cada pieza (`OrderItem.unitCost` guardado al vender o estimación con tarifas actuales si es anterior), IVA, neto taller y ganancia estimada del pedido.
+  - `aggregateProductPerformance` / `getProductPerformance`: agrega el rendimiento histórico o del mes de un producto del catálogo (unidades vendidas, ingresos netos prorrateados, costo real, ganancia acumulada, margen y pedidos recientes donde se vendió).
+  - Todas las consultas siguen protegidas por `requireCatalogContext` (`OWNER`/`ADMIN`) y filtradas estrictamente por `centerId`. No requiere migraciones ni cambios de RLS.
+- **Cambios en interfaz:**
+  - **Dinero del taller (`/money`, `MoneyControls.tsx`):** se unificó en una sola vista sin pestañas. Arriba muestra dos tarjetas complementarias: **Resultado de tus ventas** (barra proporcional Ganancia vs Costos vs IVA y cascada paso a paso con el costo de fabricación de lo vendido) y **Flujo de caja en cuenta** (cobros, IVA apartado, compras/gastos y disponible líquido en caja, aclarando por qué no se restan dos veces las bobinas). Abajo incorpora barras proporcionales por canal y categoría, un estado compacto para meses sin gastos y filtro segmentado (`Todos` · `Ingresos` · `Gastos`) en los movimientos. `/money/rentabilidad` redirige a `/money`.
+  - **Detalle de pedido (`/orders/[id]`):** la tarjeta *Resumen financiero* ahora muestra para Dueño/Administrador la sección *Costos y ganancia del pedido* con barra visual, IVA, costo de fabricación y margen estimado, además de mostrar el costo por línea y enlazar cada pieza de catálogo hacia `/products/[id]`.
+  - **Detalle de producto (`/products/[id]`):** nueva tarjeta *Rendimiento real* con selector `Todo el historial` / `Este mes`, métricas acumuladas, barra visual y listado clicable de los últimos pedidos con esa pieza.
+  - **Panel de inicio (`/dashboard`) y `MobileNav.tsx`:** alineados con la misma lectura de ventas, costos de fabricación y caja del mes.
+- **Verificación:** 380 pruebas unitarias y de componentes en verde (`npm test -- --run`, +3 casos nuevos en `insights.test.ts`). Linter con 0 errores (`npm run lint`) y compilación de producción Next.js 16 exitosa (`npm run build`). Las pruebas reales de PostgreSQL, RLS y transacciones quedaron omitidas porque Docker Desktop / Supabase local no estaba corriendo en este equipo; no se modificaron tablas, RLS ni transacciones de escritura.
+
+---
+
+## Acceso público al Cotizador 3D desde la Landing y Navegación — 2026-11-11
+
+- **Pedido del usuario:** consultar si las herramientas están disponibles desde la landing y confirmar la existencia del cotizador para uso público.
+- **Auditoría del estado actual:**
+  - El cotizador público ya existía en `/herramientas/cotizador` (y `/herramientas` redirigía a él), 100 % funcional en el navegador, sin requerir registro ni base de datos (`PublicQuoteCalculator.tsx`).
+  - La landing page (`/`) contaba con una sección completa `#herramientas` con desglose de costos (filamento, purga, luz, desgaste, insumos, IVA, Mercado Libre) y ejemplo interactivo.
+  - Sin embargo, la accesibilidad tenía tres puntos ciegos:
+    1. En la cabecera pública (`PublicShell.tsx`), el enlace decía simplemente "Herramientas" y estaba oculto en dispositivos móviles (`hidden sm:inline-block`).
+    2. En el Hero principal (`page.tsx`), no se informaba al usuario que podía calcular costos gratis sin crear cuenta, obligándolo a hacer scroll hasta el final.
+    3. En el pie de página (`PublicFooter`), el enlace no estaba incluido.
+- **Mejoras implementadas:**
+  - **Cabecera pública (`PublicShell.tsx`):** Enlace visible tanto en móviles como en escritorio, renombrado a *«Cotizador gratis»* con contraste refinado (`text-primary hover:bg-primary-soft`). Se añadió además el enlace a `#herramientas` en el menú expandido.
+  - **Hero de portada (`page.tsx`):** Se añadió acceso directo bajo los botones principales: *«¿Solo quieres calcular el costo de una pieza? Prueba el cotizador gratis sin registrarte →»*.
+  - **Pie de página (`PublicFooter`):** Se agregó *«Cotizador gratis»* al listado de navegación.
+- **Verificación:** 377 pruebas en Vitest en verde (`npm test -- --run`). Linter con 0 errores y 0 advertencias (`npm run lint`). Compilación de producción en Next.js 16 exitosa (`npm run build`).
+
+---
+
 ## Elevación de la paleta visual, profundidad y controles segmentados — 2026-11-11
 
 - **Pedido del usuario:** mejorar la paleta de colores y el estilo visual general de la app para resolver la sensación de que al entrar a cualquier sección "solo aparecían botones nuevos planos", elevando el contraste, fondos, jerarquía y acabado visual.
