@@ -101,6 +101,16 @@ export default function HomePage() {
                   </Link>
                 </div>
 
+                <p className="text-xs text-muted">
+                  ¿Solo quieres calcular el costo de una pieza?{" "}
+                  <Link
+                    href="/herramientas/cotizador"
+                    className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
+                  >
+                    Prueba el cotizador gratis sin registrarte →
+                  </Link>
+                </p>
+
                 {/* Escala de datos clave */}
                 <div className="grid grid-cols-3 gap-4 border-t border-line pt-6 sm:max-w-lg [&>*]:min-w-0">
                   <div>

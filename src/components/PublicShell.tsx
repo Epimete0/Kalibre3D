@@ -49,22 +49,25 @@ export function PublicHeader({ showHowItWorks = false }: { showHowItWorks?: bool
               <Link href="/#flujo" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink md:inline-block">
                 Flujo de taller
               </Link>
+              <Link href="/#herramientas" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink lg:inline-block">
+                Herramientas
+              </Link>
             </>
           ) : null}
           <Link
             href="/herramientas/cotizador"
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink sm:inline-block"
+            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-soft sm:px-3 sm:py-2 sm:text-sm sm:font-medium sm:text-muted sm:hover:bg-surface sm:hover:text-ink"
           >
-            Herramientas
+            Cotizador gratis
           </Link>
-          <Link href="/login" className="rounded-lg px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface hover:text-ink">
+          <Link href="/login" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-ink sm:px-3 sm:py-2 sm:text-sm">
             Iniciar sesión
           </Link>
           <Link
             href="/registro"
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+            className="inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover sm:min-h-10 sm:px-4 sm:py-2 sm:text-sm"
           >
-            <span className="sm:hidden">Crear cuenta</span>
+            <span className="sm:hidden">Crear</span>
             <span className="hidden sm:inline">Abrir mi taller</span>
           </Link>
         </nav>
@@ -85,6 +88,9 @@ export function PublicFooter() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
           <Link href="/" className="text-muted hover:text-ink">
             Inicio
+          </Link>
+          <Link href="/herramientas/cotizador" className="text-muted hover:text-ink">
+            Cotizador gratis
           </Link>
           <Link href="/login" className="text-muted hover:text-ink">
             Iniciar sesión
