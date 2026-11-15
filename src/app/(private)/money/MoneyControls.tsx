@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { vatIncluded } from "@/lib/costing";
 import type { SalesEconomicsSummary } from "@/lib/insights";
+import { buildMonthlyMoneyCsv, moneyCsvFilename } from "@/lib/money-csv";
 import { formatMoney } from "@/lib/money-format";
 import {
   CATEGORY_LABEL,
@@ -174,6 +175,20 @@ export function MoneyControls({
     });
   }
 
+  function handleExportCsv() {
+    if (view.transactions.length === 0) return;
+    const csvContent = buildMonthlyMoneyCsv(view, currency);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = moneyCsvFilename(view.month);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   const incomeChannels = Object.entries(view.summary.incomeByChannel).sort(
     (a, b) => b[1] - a[1]
   );
@@ -253,6 +268,15 @@ export function MoneyControls({
           >
             + Otro ingreso
           </button>
+          {view.transactions.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="col-span-2 sm:col-span-1 inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-raised px-3.5 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-all active:scale-[0.98] touch-manipulation"
+            >
+              Exportar CSV (Excel)
+            </button>
+          )}
         </div>
       </div>
 
@@ -768,27 +792,36 @@ export function MoneyControls({
           </h2>
 
           {view.transactions.length > 0 && (
-            <div className={segmentedTrackClass} role="tablist" aria-label="Filtrar movimientos">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className={segmentedTrackClass} role="tablist" aria-label="Filtrar movimientos">
+                <button
+                  type="button"
+                  onClick={() => setTxFilter("ALL")}
+                  className={`min-h-8 ${segmentedItemClass(txFilter === "ALL")}`}
+                >
+                  Todos ({view.transactions.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTxFilter("INCOME")}
+                  className={`min-h-8 ${segmentedItemClass(txFilter === "INCOME")}`}
+                >
+                  Ingresos ({view.transactions.filter((t) => t.type === "INCOME").length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTxFilter("EXPENSE")}
+                  className={`min-h-8 ${segmentedItemClass(txFilter === "EXPENSE")}`}
+                >
+                  Gastos ({view.transactions.filter((t) => t.type === "EXPENSE").length})
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => setTxFilter("ALL")}
-                className={`min-h-8 ${segmentedItemClass(txFilter === "ALL")}`}
+                onClick={handleExportCsv}
+                className="inline-flex min-h-8 items-center justify-center rounded-xl border border-line bg-raised px-3 text-xs font-semibold text-ink hover:bg-canvas transition-colors touch-manipulation"
               >
-                Todos ({view.transactions.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTxFilter("INCOME")}
-                className={`min-h-8 ${segmentedItemClass(txFilter === "INCOME")}`}
-              >
-                Ingresos ({view.transactions.filter((t) => t.type === "INCOME").length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTxFilter("EXPENSE")}
-                className={`min-h-8 ${segmentedItemClass(txFilter === "EXPENSE")}`}
-              >
-                Gastos ({view.transactions.filter((t) => t.type === "EXPENSE").length})
+                Descargar .csv
               </button>
             </div>
           )}

@@ -29,6 +29,10 @@
   - `spool-service.ts`, `spool-queries.ts` y `SpoolControls.tsx` guardan `tareGrams` (peso del carrete vacío, con atajos `150 g`, `200 g`, `250 g`) e incorporan el modo **Pesar en balanza** en cada bobina: al ingresar el peso total que marca la pesa, resta automáticamente el carrete vacío y ajusta `remainingGrams` en un toque.
   - `SpoolQrLabel.tsx` en `/spools/[id]` genera en el navegador una etiqueta imprimible con código QR (ISO/IEC 18004 v4-L en SVG), material, color, marca, peso inicial y tara del carrete vacío.
   - `OrderSpoolControls.tsx` en `/orders/[id]` muestra los descuentos de filamento asociados al pedido (`SpoolMovement` con `orderId`) y permite descontar en 1 toque los gramos estimados del pedido sobre cualquier bobina activa cuando el taller usa el módulo de bobinas.
+- **Exportación de movimientos a Excel / CSV (`src/lib/money-csv.ts`, `src/lib/money-csv.test.ts`, `MoneyControls.tsx`):**
+  - En `/money` se incorpora el botón **Exportar CSV (Excel)** (`kalibre-movimientos-AAAA-MM.csv`), codificado con BOM UTF-8 y separado por `;` para compatibilidad directa con Excel en español, incluyendo neutralización de inyección de fórmulas (`sanitizeCsvText`) en notas y motivos de anulación.
+- **Revisión de Términos y Privacidad (`src/lib/legal.ts`, `src/app/terminos/page.tsx`, `src/app/privacidad/page.tsx`, `src/components/LegalPage.tsx`):**
+  - Textos actualizados (`TERMS_VERSION = "2026-11-15"`, `LEGAL_REVIEWED` activo por defecto) para reflejar los módulos opcionales del taller, el cotizador público ejecutado en el navegador, la portabilidad de datos vía exportación `.csv` y la normativa chilena de datos personales (Ley N° 19.628 / Ley N° 21.719).
 - **Limpieza visual en Cotizador y Catálogo:** se retira el importador de archivos `.3mf / .gcode` (`SlicerFileImportButton`, `slicer-file-parser`) de `/quote`, `/products` y `/herramientas/cotizador` (quedando pospuesto para reevaluación futura) y se alinea `@custom-variant dark` con `html[data-theme=dark]` en `globals.css`.
 
 ---
