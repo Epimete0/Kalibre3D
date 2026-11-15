@@ -33,7 +33,12 @@
   - En `/money` se incorpora el botón **Exportar CSV (Excel)** (`kalibre-movimientos-AAAA-MM.csv`), codificado con BOM UTF-8 y separado por `;` para compatibilidad directa con Excel en español, incluyendo neutralización de inyección de fórmulas (`sanitizeCsvText`) en notas y motivos de anulación.
 - **Revisión de Términos y Privacidad (`src/lib/legal.ts`, `src/app/terminos/page.tsx`, `src/app/privacidad/page.tsx`, `src/components/LegalPage.tsx`):**
   - Textos actualizados (`TERMS_VERSION = "2026-11-15"`, `LEGAL_REVIEWED` activo por defecto) para reflejar los módulos opcionales del taller, el cotizador público ejecutado en el navegador, la portabilidad de datos vía exportación `.csv` y la normativa chilena de datos personales (Ley N° 19.628 / Ley N° 21.719).
-- **Limpieza visual en Cotizador y Catálogo:** se retira el importador de archivos `.3mf / .gcode` (`SlicerFileImportButton`, `slicer-file-parser`) de `/quote`, `/products` y `/herramientas/cotizador` (quedando pospuesto para reevaluación futura) y se alinea `@custom-variant dark` con `html[data-theme=dark]` en `globals.css`.
+- **Limpieza visual y pulido UI/UX integral (`ui.tsx`, `PrivateHeader.tsx`, `Sidebar.tsx`, `QuoteCalculator.tsx`, `SettingsForm.tsx`, `OrderListControls.tsx`):**
+  - Se retira el importador de archivos `.3mf / .gcode` (`SlicerFileImportButton`, `slicer-file-parser`) de `/quote`, `/products` y `/herramientas/cotizador` (quedando pospuesto para reevaluación futura) y se alinea `@custom-variant dark` con `html[data-theme=dark]` en `globals.css`.
+  - Se unifican los radios de botones a `rounded-xl`, se reemplaza `transition-all` por propiedades explícitas con curva `--ease-out` y se agrega indicador de sección activa en `PrivateHeader`.
+  - En `/quote` se hace `sticky` el panel de resultado en escritorio, se limpian los fondos semafóricos de las tarjetas de precios sugeridos y se rediseñan los botones de acción sin numeración confusa.
+  - En `/settings` se organiza el formulario en dos grillas temáticas (*Costos de fabricación* y *Canales, impuestos y margen*) y se añade una barra inferior flotante (`sticky`) con el modo activo y el botón **Guardar ajustes** siempre visible.
+  - En `/orders` se añaden contadores por estado en cada pestaña (`filterChipClass`) y botón directo `+ Nueva venta`.
 
 ---
 

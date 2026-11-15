@@ -3,7 +3,7 @@ import Link from "next/link";
 // Shared input styling used across forms with crisp border, subtle shadow and focus ring.
 export const inputClass =
   "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder:text-faint shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-150 " +
+  "placeholder:text-faint shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[border-color,box-shadow,background-color] duration-150 ease-[var(--ease-out)] " +
   "focus:border-primary focus:bg-surface focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:opacity-50";
 
 // Segmented track & item classes for cohesive controls (replacing loose piles of buttons)
@@ -11,14 +11,14 @@ export const segmentedTrackClass =
   "inline-flex max-w-full items-center gap-1 rounded-2xl border border-line bg-raised/70 p-1";
 
 export const segmentedItemClass = (active: boolean) =>
-  `flex items-center justify-center rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-150 touch-manipulation ${
+  `flex items-center justify-center rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] touch-manipulation ${
     active
       ? "bg-surface text-ink font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:bg-raised dark:border-line border border-line/60"
       : "text-muted hover:text-ink hover:bg-canvas/50"
   }`;
 
 export const filterChipClass = (active: boolean) =>
-  `inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-150 touch-manipulation ${
+  `inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] touch-manipulation ${
     active
       ? "border-ink bg-ink text-surface font-bold shadow-xs"
       : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink hover:bg-raised/60"
@@ -105,7 +105,7 @@ export function LinkButton({ href, variant = "primary", children }: LinkButtonPr
   return (
     <Link
       href={href}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 py-2 text-center text-sm font-semibold transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch-manipulation ${styles}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-5 py-2 text-center text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch-manipulation ${styles}`}
     >
       {children}
     </Link>
@@ -153,12 +153,18 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-line-strong bg-surface/50 px-6 py-16 text-center">
-      <h3 className="text-lg text-ink">{title}</h3>
+    <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-line-strong bg-surface/60 px-6 py-12 text-center">
+      <div className="mb-3 grid h-11 w-11 place-items-center rounded-xl border border-line bg-raised/80 text-muted">
+        <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 7.5 9-4.5 9 4.5-9 4.5-9-4.5Z" />
+          <path d="M3 7.5v9L12 21l9-4.5v-9M12 12v9" />
+        </svg>
+      </div>
+      <h3 className="text-base sm:text-lg font-semibold text-ink">{title}</h3>
       {description ? (
-        <p className="mt-1 max-w-sm text-sm text-muted">{description}</p>
+        <p className="mt-1 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">{description}</p>
       ) : null}
-      {children ? <div className="mt-5">{children}</div> : null}
+      {children ? <div className="mt-4">{children}</div> : null}
     </div>
   );
 }

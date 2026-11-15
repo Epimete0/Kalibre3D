@@ -51,8 +51,8 @@ export function Sidebar({
   const showClients = modules?.enableClients ?? true;
 
   return (
-    <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col gap-1 overflow-hidden px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
-      <div className="mb-[clamp(12px,2.6vh,24px)] px-0.5">
+    <aside className="dashboard-sidebar sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col gap-1 overflow-hidden border-r border-line/70 bg-surface/40 px-[18px] pb-[14px] pt-[clamp(14px,2.4vh,24px)] lg:flex">
+      <div className="mb-[clamp(12px,2.2vh,20px)] px-0.5">
         <Link href="/dashboard" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
           <span className="inline-flex items-center gap-2 font-display text-[24px] font-bold leading-none tracking-[-0.03em] text-ink">
             <KalibreMark size="md" />

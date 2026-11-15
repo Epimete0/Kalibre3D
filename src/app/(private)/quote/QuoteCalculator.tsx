@@ -625,10 +625,10 @@ export function QuoteCalculator({
       </div>
 
       {/* Columna derecha: Desglose en vivo y acciones en 1 toque */}
-      <div className="lg:col-span-5 space-y-4">
-        <Card className="p-4 sm:p-5 space-y-4 border-primary/35">
+      <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-4">
+        <Card className="p-4 sm:p-5 space-y-4 border-line-strong">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-ink">
+            <h2 className="text-base font-bold text-ink">
               Resultado de la cotización
             </h2>
             <Badge tone={effectiveMarginPct >= 50 ? "ok" : effectiveMarginPct >= 25 ? "warn" : "danger"}>
@@ -637,7 +637,7 @@ export function QuoteCalculator({
           </div>
 
           {/* Desglose de costo unitario */}
-          <div className="rounded-xl border border-line bg-raised p-3.5 space-y-2 text-xs">
+          <div className="rounded-xl border border-line bg-raised/70 p-3.5 space-y-2 text-xs">
             <div className="flex justify-between gap-2 text-muted">
               <span>
                 Filamento ({costBreakdown.totalGrams} g de {MATERIAL_LABEL[material]})
@@ -703,17 +703,17 @@ export function QuoteCalculator({
 
           {/* Precios sugeridos: Directo vs Mercado Libre */}
           <div className={`grid grid-cols-1 gap-3 ${sellsOnMercadoLibre ? "sm:grid-cols-2" : ""}`}>
-            <div className="rounded-xl border border-ok/30 bg-ok-soft p-3.5 space-y-1">
-              <div className="text-[11px] uppercase tracking-wider text-ok font-semibold">
+            <div className="rounded-xl border border-line-strong bg-surface p-3.5 space-y-1 shadow-2xs">
+              <div className="text-[11px] uppercase tracking-wider text-muted font-bold">
                 Venta directa
               </div>
-              <div className="text-xl font-bold text-ink tabular-nums">
+              <div className="font-display text-2xl font-bold text-ink tabular-nums tracking-[-0.02em]">
                 {formatMoney(activeUnitPriceMinor, currency)}
               </div>
               <div className="text-xs text-muted">
-                Margen:{" "}
+                Ganancia neta:{" "}
                 <span className="font-semibold text-ok tabular-nums">
-                  {formatMoney(unitProfitDirect, currency)}
+                  +{formatMoney(unitProfitDirect, currency)}
                 </span>{" "}
                 / ud.
               </div>
@@ -729,15 +729,15 @@ export function QuoteCalculator({
             </div>
 
             {sellsOnMercadoLibre && (
-              <div className="rounded-xl border border-warn/30 bg-warn-soft p-3.5 space-y-1">
-                <div className="text-[11px] uppercase tracking-wider text-warn font-semibold">
+              <div className="rounded-xl border border-line bg-raised/60 p-3.5 space-y-1">
+                <div className="text-[11px] uppercase tracking-wider text-muted font-bold">
                   Mercado Libre ({mlCommissionPercent}%)
                 </div>
-                <div className="text-xl font-bold text-ink tabular-nums">
+                <div className="font-display text-2xl font-bold text-ink tabular-nums tracking-[-0.02em]">
                   {formatMoney(suggestedMlMinor, currency)}
                 </div>
                 <div className="text-xs text-muted">
-                  Conserva tu margen tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
+                  Conserva tu ganancia tras comisión + envío ({formatMoney(mlDefaultShippingCost, currency)})
                   {mlVat > 0 && <> · incluye IVA {formatMoney(mlVat, currency)}</>}
                 </div>
               </div>
@@ -754,7 +754,7 @@ export function QuoteCalculator({
                   {formatMoney(totalOrderMinor, currency)}
                 </div>
                 <div className="text-[11px] text-ok font-medium tabular-nums">
-                  Margen total: {formatMoney(totalProfitMinor, currency)}
+                  Ganancia total: +{formatMoney(totalProfitMinor, currency)}
                 </div>
               </div>
             </div>
@@ -781,36 +781,42 @@ export function QuoteCalculator({
           )}
 
           {/* Botones de acción en 1 toque */}
-          <div className="space-y-2.5 pt-1">
+          <div className="space-y-2 pt-1">
             <button
               type="button"
               disabled={isPending}
               onClick={() => setShowOrderPanel((prev) => !prev)}
-              className="w-full min-h-12 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-4 py-2.5 transition disabled:opacity-50"
+              className="w-full min-h-11 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm px-4 py-2.5 shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-colors disabled:opacity-50"
             >
               {showOrderPanel
                 ? "Ocultar datos del pedido cotizado"
-                : "1. Crear pedido cotizado"}
+                : "+ Crear pedido con esta cotización"}
             </button>
 
-            {canEditCatalog && (
+            <div className={`grid grid-cols-1 gap-2 ${canEditCatalog ? "sm:grid-cols-2" : ""}`}>
+              {canEditCatalog && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleSaveToCatalog}
+                  className="w-full min-h-10 rounded-xl border border-line bg-surface hover:bg-raised text-ink font-semibold text-xs sm:text-sm px-3.5 py-2 transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "Guardando…" : "Guardar en catálogo"}
+                </button>
+              )}
+
               <button
                 type="button"
-                disabled={isPending}
-                onClick={handleSaveToCatalog}
-                className="w-full min-h-11 rounded-xl border border-line bg-raised hover:bg-canvas text-ink font-medium text-sm px-4 py-2.5 transition disabled:opacity-50"
+                onClick={() => void handleCopyWhatsApp()}
+                className={`w-full min-h-10 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold transition-colors ${
+                  copiedWhatsApp
+                    ? "border-ok/40 bg-ok-soft text-ok"
+                    : "border-line bg-raised hover:bg-canvas text-ink"
+                }`}
               >
-                {isPending ? "Guardando…" : "2. Guardar como pieza en el catálogo"}
+                {copiedWhatsApp ? "Copiado para WhatsApp ✓" : "Copiar para WhatsApp"}
               </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => void handleCopyWhatsApp()}
-              className="w-full min-h-11 rounded-xl border border-ok/35 bg-ok-soft hover:brightness-95 text-ok font-semibold text-sm px-4 py-2.5 transition"
-            >
-              {copiedWhatsApp ? "Presupuesto copiado para WhatsApp" : "Copiar presupuesto para WhatsApp"}
-            </button>
+            </div>
           </div>
 
           {/* Panel rápido para crear el pedido cotizado */}

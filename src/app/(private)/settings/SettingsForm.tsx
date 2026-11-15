@@ -10,7 +10,7 @@ import type { CenterSettingsView } from "@/lib/center-settings-service";
 import { saveCenterSettingsAction } from "./actions";
 
 const primary =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60";
 
 type State = { error?: string; message?: string };
 
@@ -249,7 +249,7 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               aria-pressed={isSimplePreset}
               className={`min-h-9 rounded-xl border px-3 text-xs font-semibold transition-colors ${
                 isSimplePreset
-                  ? "border-primary bg-primary text-white shadow-xs"
+                  ? "border-ink bg-ink text-surface shadow-xs"
                   : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
@@ -261,7 +261,7 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               aria-pressed={isFullPreset}
               className={`min-h-9 rounded-xl border px-3 text-xs font-semibold transition-colors ${
                 isFullPreset
-                  ? "border-primary bg-primary text-white shadow-xs"
+                  ? "border-ink bg-ink text-surface shadow-xs"
                   : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
@@ -389,6 +389,17 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
         </div>
       </Card>
 
+      <div className="space-y-2.5 pt-1">
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+            Costos de fabricación (opcionales)
+          </h2>
+          <p className="text-xs text-muted">
+            Activa solo los costos que quieras incluir al calcular cuánto te cuesta fabricar cada pieza.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-start">
       <CostToggle
         title="¿Quieres considerar la luz?"
         description="Lo que gasta tu impresora en electricidad por cada hora de impresión."
@@ -426,8 +437,8 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               key={preset.watts}
               type="button"
               onClick={() => setPrinterWatts(String(preset.watts))}
-              className={`min-h-9 rounded-full border px-3 text-xs transition-colors ${
-                printerWatts === String(preset.watts) ? "border-primary bg-primary text-white" : "border-line bg-raised text-ink hover:bg-canvas"
+              className={`min-h-9 rounded-xl border px-3 text-xs font-medium transition-colors ${
+                printerWatts === String(preset.watts) ? "border-ink bg-ink text-surface font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
               {preset.label} · {preset.watts} W
@@ -518,8 +529,8 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               key={hours}
               type="button"
               onClick={() => setMachineLifeHours(String(hours))}
-              className={`min-h-9 rounded-full border px-3 text-xs transition-colors ${
-                machineLifeHours === String(hours) ? "border-primary bg-primary text-white" : "border-line bg-raised text-ink hover:bg-canvas"
+              className={`min-h-9 rounded-xl border px-3 text-xs font-medium transition-colors ${
+                machineLifeHours === String(hours) ? "border-ink bg-ink text-surface font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
               {hours.toLocaleString("es-CL")} h
@@ -565,7 +576,7 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               aria-pressed={failurePercent === String(pct)}
               onClick={() => setFailurePercent(String(pct))}
               className={`min-h-10 rounded-xl border px-3.5 text-sm transition-colors ${
-                failurePercent === String(pct) ? "border-primary bg-primary text-white font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
+                failurePercent === String(pct) ? "border-ink bg-ink text-surface font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
               {pct}%
@@ -588,6 +599,37 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
         </div>
       </CostToggle>
 
+      <CostToggle
+        title="¿Quieres considerar el embalaje?"
+        description="Caja, bolsa, etiqueta o protección de cada pieza."
+        enabled={usePackaging}
+        onChange={setUsePackaging}
+      >
+        <Field label={`Embalaje por pieza (${currency})`} htmlFor="settings-packaging" hint="Si las cajas te salen gratis, déjalo apagado.">
+          <SmartMoneyInput
+            id="settings-packaging"
+            currency={currency}
+            integerOnly
+            allowZeroDisplay
+            value={packaging}
+            onChangeValue={setPackaging}
+          />
+        </Field>
+      </CostToggle>
+        </div>
+      </div>
+
+      <div className="space-y-2.5 pt-2">
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+            Canales de venta, impuestos y margen
+          </h2>
+          <p className="text-xs text-muted">
+            Para saber cuánto te queda limpio después de comisiones, envíos e IVA.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-start">
       <CostToggle
         title="¿Vendes por Mercado Libre?"
         description="Para calcular cuánto te llega de verdad después de la comisión y el envío."
@@ -674,24 +716,6 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
         </HelpTip>
       </CostToggle>
 
-      <CostToggle
-        title="¿Quieres considerar el embalaje?"
-        description="Caja, bolsa, etiqueta o protección de cada pieza."
-        enabled={usePackaging}
-        onChange={setUsePackaging}
-      >
-        <Field label={`Embalaje por pieza (${currency})`} htmlFor="settings-packaging" hint="Si las cajas te salen gratis, déjalo apagado.">
-          <SmartMoneyInput
-            id="settings-packaging"
-            currency={currency}
-            integerOnly
-            allowZeroDisplay
-            value={packaging}
-            onChangeValue={setPackaging}
-          />
-        </Field>
-      </CostToggle>
-
       <Card className="p-4 sm:p-5">
         <h3 className="font-semibold text-ink">Tu margen mínimo de ganancia</h3>
         <p className="mt-0.5 text-sm text-muted">
@@ -705,7 +729,7 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
               aria-pressed={marginPercent === String(value)}
               onClick={() => setMarginPercent(String(value))}
               className={`min-h-10 rounded-xl border px-4 text-sm transition-colors ${
-                marginPercent === String(value) ? "border-primary bg-primary text-white font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
+                marginPercent === String(value) ? "border-ink bg-ink text-surface font-semibold" : "border-line bg-raised text-ink hover:bg-canvas"
               }`}
             >
               {value}%
@@ -734,6 +758,8 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
           </p>
         </HelpTip>
       </Card>
+        </div>
+      </div>
 
       <details className="group rounded-2xl border border-line bg-surface">
         <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 font-semibold text-ink sm:px-5">
@@ -821,17 +847,33 @@ export function SettingsForm({ settings, welcome = false }: { settings: CenterSe
         </div>
       </details>
 
-      <Feedback state={state} />
-
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        {welcome && (
-          <Link href="/dashboard" className="min-h-11 px-3 text-sm font-semibold text-muted hover:text-ink inline-flex items-center">
-            Lo configuro después
-          </Link>
-        )}
-        <button type="submit" disabled={pending} className={primary}>
-          {pending ? "Guardando ajustes…" : welcome ? "Guardar y seguir" : "Guardar ajustes"}
-        </button>
+      <div className="sticky bottom-20 lg:bottom-4 z-10 rounded-2xl border border-line-strong bg-surface/95 px-4 py-3 shadow-[0_8px_24px_rgba(28,29,33,0.12)] backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          {state.error || state.message ? (
+            <Feedback state={state} />
+          ) : (
+            <p className="text-xs sm:text-sm text-muted">
+              Modo activo:{" "}
+              <strong className="text-ink font-semibold">
+                {isSimplePreset
+                  ? "Simple (solo costos y plata)"
+                  : isFullPreset
+                    ? "Completo (todos los módulos)"
+                    : "Personalizado"}
+              </strong>
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0">
+          {welcome && (
+            <Link href="/dashboard" className="min-h-10 px-3 text-xs sm:text-sm font-semibold text-muted hover:text-ink inline-flex items-center">
+              Lo configuro después
+            </Link>
+          )}
+          <button type="submit" disabled={pending} className={primary}>
+            {pending ? "Guardando ajustes…" : welcome ? "Guardar y seguir" : "Guardar ajustes"}
+          </button>
+        </div>
       </div>
     </form>
   );

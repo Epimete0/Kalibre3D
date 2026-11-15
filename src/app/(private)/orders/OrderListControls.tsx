@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Badge, Card, EmptyState, inputClass } from "@/components/ui";
+import { Badge, Card, EmptyState, filterChipClass, inputClass } from "@/components/ui";
 import { formatMoney } from "@/lib/money-format";
 import type { OrderListFilterChannel, OrderListFilterStatus, OrderListItem } from "@/lib/order-queries";
 import {
@@ -119,6 +119,27 @@ export function OrderListControls({
     [orders]
   );
 
+  const tabCounts = useMemo(() => {
+    const counts: Record<OrderListFilterStatus, number> = {
+      ALL: orders.length,
+      ACTIVE: 0,
+      QUOTED: 0,
+      CONFIRMED: 0,
+      PRINTING: 0,
+      READY: 0,
+      DELIVERED: 0,
+      CANCELED: 0,
+      RETURNED: 0,
+    };
+    for (const o of orders) {
+      counts[o.status] = (counts[o.status] ?? 0) + 1;
+      if (!isClosedStatus(o.status)) {
+        counts.ACTIVE += 1;
+      }
+    }
+    return counts;
+  }, [orders]);
+
   function handleQuickAdvance(order: OrderListItem, next: OrderStatus) {
     setFeedbackError(null);
     setPendingOrderId(order.id);
@@ -204,24 +225,37 @@ export function OrderListControls({
               </option>
             ))}
           </select>
+
+          {canManage && (
+            <Link
+              href="/orders/new"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] hover:bg-primary-hover transition-colors touch-manipulation"
+            >
+              + Nueva venta
+            </Link>
+          )}
         </div>
 
         {/* Pestañas de estado desplazables horizontalmente en móvil */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 -mx-1 px-1">
           {STATUS_TABS.map((tab) => {
             const active = statusFilter === tab.id;
+            const count = tabCounts[tab.id] ?? 0;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setStatusFilter(tab.id)}
-                className={`shrink-0 min-h-10 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors touch-manipulation ${
-                  active
-                    ? "bg-primary text-white shadow-sm"
-                    : "border border-line bg-raised text-muted hover:text-ink"
-                }`}
+                className={`shrink-0 ${filterChipClass(active)}`}
               >
-                {tab.label}
+                <span>{tab.label}</span>
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                    active ? "bg-surface/20 text-surface" : "bg-raised text-muted"
+                  }`}
+                >
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -240,7 +274,7 @@ export function OrderListControls({
           {orders.length === 0 && canManage ? (
             <Link
               href="/orders/new"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.14)] hover:bg-primary-hover"
             >
               + Registrar primera venta
             </Link>

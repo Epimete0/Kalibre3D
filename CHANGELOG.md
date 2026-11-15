@@ -29,6 +29,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 - **Precio Mercado Libre en modo `Publicado en ML` vs `Lo que recibo neto` (`src/lib/ml-pricing.ts`):** en *Catálogo* permite definir cuánto deseas recibir neto calculando el precio publicado automáticamente; en *Nueva venta* permite cobrar indicando directamente el monto neto recibido sin descontar comisión ni envío dos veces.
 
 ### Mejorado
+- **Pulido UI/UX integral en navegación, Cotizador, Mis costos y Pedidos:**
+  - **Barra superior y sistema base (`PrivateHeader.tsx`, `Sidebar.tsx`, `ui.tsx`):** muestra el nombre de la sección activa en la barra superior, unifica radios de acción en `rounded-xl`, añade icono vectorial técnico en `EmptyState` y reemplaza `transition-all` por transiciones específicas con `--ease-out`.
+  - **Cotizar pieza (`/quote`):** columna de resultados fija al hacer scroll en escritorio (`lg:sticky`), tarjetas de *Venta directa* y *Mercado Libre* en superficies limpias de alto contraste y acciones claras sin numeración confusa (`1.`, `2.`).
+  - **Mis costos (`/settings`):** agrupación en grilla de 2 columnas (*Costos de fabricación* y *Canales, impuestos y margen*), chips de selección en carbón neutro respetando la regla 60-30-10 y barra inferior flotante (`sticky`) con botón **Guardar ajustes** siempre a la vista.
+  - **Pedidos (`/orders`):** pestañas de estado con contador en vivo (`Todos`, `Pendientes`, `Imprimiendo`…) y botón directo **`+ Nueva venta`** junto al buscador.
 - **Nueva venta sin campos ni pasos redundantes (`/orders/new`):** oculta el selector duplicado de `Método de pago` cuando el canal elegido es Mercado Libre, elimina la repetición de subtotal en cada tarjeta y simplifica el resumen cuando hay una sola pieza.
 - **Pantallas internas más directas:** eliminados los encabezados y subtítulos redundantes en *Nueva venta*, *Catálogo*, *Pedidos*, *Bobinas*, *Clientes*, *Cotizador* y *Mis costos* (manteniendo accesibilidad y la guía inicial de onboarding).
 - **Nueva paleta Carbón & Arena + Azul Eléctrico (regla 60-30-10) en toda la plataforma:**
