@@ -39,6 +39,7 @@
   - En `/quote` se hace `sticky` el panel de resultado en escritorio, se limpian los fondos semafóricos de las tarjetas de precios sugeridos y se rediseñan los botones de acción sin numeración confusa.
   - En `/settings` se organiza el formulario en dos grillas temáticas (*Costos de fabricación* y *Canales, impuestos y margen*) y se añade una barra inferior flotante (`sticky`) con el modo activo y el botón **Guardar ajustes** siempre visible.
   - En `/orders` se añaden contadores por estado en cada pestaña (`filterChipClass`) y botón directo `+ Nueva venta`.
+  - En `/money` se añade buscador instantáneo de movimientos por nota, `#pedido`, categoría o método; en `/profile` se unifican botones y se añade acceso directo a `/team` y `/settings`; y en `/` (`page.tsx`) se actualiza la portada con Modo Simple/Completo, presupuesto WhatsApp, insumos extra, tara de balanza y exportación CSV.
 
 ---
 

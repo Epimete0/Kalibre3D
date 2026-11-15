@@ -3,32 +3,32 @@ import { PublicShell } from "@/components/PublicShell";
 
 const modules = [
   {
-    code: "MOD-01 · PEDIDOS",
-    title: "Pedidos y entregas sin atrasos",
+    code: "MOD-01 · PEDIDOS Y WHATSAPP",
+    title: "Pedidos, estados y resumen para WhatsApp en 1 toque",
     description:
-      "Registra ventas rápidas o encargos por fabricar desde WhatsApp, Instagram, Mercado Libre o en persona. Sigue cada pieza desde Cotizado y Confirmado hasta Imprimiendo, Listo y Entregado.",
-    metrics: "Estados con versión · Alertas de atraso",
+      "Registra ventas rápidas o encargos por fabricar desde WhatsApp, Instagram, Mercado Libre o en persona. Copia el detalle de cobro y saldo pendiente para tu cliente en un clic y descuenta el filamento usado directo desde el pedido.",
+    metrics: "Resumen WhatsApp · Estados con versión",
   },
   {
     code: "MOD-02 · COTIZADOR 3D",
-    title: "Costo al gramo con purga multicolor",
+    title: "Costo real al gramo, purga, desgaste e insumos extra",
     description:
-      "Calcula el costo real sumando gramos de pieza, gramos de torre/purga multicolor (AMS/MMU), minutos de impresión eléctrica y embalaje, usando el costo promedio real de tus bobinas activas.",
-    metrics: "1 clic a Pedido o Catálogo",
+      "Calcula el costo real sumando gramos de pieza, purga multicolor (AMS/MMU), luz eléctrica, desgaste de máquina, merma e insumos extra (argollas, imanes, insertos), y copia el presupuesto listo para WhatsApp.",
+    metrics: "Presupuesto WhatsApp · 1 clic a Pedido o Catálogo",
   },
   {
-    code: "MOD-03 · BOBINAS Y STOCK",
-    title: "Control de filamento y piezas terminadas",
+    code: "MOD-03 · BOBINAS Y STOCK (OPCIONAL)",
+    title: "Pesa en balanza con tara de carrete vacío y etiqueta QR",
     description:
-      "Descuenta gramos de cada carrete (PLA, PETG, ASA, ABS, TPU) con movimientos inmutables. Recibe alertas en el inicio cuando una bobina baja de tu umbral en gramos o una pieza queda con stock bajo.",
-    metrics: "Sin números negativos · Historial completo",
+      "Descuenta gramos de cada bobina o ingresa el peso total en tu pesa para que Kalibre reste el carrete vacío automáticamente. ¿Solo quieres llevar costos y plata? Activa el Modo Simple y oculta bobinas, stock y clientes.",
+    metrics: "Modo Simple o Completo · Etiqueta QR imprimible",
   },
   {
-    code: "MOD-04 · DINERO DEL MES",
-    title: "Caja del mes y margen de piezas, sin mezclar platas",
+    code: "MOD-04 · DINERO DEL MES Y EXCEL",
+    title: "Caja del mes, margen real y respaldo en Excel (.csv)",
     description:
-      "Mira cuánto dinero real entró y quedó en caja tras compras y gastos, y cuánto margen le ganas a cada modelo según su filamento y luz consumidos.",
-    metrics: "Exclusivo Dueño / Administrador",
+      "Mira cuánto dinero real entró y quedó en caja tras compras, gastos e IVA, cuánto margen te deja cada pieza y descarga todos los movimientos del mes en CSV (Excel) en un clic.",
+    metrics: "Exportación CSV / Excel · Dueño / Administrador",
   },
 ];
 
@@ -36,9 +36,9 @@ const workflowSteps = [
   {
     step: "01",
     badge: "COTIZACIÓN EN VIVO",
-    title: "Ingresa gramos, minutos y colores",
+    title: "Ingresa gramos, minutos, colores e insumos extra",
     detail:
-      "Escribe los gramos que te da el laminador (OrcaSlicer, Bambu Studio, PrusaSlicer o Cura). Kalibre suma la purga multicolor, la luz y el embalaje, y te sugiere el precio directo y el precio para Mercado Libre.",
+      "Escribe los gramos y minutos que te da el laminador (OrcaSlicer, Bambu Studio, PrusaSlicer o Cura). Kalibre suma purga multicolor, luz, desgaste, merma, argollas o imanes y embalaje, y te arma el texto para enviar por WhatsApp.",
   },
   {
     step: "02",
@@ -49,10 +49,10 @@ const workflowSteps = [
   },
   {
     step: "03",
-    badge: "TRAZABILIDAD TOTAL",
-    title: "Descuenta filamento y cobra el neto real",
+    badge: "MODO SIMPLE O COMPLETO",
+    title: "Adapta el taller a tu forma de trabajar",
     detail:
-      "Registra el consumo de tus bobinas en un toque (-25 g, -50 g, -100 g) y controla en el Panel del Mes tu ganancia limpia después de comisiones, envíos y devoluciones.",
+      "Usa el taller completo con bobinas, stock y clientes, o activa el Modo Simple en Mis costos para quedarte solo con Cotizador, Pedidos y Dinero del mes (con descarga a Excel/CSV).",
   },
 ];
 

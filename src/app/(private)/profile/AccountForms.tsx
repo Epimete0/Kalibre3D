@@ -4,8 +4,8 @@ import { startTransition, useActionState, useState } from "react";
 import { Field, inputClass } from "@/components/ui";
 import { changeEmailAction, changePasswordAction, saveCenterAction, saveDisplayNameAction, switchCenterAction } from "./actions";
 
-const primary = "inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60";
-const secondary = "inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-raised px-5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60";
+const primary = "inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition-all duration-150 hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60 touch-manipulation";
+const secondary = "inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-raised px-5 text-sm font-semibold text-ink transition-all duration-150 hover:bg-canvas active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:opacity-60 touch-manipulation";
 
 type State = { error?: string; message?: string };
 

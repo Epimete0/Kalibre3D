@@ -99,6 +99,7 @@ export function MoneyControls({
   const [notes, setNotes] = useState("");
 
   const [txFilter, setTxFilter] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
+  const [txQuery, setTxQuery] = useState("");
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
 
@@ -205,10 +206,21 @@ export function MoneyControls({
   const expenseCount = validTransactions.filter((t) => t.type === "EXPENSE").length;
   const incomeCount = validTransactions.filter((t) => t.type === "INCOME").length;
 
-  const visibleTransactions =
-    txFilter === "ALL"
-      ? view.transactions
-      : view.transactions.filter((t) => t.type === txFilter);
+  const normalizedQuery = txQuery.trim().toLowerCase();
+  const visibleTransactions = view.transactions.filter((t) => {
+    if (txFilter !== "ALL" && t.type !== txFilter) return false;
+    if (!normalizedQuery) return true;
+    const categoryLabel = (CATEGORY_LABEL[t.category as MoneyCategory] ?? t.category).toLowerCase();
+    const methodLabel = (METHOD_LABEL[t.method as PaymentMethod] ?? t.method).toLowerCase();
+    const orderLabel = t.orderNumber !== null ? `#${t.orderNumber}` : "";
+    const notesText = (t.notes ?? "").toLowerCase();
+    return (
+      categoryLabel.includes(normalizedQuery) ||
+      methodLabel.includes(normalizedQuery) ||
+      orderLabel.includes(normalizedQuery) ||
+      notesText.includes(normalizedQuery)
+    );
+  });
 
   const salesProfitShare =
     salesSummary.grossRevenue > 0
@@ -793,6 +805,14 @@ export function MoneyControls({
 
           {view.transactions.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="search"
+                value={txQuery}
+                onChange={(e) => setTxQuery(e.target.value)}
+                placeholder="Buscar nota, #pedido o categoría…"
+                aria-label="Buscar en movimientos del mes"
+                className="min-h-8 w-full sm:w-52 rounded-xl border border-line bg-surface px-3 py-1 text-xs text-ink placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
               <div className={segmentedTrackClass} role="tablist" aria-label="Filtrar movimientos">
                 <button
                   type="button"

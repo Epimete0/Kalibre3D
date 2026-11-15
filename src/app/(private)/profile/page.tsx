@@ -35,7 +35,7 @@ export default async function ProfilePage() {
         <Card className="min-w-0 p-5 lg:col-span-7">
           <h2 className="font-display text-xl text-ink">Aún no tienes un taller activo</h2>
           <p className="mt-1 text-sm text-faint">Para trabajar en un taller, pídele a quien administra el taller un código de invitación.</p>
-          <Link href="/join" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2">Tengo un código de invitación</Link>
+          <Link href="/join" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition-all duration-150 hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2">Tengo un código de invitación</Link>
         </Card>
       </div>
     </>;
@@ -46,15 +46,28 @@ export default async function ProfilePage() {
     <Card id="mi-taller" className="min-w-0 scroll-mt-24 p-5 lg:col-span-7">
       <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-display text-xl text-ink">Mi taller</h2><Badge tone="accent">Tu rol: {ROLE_LABEL[active.role as TeamRole]}</Badge></div>
       {canManage ? (
-        <div className="mt-3">
+        <div className="mt-3 space-y-4">
           <CenterForm name={activeCenter?.name ?? ""} nameLockedUntil={null} />
-          <p className="mt-3 text-xs text-faint">
-            Tus costos (luz, comisiones, IVA, margen), la moneda y la zona horaria están en{" "}
-            <Link href="/settings" className="font-semibold text-primary hover:underline">
-              Mis costos
-            </Link>
-            .
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line/70 bg-raised/50 p-3.5 text-xs">
+            <div className="space-y-0.5">
+              <p className="font-semibold text-ink">Atajos de administración del taller</p>
+              <p className="text-faint">Ajusta costos y módulos visibles o invita a ayudantes a tu taller.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/settings"
+                className="inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink hover:bg-canvas transition-colors"
+              >
+                Mis costos y módulos →
+              </Link>
+              <Link
+                href="/team"
+                className="inline-flex min-h-9 items-center justify-center rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-ink hover:bg-canvas transition-colors"
+              >
+                Equipo e invitaciones →
+              </Link>
+            </div>
+          </div>
         </div>
       ) : (
         <dl className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
