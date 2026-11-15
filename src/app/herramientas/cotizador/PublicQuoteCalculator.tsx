@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { SlicerFileImportButton } from "@/components/SlicerFileImportButton";
 import { SmartMoneyInput } from "@/components/SmartMoneyInput";
 import { CURRENCIES, CURRENCY_LABEL, currencyDecimals, formatMoney, type Currency } from "@/lib/money-format";
 import { MARGIN_GUIDE, PRINTER_PRESETS, computePublicQuote } from "@/lib/public-quote";
-import type { ParsedSlicerFile } from "@/lib/slicer-file-parser";
 import { formatWhatsAppQuote } from "@/lib/whatsapp-quote";
 
 const inputClass =
@@ -131,18 +129,6 @@ export function PublicQuoteCalculator() {
   const [mlCommission, setMlCommission] = useState("19");
   const [mlShipping, setMlShipping] = useState("");
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
-
-  function handleSlicerParsed(parsed: ParsedSlicerFile) {
-    if (parsed.grams !== null) setGrams(String(parsed.grams));
-    if (parsed.printMinutes !== null) {
-      setHours(String(Math.floor(parsed.printMinutes / 60)));
-      setMinutes(String(parsed.printMinutes % 60));
-    }
-    if (parsed.colorsCount !== null) {
-      setColors(Math.min(4, Math.max(1, parsed.colorsCount)));
-    }
-    if (parsed.purgeGrams !== null) setPurge(String(parsed.purgeGrams));
-  }
 
   // Los montos se escriben en unidades normales y se calculan en la unidad mínima de la moneda.
   const factor = 10 ** currencyDecimals(currency);
@@ -279,8 +265,7 @@ export function PublicQuoteCalculator() {
           </div>
         </Section>
 
-        <Section step="Paso 2" title="La pieza" description="Importa tu archivo laminado o escribe peso y tiempo de tu laminador.">
-          <SlicerFileImportButton onParsed={handleSlicerParsed} />
+        <Section step="Paso 2" title="La pieza" description="Escribe el peso y el tiempo que te indica tu laminador.">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <NumberField label="Peso" suffix="g" value={grams} onChange={setGrams} placeholder="Ej: 50" />
             <NumberField label="Tiempo" suffix="horas" value={hours} onChange={setHours} placeholder="Ej: 1" />

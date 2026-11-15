@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useId, useState, useTransition } from "react";
 import { MoneyInput } from "@/components/MoneyInput";
-import { SlicerFileImportButton } from "@/components/SlicerFileImportButton";
 import {
   Badge,
   Card,
@@ -23,7 +22,6 @@ import {
 import { formatMoney } from "@/lib/money-format";
 import { digitsToInt } from "@/lib/money-input";
 import type { ProductListItem } from "@/lib/product-queries";
-import type { ParsedSlicerFile } from "@/lib/slicer-file-parser";
 import {
   createProductAction,
   deleteProductAction,
@@ -245,16 +243,6 @@ export function CreateProductBar({
     startTransition(() => run(data));
   };
 
-  const handleSlicerParsed = (parsed: ParsedSlicerFile) => {
-    if (!name.trim() && parsed.suggestedName) setName(parsed.suggestedName);
-    if (parsed.material) setMaterial(parsed.material);
-    if (parsed.grams !== null) setGrams(String(Math.round(parsed.grams)));
-    if (parsed.printMinutes !== null) setPrintMinutes(String(parsed.printMinutes));
-    if (parsed.colorsCount !== null) setColorsCount(String(Math.min(16, Math.max(1, parsed.colorsCount))));
-    if (parsed.purgeGrams !== null) setPurgeGrams(String(parsed.purgeGrams));
-    setShowAdvanced(true);
-  };
-
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -273,7 +261,6 @@ export function CreateProductBar({
       </div>
 
       <form className="mt-3.5 space-y-3" onSubmit={handleSubmit}>
-        <SlicerFileImportButton compact onParsed={handleSlicerParsed} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 sm:items-start">
           <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Nombre de la pieza" htmlFor={nameId}>

@@ -29,12 +29,13 @@
   - `spool-service.ts`, `spool-queries.ts` y `SpoolControls.tsx` guardan `tareGrams` (peso del carrete vacío, con atajos `150 g`, `200 g`, `250 g`) e incorporan el modo **Pesar en balanza** en cada bobina: al ingresar el peso total que marca la pesa, resta automáticamente el carrete vacío y ajusta `remainingGrams` en un toque.
   - `SpoolQrLabel.tsx` en `/spools/[id]` genera en el navegador una etiqueta imprimible con código QR (ISO/IEC 18004 v4-L en SVG), material, color, marca, peso inicial y tara del carrete vacío.
   - `OrderSpoolControls.tsx` en `/orders/[id]` muestra los descuentos de filamento asociados al pedido (`SpoolMovement` con `orderId`) y permite descontar en 1 toque los gramos estimados del pedido sobre cualquier bobina activa cuando el taller usa el módulo de bobinas.
+- **Limpieza visual en Cotizador y Catálogo:** se retira el importador de archivos `.3mf / .gcode` (`SlicerFileImportButton`, `slicer-file-parser`) de `/quote`, `/products` y `/herramientas/cotizador` (quedando pospuesto para reevaluación futura) y se alinea `@custom-variant dark` con `html[data-theme=dark]` en `globals.css`.
 
 ---
 
-## Bloque 1: Desgaste, fallos, lectura local `.3mf`/`.gcode`, miles en cotizadores y WhatsApp en 1 toque — 2026-11-14
+## Bloque 1: Desgaste, fallos, miles en cotizadores y WhatsApp en 1 toque — 2026-11-14
 
-- **Pedido del usuario:** cerrar brechas detectadas frente a competidores (SpoolDeck / EiPrint3D) en la capa de cálculo y operación rápida sin obligar a llenar costos opcionales: unificar desgaste de impresora y margen de fallos del cotizador público en todo el taller, leer archivos `.3mf` laminados y `.gcode` 100 % en el navegador sin subirlos al servidor, sumar selector de impresora por watts y miles automáticos en cotizadores/ajustes, y ofrecer resumen listo para copiar a WhatsApp. Los módulos configurables/onboarding personalizado, descuento automático por bobina, recetas/insumos y QR de bobinas quedan pospuestos para **Bloque 2**.
+- **Pedido del usuario:** cerrar brechas detectadas frente a competidores (SpoolDeck / EiPrint3D) en la capa de cálculo y operación rápida sin obligar a llenar costos opcionales: unificar desgaste de impresora y margen de fallos del cotizador público en todo el taller, sumar selector de impresora por watts y miles automáticos en cotizadores/ajustes, y ofrecer resumen listo para copiar a WhatsApp. Los módulos configurables/onboarding personalizado, descuento automático por bobina, recetas/insumos y QR de bobinas quedan pospuestos para **Bloque 2**.
 - **Base de datos y migraciones (`20261114000000_machine_wear_and_failures`):**
   - Se añaden 4 columnas aditivas (`NOT NULL DEFAULT 0`) a `public."CenterSettings"`: `machineReplacementCost` (`Int`), `machineLifeHours` (`Int`), `machineWearCostPerHour` (`Int`) y `failurePercent` (`DECIMAL(5,2)`), con `CHECK ("CenterSettings_wear_and_failure_non_negative")` (`failurePercent` entre `0` y `100`).
   - Paquete de producción idempotente en `scripts/production/20261114-apply-machine-wear-and-failures.sql` y test de integridad `scripts/production/package-20261114.test.ts`.
@@ -42,14 +43,11 @@
   - `computePieceCost` suma `wearCost` (`printMinutes/60 * machineWearCostPerHour`) y `failureCost` (`(materialCost + electricityCost + wearCost) * failurePercent / 100`) de forma retrocompatible (opcionales, default `0`) y exporta `machineWearCostPerHourFromReplacement`.
   - `updateCenterSettings` calcula `machineWearCostPerHour` desde reposición ÷ vida útil (o respeta el valor manual por hora si alguno es `0`) y persiste `failurePercent` validado con Zod (`0–50%`).
   - `estimateUnitCost`, `estimateOrderUnitCosts` y `loadCostRatesAndVat` aplican ambos parámetros al guardar `OrderItem.unitCost` y estimar rentabilidad en *Dinero* (`/money`).
-- **Lectura local en navegador (`slicer-file-parser.ts`, `SlicerFileImportButton.tsx`, `fflate`):**
-  - Extrae gramos, tiempo en minutos, cantidad de colores, purga, material y nombre sugerido desde `Metadata/slice_info.config` / `.gcode` en `.3mf` laminados o cabeceras/pies de `.gcode` (Bambu Studio, OrcaSlicer, PrusaSlicer, Cura) completamente en memoria del navegador (`parseSlicerBytes`, `parseSlicerFile` usando slices de cabecera y pie en archivos grandes). Rechaza con mensaje claro los `.3mf` de geometría cruda sin laminar.
-  - Integrado en `/herramientas/cotizador`, `/quote` y *Agregar pieza al catálogo* (`/products`).
 - **WhatsApp y formato de miles en vivo (`whatsapp-quote.ts`, `SmartMoneyInput.tsx`, `CopyWhatsAppButton.tsx`):**
   - `formatWhatsAppQuote` genera presupuestos listos para pegar desde `/herramientas/cotizador` y `/quote` sin filtrar costos internos ni márgenes; `formatWhatsAppOrderSummary` y `CopyWhatsAppButton` permiten copiar el resumen del pedido o abrir chat `wa.me` en `/orders/[id]`.
   - `SmartMoneyInput` aplica `MoneyInput` con separador `.` en vivo para monedas enteras (`CLP`, `PYG`) y admite decimales sin perder precisión en `/herramientas/cotizador`, `/quote` y `/settings`. Todos los costos secundarios siguen siendo opcionales (vacío o `0` nunca bloquea guardar ni cotizar).
   - `/quote` incorpora además selector opcional de `PRINTER_PRESETS` por sesión para ajustar watts sin alterar la configuración guardada del taller.
-- **Pruebas nuevas:** `src/lib/costing-wear.test.ts`, `src/lib/slicer-file-parser.test.ts`, `src/lib/whatsapp-quote.test.ts`, `scripts/production/package-20261114.test.ts`, además de extensión de `sale-cost.test.ts` y `center-settings-service.test.ts`.
+- **Pruebas nuevas:** `src/lib/costing-wear.test.ts`, `src/lib/whatsapp-quote.test.ts`, `scripts/production/package-20261114.test.ts`, además de extensión de `sale-cost.test.ts` y `center-settings-service.test.ts`.
 - **Pendiente Bloque 2:** cuestionario de onboarding y toggles de módulos (`Clientes`, `Bobinas/Stock`, `Máquinas`), descuento opcional por bobina, recetas multi-pieza/insumos no impresos y etiquetas QR para bobinas.
 
 ---

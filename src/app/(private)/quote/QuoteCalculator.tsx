@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SlicerFileImportButton } from "@/components/SlicerFileImportButton";
 import { SmartMoneyInput } from "@/components/SmartMoneyInput";
 import { Badge, Card, Field, inputClass } from "@/components/ui";
 import {
@@ -24,7 +23,6 @@ import { currencyDecimals, formatMoney, toMinorUnits, type Currency } from "@/li
 import { CHANNEL_LABEL } from "@/lib/order-presentation";
 import { ORDER_CHANNELS, type OrderChannel } from "@/lib/order-status";
 import { PRINTER_PRESETS } from "@/lib/public-quote";
-import type { ParsedSlicerFile } from "@/lib/slicer-file-parser";
 import { formatWhatsAppQuote } from "@/lib/whatsapp-quote";
 import { createQuotedOrderAction, saveQuoteAsProductAction } from "./actions";
 
@@ -187,19 +185,6 @@ export function QuoteCalculator({
   const parsedCustom = parseInputMinor(customUnitPriceInput);
   const activeUnitPriceMinor = parsedCustom !== null ? parsedCustom : suggestedDirectMinor;
 
-  function handleSlicerParsed(parsed: ParsedSlicerFile) {
-    if (!description.trim() && parsed.suggestedName) {
-      setDescription(parsed.suggestedName);
-    }
-    if (parsed.material) setMaterial(parsed.material);
-    if (parsed.grams !== null) setGrams(String(parsed.grams));
-    if (parsed.printMinutes !== null) setPrintMinutes(String(parsed.printMinutes));
-    if (parsed.colorsCount !== null) {
-      setColorsCount(String(Math.min(16, Math.max(1, parsed.colorsCount))));
-    }
-    if (parsed.purgeGrams !== null) setPurgeGrams(String(parsed.purgeGrams));
-  }
-
   const directSale = directSaleBreakdown({
     price: activeUnitPriceMinor,
     totalCost: costBreakdown.totalCost,
@@ -358,8 +343,6 @@ export function QuoteCalculator({
             </h2>
             <Badge tone="neutral">En vivo</Badge>
           </div>
-
-          <SlicerFileImportButton onParsed={handleSlicerParsed} />
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">

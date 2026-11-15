@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /*
   Kalibre (saas3d) — Sistema de diseño técnico para makers y talleres de impresión 3D.
   Inspirado en instrumentos de calibración (pie de rey de acero bruñido), camas PEI texturizadas,
