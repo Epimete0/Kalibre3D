@@ -1,5 +1,6 @@
 import { requireAuthContext } from "@/lib/auth";
 import { normalizeSearchText } from "@/lib/customer-queries";
+import { todayInTimeZone } from "@/lib/money-summary";
 import {
   isClosedStatus,
   ORDER_CHANNELS,
@@ -87,6 +88,7 @@ export type OrderListItem = {
   expectedReceivable: number | null;
   balance: number | null;
   createdAt: Date;
+  createdOn: string;
   deliveredAt: Date | null;
 };
 
@@ -229,6 +231,7 @@ export async function listOrders(filters?: OrderListFilters): Promise<OrderListI
       expectedReceivable: isViewer ? null : expected,
       balance: isViewer ? null : balance,
       createdAt: order.createdAt,
+      createdOn: todayInTimeZone(order.createdAt, tz),
       deliveredAt: order.deliveredAt,
     };
   });

@@ -137,6 +137,7 @@ describe("order-queries", () => {
       expect(result[1].isOverdue).toBe(false);
       expect(result[1].balance).toBe(6000);
       expect(result[1].itemsSummary).toBe("2× Emblema Hilux");
+      expect(result[1].createdOn).toBe("2026-11-04");
     });
 
     it("busca por número con prefijo #", async () => {
