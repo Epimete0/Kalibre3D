@@ -6,6 +6,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 ## [Sin publicar]
 
 ### Añadido
+- **Pedidos organizados por fecha (`/orders`, `src/lib/order-grouping.ts`):**
+  - Agrupación diaria con encabezados relativos (`Hoy`, `Ayer`, `Mañana` y día de la semana), contador de pedidos y monto diario en tarjetas móviles y tabla de escritorio (respetando la ocultación de montos para el rol `VIEWER`).
+  - Filtro por mes (`Todos los meses` + meses con pedidos), selector **`Por fecha de pedido`** | **`Por entrega`** (con entregas atrasadas destacadas primero al elegir *Por entrega*) y soporte de filtros iniciales por URL desde las tarjetas y alertas del Inicio (`/orders?status=...&mode=due`).
+- **Vista «Cuentas» en Dinero (`/money`, `MoneyAccountsView.tsx`, `src/lib/money-csv.ts`):**
+  - Nuevo selector superior **`Cuentas`** | **`Vista actual`** que permite alternar entre un resumen claro de utilidades, IVA y costos o la vista tradicional de flujo de caja y movimientos (conservando el modo elegido al cambiar de mes).
+  - La vista **Cuentas** muestra 4 tarjetas clave (*Ventas del mes*, *Costos de fabricar*, *IVA* y *Utilidad estimada*), fórmula visual paso a paso (`Ventas − IVA − Costos = Utilidad`), desglose de costos de fabricación (filamento y purga, electricidad, desgaste/fallos, embalaje e insumos) frente a compras/gastos pagados en caja, una tabla buscable con el detalle de venta, IVA, costo y utilidad por pedido del mes y exportación dedicada **`Exportar cuentas (.csv)`** (`kalibre-cuentas-AAAA-MM.csv`).
 - **Módulos configurables por taller ("Núcleo + 3 preguntas", `20261115000000_custom_modules_supplies_and_spool_tare`):**
   - En la bienvenida (`/settings?welcome=1`) y en *Mis costos* (`/settings`), cada taller puede elegir con un toque entre **Modo simple (solo costos y plata)**, **Modo completo** o responder 3 preguntas simples: *¿Cómo prefieres calcular el filamento?* (`enableSpools`), *¿Fabricación a pedido o con stock?* (`enableProductStock`) y *¿Quieres llevar agenda de clientes?* (`enableClients`).
   - Los módulos desactivados desaparecen del menú lateral (`Sidebar`), barra móvil (`MobileNav`), pasos iniciales y alertas de *Inicio* (`/dashboard`), *Nueva venta* (`/orders/new`) y *Catálogo* (`/products`), sin perder datos históricos si se vuelven a activar más adelante.
@@ -29,6 +35,10 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 - **Precio Mercado Libre en modo `Publicado en ML` vs `Lo que recibo neto` (`src/lib/ml-pricing.ts`):** en *Catálogo* permite definir cuánto deseas recibir neto calculando el precio publicado automáticamente; en *Nueva venta* permite cobrar indicando directamente el monto neto recibido sin descontar comisión ni envío dos veces.
 
 ### Mejorado
+- **Pulido UI, animación y rendimiento según Playbook (`docs/ui-playbook.md`):**
+  - **Landing (`/`):** limpieza *Anti-AI-Slop* (retirados códigos decorativos `MOD-01..04`/`TOOL-01`, etiquetas redundantes y puntos simulando estado en vivo), barra sutil de progreso de lectura arriba y entrada escalonada sutil por scroll (`CSS Scroll-Driven Animations`, respetando `prefers-reduced-motion`), con copy actualizado a pedidos por fecha y vista *Cuentas*.
+  - **Microinteracciones y accesibilidad (`globals.css`, `AccountMenu.tsx`, `PieceCombobox.tsx`, `OrderListControls.tsx`, `MoneyControls.tsx`, `MoneyAccountsView.tsx`):** transiciones UI bajo `300 ms` solo con propiedades GPU (`transform`/`opacity`), *origin awareness* en menú de cuenta, buscador de piezas y formulario rápido de gastos, recorte completo de transiciones en `prefers-reduced-motion` y atributos ARIA completos (`aria-pressed`, `role="tab"`, `aria-selected`).
+  - **Inicio más rápido y enlaces profundos corregidos (`/dashboard`, `/spools`):** carga paralela (`Promise.all`) del resumen general y la economía mensual de ventas, enlace de bobinas bajas corregido (`/spools?low=1`, manteniendo compatibilidad con `?onlyLow=1`) y accesos directos diferenciados a **Cuentas** y **Caja del mes**.
 - **Pulido UI/UX integral en navegación, Cotizador, Mis costos y Pedidos:**
   - **Barra superior y sistema base (`PrivateHeader.tsx`, `Sidebar.tsx`, `ui.tsx`):** muestra el nombre de la sección activa en la barra superior, unifica radios de acción en `rounded-xl`, añade icono vectorial técnico en `EmptyState` y reemplaza `transition-all` por transiciones específicas con `--ease-out`.
   - **Cotizar pieza (`/quote`):** columna de resultados fija al hacer scroll en escritorio (`lg:sticky`), tarjetas de *Venta directa* y *Mercado Libre* en superficies limpias de alto contraste y acciones claras sin numeración confusa (`1.`, `2.`).

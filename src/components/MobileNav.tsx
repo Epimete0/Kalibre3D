@@ -102,7 +102,7 @@ export function MobileNav({
 
   const moreItems: NavEntry[] = [
     ...(isManager
-      ? [{ href: "/money", label: "Dinero", description: "Ventas, costos de fabricación, gastos y caja", icon: icons.money }]
+      ? [{ href: "/money", label: "Dinero", description: "Cuentas (utilidades, IVA, costos) y caja", icon: icons.money }]
       : []),
     ...(canOperate && showClients
       ? [{ href: "/clients", label: "Clientes", description: "Quiénes te compran y cuánto te deben", icon: icons.clients }]
@@ -155,7 +155,7 @@ export function MobileNav({
           <div
             role="dialog"
             aria-label="Más secciones"
-            className="fixed inset-x-3 bottom-20 z-40 max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-3 shadow-2xl space-y-1.5"
+            className="popover-enter origin-bottom fixed inset-x-3 bottom-20 z-40 max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-3 shadow-2xl space-y-1.5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-2 py-1 border-b border-line/60">

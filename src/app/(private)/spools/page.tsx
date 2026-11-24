@@ -13,6 +13,7 @@ type SearchParams = Promise<{
   material?: string;
   inactive?: string;
   low?: string;
+  onlyLow?: string;
   nueva?: string;
   bienvenida?: string;
 }>;
@@ -21,7 +22,7 @@ export default async function SpoolsPage({ searchParams }: { searchParams: Searc
   const params = await searchParams;
   const materialFilter = params.material ?? "ALL";
   const includeInactive = params.inactive === "1";
-  const onlyLow = params.low === "1";
+  const onlyLow = params.low === "1" || params.onlyLow === "1";
 
   const view = await listSpools({
     material: materialFilter,

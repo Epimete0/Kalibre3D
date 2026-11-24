@@ -6,7 +6,7 @@ import {
   PageHeader,
   segmentedTrackClass,
 } from "@/components/ui";
-import { getSessionMembershipState } from "@/lib/auth";
+import { canManageCatalog, getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
 import { vatIncluded } from "@/lib/costing";
 import { getDashboardOverview } from "@/lib/dashboard-queries";
@@ -82,7 +82,12 @@ export default async function DashboardPage({
   )?.center.name;
   const name = membershipState.profile?.displayName?.split(" ")[0];
 
-  const overview = await getDashboardOverview({ month: resolvedParams.month });
+  const [overview, salesEconomics] = await Promise.all([
+    getDashboardOverview({ month: resolvedParams.month }),
+    canManageCatalog(active.role)
+      ? getMonthlySalesEconomics({ month: resolvedParams.month })
+      : Promise.resolve(null),
+  ]);
   const {
     currency,
     vatPercent,
@@ -98,10 +103,6 @@ export default async function DashboardPage({
     lowStockProducts,
     gettingStarted,
   } = overview;
-
-  const salesEconomics = isManager
-    ? await getMonthlySalesEconomics({ month: resolvedParams.month })
-    : null;
 
   const hasAlerts =
     overdueOrders.length > 0 ||
@@ -178,7 +179,7 @@ export default async function DashboardPage({
                   : "pedidos con fecha de entrega vencida."}
               </p>
               <Link
-                href="/orders?status=ACTIVE"
+                href="/orders?status=ACTIVE&mode=due"
                 className="text-xs font-semibold text-danger hover:underline"
               >
                 Revisar pedidos atrasados →
@@ -212,7 +213,7 @@ export default async function DashboardPage({
                 ))}
               </div>
               <Link
-                href="/spools?onlyLow=1"
+                href="/spools?low=1"
                 className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
               >
                 Ver bobinas bajas →
@@ -295,7 +296,7 @@ export default async function DashboardPage({
                 Caja de {formatMonth(moneyView.month)}
               </h2>
               <Link
-                href={`/money?month=${moneyView.month}`}
+                href={`/money?month=${moneyView.month}&view=cash`}
                 className="text-xs font-semibold text-muted hover:text-ink underline decoration-line-strong underline-offset-4"
               >
                 Ver caja del mes →
@@ -341,10 +342,10 @@ export default async function DashboardPage({
               </span>
             )}
             <Link
-              href={`/money?month=${moneyView.month}`}
+              href={`/money?month=${moneyView.month}&view=accounts`}
               className="text-ink font-semibold underline decoration-line-strong underline-offset-4 hover:decoration-ink shrink-0"
             >
-              Ver ventas, costos y caja →
+              Ver cuentas (utilidades, IVA y costos) →
             </Link>
           </div>
 

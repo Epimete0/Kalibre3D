@@ -3,56 +3,53 @@ import { PublicShell } from "@/components/PublicShell";
 
 const modules = [
   {
-    code: "MOD-01 · PEDIDOS Y WHATSAPP",
-    title: "Pedidos, estados y resumen para WhatsApp en 1 toque",
+    name: "Pedidos y WhatsApp",
+    title: "Pedidos organizados por fecha y resumen para WhatsApp en 1 toque",
     description:
-      "Registra ventas rápidas o encargos por fabricar desde WhatsApp, Instagram, Mercado Libre o en persona. Copia el detalle de cobro y saldo pendiente para tu cliente en un clic y descuenta el filamento usado directo desde el pedido.",
-    metrics: "Resumen WhatsApp · Estados con versión",
+      "Registra ventas rápidas o encargos desde WhatsApp, Instagram, Mercado Libre o en persona. Visualiza tus pedidos agrupados por día o fecha de entrega, copia el resumen de cobro para tu cliente en un clic y descuenta el filamento usado directo desde el pedido.",
+    metrics: "Agrupados por fecha · Resumen WhatsApp",
   },
   {
-    code: "MOD-02 · COTIZADOR 3D",
+    name: "Cotizador 3D",
     title: "Costo real al gramo, purga, desgaste e insumos extra",
     description:
       "Calcula el costo real sumando gramos de pieza, purga multicolor (AMS/MMU), luz eléctrica, desgaste de máquina, merma e insumos extra (argollas, imanes, insertos), y copia el presupuesto listo para WhatsApp.",
     metrics: "Presupuesto WhatsApp · 1 clic a Pedido o Catálogo",
   },
   {
-    code: "MOD-03 · BOBINAS Y STOCK (OPCIONAL)",
+    name: "Bobinas y stock (opcional)",
     title: "Pesa en balanza con tara de carrete vacío y etiqueta QR",
     description:
       "Descuenta gramos de cada bobina o ingresa el peso total en tu pesa para que Kalibre reste el carrete vacío automáticamente. ¿Solo quieres llevar costos y plata? Activa el Modo Simple y oculta bobinas, stock y clientes.",
     metrics: "Modo Simple o Completo · Etiqueta QR imprimible",
   },
   {
-    code: "MOD-04 · DINERO DEL MES Y EXCEL",
-    title: "Caja del mes, margen real y respaldo en Excel (.csv)",
+    name: "Cuentas y caja del mes",
+    title: "Utilidades, IVA, costos reales y respaldo en Excel (.csv)",
     description:
-      "Mira cuánto dinero real entró y quedó en caja tras compras, gastos e IVA, cuánto margen te deja cada pieza y descarga todos los movimientos del mes en CSV (Excel) en un clic.",
-    metrics: "Exportación CSV / Excel · Dueño / Administrador",
+      "Alterna entre la vista Cuentas (ventas, costos de fabricación, IVA y utilidad por pedido) y el flujo de caja con todos tus cobros y gastos del mes, con descarga a Excel (.csv) en un clic.",
+    metrics: "Vista Cuentas y Caja · Exportación CSV / Excel",
   },
 ];
 
 const workflowSteps = [
   {
-    step: "01",
-    badge: "COTIZACIÓN EN VIVO",
+    step: "1",
     title: "Ingresa gramos, minutos, colores e insumos extra",
     detail:
       "Escribe los gramos y minutos que te da el laminador (OrcaSlicer, Bambu Studio, PrusaSlicer o Cura). Kalibre suma purga multicolor, luz, desgaste, merma, argollas o imanes y embalaje, y te arma el texto para enviar por WhatsApp.",
   },
   {
-    step: "02",
-    badge: "MENOS DE 30 SEGUNDOS",
+    step: "2",
     title: "Crea el pedido o registra una venta rápida",
     detail:
-      "Si ya tenías la pieza impresa en stock, márcala como venta rápida y queda entregada y cobrada en un solo paso. Si es a pedido, queda en tu cola de impresión con fecha de entrega.",
+      "Si ya tenías la pieza impresa en stock, márcala como venta rápida y queda entregada y cobrada en un solo paso. Si es a pedido, queda organizada por fecha de entrega en tu cola de impresión.",
   },
   {
-    step: "03",
-    badge: "MODO SIMPLE O COMPLETO",
-    title: "Adapta el taller a tu forma de trabajar",
+    step: "3",
+    title: "Revisa tus cuentas y adapta el taller a tu ritmo",
     detail:
-      "Usa el taller completo con bobinas, stock y clientes, o activa el Modo Simple en Mis costos para quedarte solo con Cotizador, Pedidos y Dinero del mes (con descarga a Excel/CSV).",
+      "Consulta cuánto ganaste tras costos e IVA en la vista Cuentas, exporta tus movimientos a Excel o activa el Modo Simple en Mis costos si prefieres trabajar sin bobinas ni agenda de clientes.",
   },
 ];
 
@@ -60,40 +57,40 @@ export default function HomePage() {
   return (
     <PublicShell showHowItWorks>
       <main className="text-ink">
+        {/* Indicador sutil de avance de lectura (CSS Scroll-Driven, oculto con reduced-motion) */}
+        <div className="scroll-progress-bar" aria-hidden="true" />
+
         {/* HERO TÉCNICO */}
         <section className="kalibre-grid-bg relative overflow-hidden border-b border-line py-10 sm:py-14 lg:py-16">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.06fr_0.94fr] lg:gap-12 [&>*]:min-w-0">
               {/* Columna izquierda: Tesis */}
               <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-ink" />
-                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-ink">
-                    Gestión calibrada para talleres de impresión 3D
-                  </span>
-                </div>
+                <p className="font-mono text-xs font-semibold tracking-wide text-muted">
+                  Software de gestión para talleres de impresión 3D
+                </p>
 
                 <h1 className="font-display text-4xl font-bold leading-[1.04] tracking-tight text-ink sm:text-5xl lg:text-[3.25rem]">
                   Mide cada gramo. Cobra cada peso. Entrega a tiempo.
                 </h1>
 
                 <p className="max-w-xl text-base leading-relaxed text-muted sm:text-[17px]">
-                  El sistema operativo en español para makers que venden por{" "}
+                  El sistema en español para makers que venden por{" "}
                   <strong className="font-semibold text-ink">WhatsApp, Instagram y Mercado Libre</strong>.
-                  Conecta tus pedidos, el cotizador con purga multicolor, tus bobinas y la ganancia real del mes.
+                  Conecta tus pedidos, el cotizador con purga multicolor, tus bobinas y las cuentas reales del mes.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link
                     href="/registro"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-[background-color,transform] duration-150 ease-out hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     <span>Crear mi taller gratis</span>
                     <span aria-hidden="true" className="font-mono text-base">→</span>
                   </Link>
                   <Link
                     href="/login"
-                    className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-surface px-6 text-sm font-semibold text-ink transition-[background-color,transform] duration-150 ease-out hover:bg-raised active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     Iniciar sesión
                   </Link>
@@ -126,19 +123,16 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Columna derecha: Instrumento / Ficha de Calibración en vivo */}
+              {/* Columna derecha: Ficha de ejemplo de costeo */}
               <div className="relative">
                 <div className="kalibre-dark-grid overflow-hidden rounded-2xl border border-[#2a2c33] p-5 text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.28)] sm:p-6">
-                  {/* Barra superior estilo ficha de taller */}
+                  {/* Barra superior */}
                   <div className="flex items-center justify-between gap-2 border-b border-[#2a2c33] pb-3.5">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#f5f2eb]" />
-                      <span className="font-mono text-xs font-semibold tracking-wider text-[#d6d3cb]">
-                        EJEMPLO REAL · PEDIDO #42
-                      </span>
-                    </div>
+                    <span className="font-mono text-xs font-semibold tracking-wide text-[#d6d3cb]">
+                      Ejemplo de costeo · Pedido #42
+                    </span>
                     <span className="rounded-md border border-[#3a3d47] bg-[#26282e] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#f5f2eb]">
-                      IMPRIMIENDO · 0.20 mm
+                      PETG · 0.20 mm
                     </span>
                   </div>
 
@@ -146,8 +140,8 @@ export default function HomePage() {
                   <div className="mt-4 rounded-xl border border-[#2a2c33] bg-[#16171b]/95 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-mono text-[11px] uppercase tracking-wider text-[#a8a49b]">
-                          Canal: Mercado Libre · Entrega hoy
+                        <p className="font-mono text-[11px] text-[#a8a49b]">
+                          Canal: Mercado Libre · Ejemplo ilustrativo
                         </p>
                         <h2 className="mt-1 font-display text-lg font-bold leading-snug text-[#f5f2eb]">
                           Soporte para control gamer (Bicolor)
@@ -198,11 +192,11 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Estado de bobina activa */}
+                  {/* Aviso de ejemplo de bobina baja */}
                   <div className="mt-3.5 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
                     <div className="min-w-0">
                       <p className="font-mono text-[11px] font-semibold text-amber-300">
-                        ALERTA DE BOBINA · PETG NEGRO
+                        Aviso de stock · PETG Negro
                       </p>
                       <p className="truncate text-xs text-[#d6d3cb]">
                         Quedan 120 g de 1.000 g (bajo umbral de 150 g)
@@ -222,31 +216,28 @@ export default function HomePage() {
         <section id="pilares" className="scroll-mt-16 py-14 sm:py-20">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-                Diseñado para la realidad del taller 3D
-              </p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                 Todo lo que una planilla de Excel no te avisa antes de imprimir.
               </h2>
               <p className="mt-3 text-base text-muted">
-                Sin módulos de relleno: cuatro herramientas conectadas para que sepas qué debes entregar, cuánto te cuesta fabricarlo y cuánto ganaste realmente este mes.
+                Cuatro herramientas conectadas para que sepas qué debes entregar, cuánto te cuesta fabricarlo y cuánto ganaste realmente este mes.
               </p>
             </div>
 
             <div className="mt-10 grid gap-6 sm:grid-cols-2">
               {modules.map((mod) => (
                 <article
-                  key={mod.code}
-                  className="flex flex-col justify-between rounded-2xl border border-line bg-surface p-6 shadow-2xs transition-colors hover:border-line-strong"
+                  key={mod.name}
+                  className="scroll-stagger-item flex flex-col justify-between rounded-2xl border border-line bg-surface p-6 shadow-2xs transition-colors duration-150 ease-out hover:border-line-strong"
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-md border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">
-                        {mod.code}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-ink">
+                        {mod.name}
                       </span>
-                      <span className="font-mono text-xs text-faint">{mod.metrics}</span>
+                      <span className="font-mono text-xs text-muted">{mod.metrics}</span>
                     </div>
-                    <h3 className="mt-4 font-display text-xl font-bold text-ink">{mod.title}</h3>
+                    <h3 className="mt-3 font-display text-xl font-bold text-ink">{mod.title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-muted">{mod.description}</p>
                   </div>
                 </article>
@@ -260,37 +251,34 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="grid items-center gap-10 lg:grid-cols-12">
               <div className="lg:col-span-5">
-                <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-                  Cotizador y canales de venta
-                </p>
-                <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                   Vender a $8.990 en Mercado Libre no es ganar $8.990.
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
-                  Cuando marcas la casilla <strong className="font-semibold text-ink">«Venta por Mercado Libre»</strong> en Kalibre, el pedido cambia automáticamente a tus precios de ML, descuenta el porcentaje de comisión y el envío a tu cargo, y registra en Dinero exactamente el neto que entra a tu cuenta.
+                  Cuando marcas <strong className="font-semibold text-ink">Mercado Libre</strong> en un pedido, Kalibre usa tus precios publicados o el neto que recibes, descuenta la comisión y el envío a tu cargo, y refleja en Dinero lo que realmente entra a tu cuenta.
                 </p>
                 <ul className="mt-6 space-y-2.5 text-sm text-ink">
                   <li className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-ink" />
+                    <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-ink" />
                     <span>Calcula cuánto cobrar en ML para empatar tu ganancia de venta directa.</span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-muted" />
+                    <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-muted" />
                     <span>Registra devoluciones en un paso descontando el reembolso del mes.</span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-ok" />
+                    <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-ok" />
                     <span>Soporta monedas de toda la región (CLP, ARS, MXN, COP, PEN, UYU, USD).</span>
                   </li>
                 </ul>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
-                <div className="rounded-2xl border border-line bg-canvas p-5">
-                  <span className="rounded border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">
-                    VENTA DIRECTA (WHATSAPP / IG)
+                <div className="scroll-stagger-item rounded-2xl border border-line bg-canvas p-5">
+                  <span className="text-xs font-bold text-muted">
+                    Venta directa (WhatsApp / IG)
                   </span>
-                  <p className="mt-4 font-display text-3xl font-bold text-ink">$6.500</p>
+                  <p className="mt-3 font-display text-3xl font-bold text-ink tabular-nums">$6.500</p>
                   <p className="mt-1 text-xs text-muted">Sin comisión de plataforma</p>
                   <dl className="mt-5 space-y-2 border-t border-line pt-4 font-mono text-xs">
                     <div className="flex justify-between">
@@ -308,11 +296,11 @@ export default function HomePage() {
                   </dl>
                 </div>
 
-                <div className="rounded-2xl border border-[#2a2c33] bg-[#1c1d21] p-5 text-[#f5f2eb] shadow-lg">
-                  <span className="rounded border border-[#3a3d47] bg-[#26282e] px-2.5 py-1 font-mono text-xs font-bold text-[#f5f2eb]">
-                    PRECIO SUGERIDO MERCADO LIBRE
+                <div className="scroll-stagger-item rounded-2xl border border-[#2a2c33] bg-[#1c1d21] p-5 text-[#f5f2eb] shadow-lg">
+                  <span className="text-xs font-bold text-[#d6d3cb]">
+                    Precio sugerido Mercado Libre
                   </span>
-                  <p className="mt-4 font-display text-3xl font-bold text-[#f5f2eb]">$8.990</p>
+                  <p className="mt-3 font-display text-3xl font-bold text-[#f5f2eb] tabular-nums">$8.990</p>
                   <p className="mt-1 text-xs text-[#a8a49b]">Incluye 19% comisión ($1.708) + envío ($799)</p>
                   <dl className="mt-5 space-y-2 border-t border-[#2a2c33] pt-4 font-mono text-xs">
                     <div className="flex justify-between">
@@ -338,23 +326,20 @@ export default function HomePage() {
         <section id="flujo" className="scroll-mt-16 py-14 sm:py-20">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-                Flujo operativo
-              </p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                 Tres pasos desde que te piden precio hasta que entregas la pieza.
               </h2>
             </div>
 
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {workflowSteps.map((item) => (
-                <div key={item.step} className="rounded-2xl border border-line bg-surface p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-3xl font-bold text-ink">{item.step}</span>
-                    <span className="rounded bg-raised px-2.5 py-1 font-mono text-[11px] font-semibold text-muted">
-                      {item.badge}
-                    </span>
-                  </div>
+                <div
+                  key={item.step}
+                  className="scroll-stagger-item rounded-2xl border border-line bg-surface p-6"
+                >
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-raised font-mono text-sm font-bold text-ink">
+                    {item.step}
+                  </span>
                   <h3 className="mt-4 font-display text-lg font-bold text-ink">{item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{item.detail}</p>
                 </div>
@@ -367,22 +352,20 @@ export default function HomePage() {
         <section id="herramientas" className="scroll-mt-16 border-t border-line bg-surface py-14 sm:py-20">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="max-w-2xl">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Herramientas gratis</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                 Calcula cuánto cobrar, sin crear cuenta.
               </h2>
               <p className="mt-3 text-base text-muted">
-                Herramientas abiertas para cualquier maker. Escribe tus datos y obtén el resultado al instante.
+                Cotizador abierto para cualquier maker. Escribe tus datos y obtén el resultado directo en tu navegador.
               </p>
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
-              <article className="flex flex-col justify-between rounded-2xl border border-line-strong bg-canvas p-6">
+              <article className="scroll-stagger-item flex flex-col justify-between rounded-2xl border border-line-strong bg-canvas p-6">
                 <div>
-                  <span className="rounded-md border border-line bg-raised px-2.5 py-1 font-mono text-xs font-bold text-ink">TOOL-01 · COTIZADOR 3D</span>
-                  <h3 className="mt-4 font-display text-2xl font-bold text-ink">Cotizador de impresión 3D</h3>
+                  <h3 className="font-display text-2xl font-bold text-ink">Cotizador de impresión 3D</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">
-                    Cuánto te cuesta imprimir una pieza y a qué precio venderla, con todo lo que normalmente se olvida.
+                    Cuánto te cuesta imprimir una pieza y a qué precio venderla, incluyendo lo que normalmente se queda fuera.
                   </p>
                   <ul className="mt-4 grid gap-2 text-sm text-ink sm:grid-cols-2">
                     {[
@@ -394,7 +377,7 @@ export default function HomePage() {
                       "Precio para Mercado Libre",
                     ].map((item) => (
                       <li key={item} className="flex items-center gap-2">
-                        <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-ink" />
+                        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
                         {item}
                       </li>
                     ))}
@@ -403,7 +386,7 @@ export default function HomePage() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     href="/herramientas/cotizador"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-colors hover:bg-primary-hover"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_6px_18px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-[background-color,transform] duration-150 ease-out hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     Usar el cotizador <span aria-hidden="true">→</span>
                   </Link>
@@ -411,8 +394,8 @@ export default function HomePage() {
                 </div>
               </article>
 
-              <div className="kalibre-dark-grid rounded-2xl border border-[#2a2c33] p-5 font-mono text-xs text-[#d6d3cb]">
-                <p className="text-[#a8a49b]">EJEMPLO · LLAVERO CON NFC</p>
+              <div className="scroll-stagger-item kalibre-dark-grid rounded-2xl border border-[#2a2c33] p-5 font-mono text-xs text-[#d6d3cb]">
+                <p className="text-[#a8a49b]">Ejemplo · Llavero con NFC</p>
                 <dl className="mt-3 space-y-1.5">
                   {[
                     ["Filamento (12 g)", "$180"],
@@ -430,8 +413,8 @@ export default function HomePage() {
                   ))}
                 </dl>
                 <div className="mt-4 rounded-lg bg-emerald-500/10 p-3">
-                  <p className="text-emerald-300">COBRA (MARGEN 70%)</p>
-                  <p className="mt-1 font-display text-2xl font-bold text-[#f5f2eb]">$2.144</p>
+                  <p className="text-emerald-300">Cobra (margen 70%)</p>
+                  <p className="mt-1 font-display text-2xl font-bold text-[#f5f2eb] tabular-nums">$2.144</p>
                   <p className="text-emerald-400">Te quedan $1.501 limpios</p>
                 </div>
               </div>
@@ -443,25 +426,22 @@ export default function HomePage() {
         <section className="py-14 sm:py-20">
           <div className="mx-auto max-w-6xl px-5 sm:px-10 lg:px-12">
             <div className="kalibre-dark-grid rounded-3xl border border-[#2a2c33] px-6 py-12 text-center text-[#f5f2eb] shadow-[0_24px_48px_-12px_rgba(28,29,33,0.25)] sm:px-12 sm:py-16">
-              <span className="inline-block rounded-md border border-[#3a3d47] bg-[#26282e] px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-[#f5f2eb]">
-                Listo para usar en celular y computador
-              </span>
-              <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-bold tracking-tight text-[#f5f2eb] sm:text-4xl">
+              <h2 className="mx-auto max-w-2xl font-display text-3xl font-bold tracking-tight text-[#f5f2eb] sm:text-4xl">
                 Pon en orden los pedidos, las bobinas y los números de tu taller 3D.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-sm text-[#a8a49b] sm:text-base">
-                Crea tu taller en un minuto, configura el costo de tu electricidad y comisión de Mercado Libre, y registra tu primer pedido hoy mismo.
+                Crea tu taller en un minuto, configura tu costo de electricidad y comisión de Mercado Libre, y registra tu primer pedido hoy mismo.
               </p>
               <div className="mt-7 flex flex-wrap justify-center gap-3.5">
                 <Link
                   href="/registro"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2),0_6px_18px_color-mix(in_srgb,var(--color-primary)_35%,transparent)] transition-colors hover:bg-primary-hover"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2),0_6px_18px_color-mix(in_srgb,var(--color-primary)_35%,transparent)] transition-[background-color,transform] duration-150 ease-out hover:bg-primary-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
                   Crear mi taller ahora
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#3a3d47] bg-[#26282e] px-7 text-sm font-semibold text-[#f5f2eb] transition-colors hover:bg-[#31343c]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#3a3d47] bg-[#26282e] px-7 text-sm font-semibold text-[#f5f2eb] transition-[background-color,transform] duration-150 ease-out hover:bg-[#31343c] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
                   Ya tengo una cuenta
                 </Link>

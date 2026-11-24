@@ -195,7 +195,7 @@ export function PieceCombobox({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line-strong bg-surface p-1 shadow-[0_12px_28px_rgba(28,29,33,0.14)]"
+          className="popover-enter origin-top absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line-strong bg-surface p-1 shadow-[0_12px_28px_rgba(28,29,33,0.14)]"
         >
           {filteredProducts.length > 0 ? (
             filteredProducts.map((p, index) => {

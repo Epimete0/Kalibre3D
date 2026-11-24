@@ -230,6 +230,13 @@ validaciones locales, informa las pruebas omitidas y termina con estado no
 exitoso. La tarea queda incompleta para efectos de seguridad y transacciones.
 No usar la base remota normal para pruebas destructivas.
 
+## Diseño UI, animación y calidad de código
+
+Antes de crear o rediseñar pantallas, microinteracciones o componentes, consultar
+`docs/ui-playbook.md` (filtro *Anti-AI-Slop*, tokens semánticos 60–30–10,
+timing `< 300 ms`, *origin awareness*, `prefers-reduced-motion` y rendimiento
+React/Next.js). Si existe cualquier conflicto con el dominio, prevalece `onyx.md`.
+
 ## Documentación obligatoria
 
 Todo cambio funcional relevante debe actualizar:
