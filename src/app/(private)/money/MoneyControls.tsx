@@ -14,8 +14,17 @@ import {
   segmentedTrackClass,
 } from "@/components/ui";
 import { vatIncluded } from "@/lib/costing";
-import type { SalesEconomicsSummary } from "@/lib/insights";
-import { buildMonthlyMoneyCsv, moneyCsvFilename } from "@/lib/money-csv";
+import type {
+  MonthlyCostBreakdown,
+  MonthlyOrderAccountRow,
+  SalesEconomicsSummary,
+} from "@/lib/insights";
+import {
+  accountsCsvFilename,
+  buildMonthlyAccountsCsv,
+  buildMonthlyMoneyCsv,
+  moneyCsvFilename,
+} from "@/lib/money-csv";
 import { formatMoney } from "@/lib/money-format";
 import {
   CATEGORY_LABEL,
@@ -30,6 +39,7 @@ import type { MonthlyMoneyView } from "@/lib/money-queries";
 import { CHANNEL_LABEL, orderNumberLabel } from "@/lib/order-presentation";
 import type { OrderChannel } from "@/lib/order-status";
 import { recordManualMoneyAction, voidMoneyAction } from "./actions";
+import { MoneyAccountsView } from "./MoneyAccountsView";
 import { formatDay } from "@/lib/date-labels";
 
 function makeUuid(): string {
@@ -72,22 +82,31 @@ function marginTone(margin: number | null): "ok" | "warn" | "danger" | "neutral"
   return "danger";
 }
 
+export type MoneyDisplayMode = "accounts" | "cash";
+
 export function MoneyControls({
   view,
   salesSummary,
+  costBreakdown,
+  orderAccounts,
   currency,
   vatPercent = 0,
   initialMode = null,
+  initialView = "accounts",
 }: {
   view: MonthlyMoneyView;
   salesSummary: SalesEconomicsSummary;
+  costBreakdown: MonthlyCostBreakdown;
+  orderAccounts: MonthlyOrderAccountRow[];
   currency: string;
   vatPercent?: number;
   initialMode?: "EXPENSE" | "INCOME" | null;
+  initialView?: MoneyDisplayMode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [displayMode, setDisplayMode] = useState<MoneyDisplayMode>(initialView);
   const [formMode, setFormMode] = useState<"EXPENSE" | "INCOME" | null>(initialMode);
   const [operationId, setOperationId] = useState<string>(() => makeUuid());
   const [category, setCategory] = useState<string>(
@@ -105,6 +124,15 @@ export function MoneyControls({
 
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  function switchDisplayMode(next: MoneyDisplayMode) {
+    setDisplayMode(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("view", next);
+      window.history.replaceState(null, "", url.pathname + url.search);
+    }
+  }
 
   function openForm(mode: "EXPENSE" | "INCOME") {
     setError(null);
@@ -176,18 +204,29 @@ export function MoneyControls({
     });
   }
 
-  function handleExportCsv() {
-    if (view.transactions.length === 0) return;
-    const csvContent = buildMonthlyMoneyCsv(view, currency);
+  function triggerCsvDownload(csvContent: string, filename: string) {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = moneyCsvFilename(view.month);
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  function handleExportCsv() {
+    if (view.transactions.length === 0) return;
+    triggerCsvDownload(buildMonthlyMoneyCsv(view, currency), moneyCsvFilename(view.month));
+  }
+
+  function handleExportAccountsCsv() {
+    if (orderAccounts.length === 0) return;
+    triggerCsvDownload(
+      buildMonthlyAccountsCsv(orderAccounts, currency, vatPercent),
+      accountsCsvFilename(view.month)
+    );
   }
 
   const incomeChannels = Object.entries(view.summary.incomeByChannel).sort(
@@ -234,61 +273,81 @@ export function MoneyControls({
 
   return (
     <div className="space-y-4">
-      {/* Encabezado unificado: Mes activo + resumen rápido + botones de acción */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1 rounded-2xl border border-line bg-surface p-1 shadow-xs">
-            <Link
-              href={`/money?month=${view.previousMonth}`}
-              aria-label="Mes anterior"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
-            >
-              ←
-            </Link>
-            <h1 className="px-3 text-base sm:text-lg font-bold tracking-[-0.02em] text-ink">
-              {formatMonthLabel(view.month)}
-            </h1>
-            <Link
-              href={`/money?month=${view.nextMonth}`}
-              aria-label="Mes siguiente"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
-            >
-              →
-            </Link>
-          </div>
-          <span className="hidden md:inline text-xs font-medium text-muted">
-            {salesSummary.ordersCount}{" "}
-            {salesSummary.ordersCount === 1 ? "pedido" : "pedidos"} ·{" "}
-            {salesSummary.units} {salesSummary.units === 1 ? "pieza" : "piezas"} ·{" "}
-            {validTransactions.length}{" "}
-            {validTransactions.length === 1 ? "movimiento" : "movimientos"}
-          </span>
-        </div>
+      {/* Encabezado unificado: Mes activo + selector de vista (Cuentas vs Vista actual) + botones */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1 rounded-2xl border border-line bg-surface p-1 shadow-xs">
+              <Link
+                href={`/money?month=${view.previousMonth}&view=${displayMode}`}
+                aria-label="Mes anterior"
+                className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
+              >
+                ←
+              </Link>
+              <h1 className="px-3 text-base sm:text-lg font-bold tracking-[-0.02em] text-ink">
+                {formatMonthLabel(view.month)}
+              </h1>
+              <Link
+                href={`/money?month=${view.nextMonth}&view=${displayMode}`}
+                aria-label="Mes siguiente"
+                className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-line/60 bg-raised px-2.5 text-sm font-bold text-ink hover:bg-canvas transition-colors touch-manipulation"
+              >
+                →
+              </Link>
+            </div>
 
-        <div className="grid grid-cols-2 sm:flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => openForm("EXPENSE")}
-            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-all hover:bg-primary-hover active:scale-[0.98] touch-manipulation"
-          >
-            + Registrar gasto
-          </button>
-          <button
-            type="button"
-            onClick={() => openForm("INCOME")}
-            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs hover:bg-raised transition-all active:scale-[0.98] touch-manipulation"
-          >
-            + Otro ingreso
-          </button>
-          {view.transactions.length > 0 && (
+            <div
+              className={`${segmentedTrackClass} w-full sm:w-auto`}
+              role="tablist"
+              aria-label="Modo de visualización de Dinero"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={displayMode === "accounts"}
+                onClick={() => switchDisplayMode("accounts")}
+                className={`flex-1 sm:flex-initial min-h-9 ${segmentedItemClass(displayMode === "accounts")}`}
+              >
+                Cuentas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={displayMode === "cash"}
+                onClick={() => switchDisplayMode("cash")}
+                className={`flex-1 sm:flex-initial min-h-9 ${segmentedItemClass(displayMode === "cash")}`}
+              >
+                Vista actual
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:flex items-center gap-2">
             <button
               type="button"
-              onClick={handleExportCsv}
-              className="col-span-2 sm:col-span-1 inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-raised px-3.5 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-all active:scale-[0.98] touch-manipulation"
+              onClick={() => openForm("EXPENSE")}
+              className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-[0_1px_2px_rgba(28,29,33,0.12),0_4px_12px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition-colors hover:bg-primary-hover active:scale-[0.98] touch-manipulation"
             >
-              Exportar CSV (Excel)
+              + Registrar gasto
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => openForm("INCOME")}
+              className="inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs hover:bg-raised transition-colors active:scale-[0.98] touch-manipulation"
+            >
+              + Otro ingreso
+            </button>
+            {(displayMode === "accounts" ? orderAccounts.length > 0 : view.transactions.length > 0) && (
+              <button
+                type="button"
+                onClick={displayMode === "accounts" ? handleExportAccountsCsv : handleExportCsv}
+                className="col-span-2 sm:col-span-1 inline-flex min-h-10 items-center justify-center rounded-xl border border-line bg-raised px-3.5 py-2 text-xs sm:text-sm font-semibold text-ink hover:bg-canvas transition-colors active:scale-[0.98] touch-manipulation"
+              >
+                {displayMode === "accounts" ? "Exportar cuentas (.csv)" : "Exportar CSV (Excel)"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -312,7 +371,7 @@ export function MoneyControls({
 
       {/* Formulario táctil de alta rápida de gasto o ingreso suelto */}
       {formMode && (
-        <Card className="p-4 sm:p-5 border-primary/30 space-y-4">
+        <Card className="popover-enter origin-top p-4 sm:p-5 border-primary/30 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-ink">
               {formMode === "EXPENSE"
@@ -454,6 +513,20 @@ export function MoneyControls({
         </Card>
       )}
 
+      {displayMode === "accounts" ? (
+        <MoneyAccountsView
+          monthLabel={formatMonthLabel(view.month)}
+          salesSummary={salesSummary}
+          costBreakdown={costBreakdown}
+          orderAccounts={orderAccounts}
+          expenseTotal={view.summary.expense}
+          expenseCategories={expenseCategories}
+          currency={currency}
+          vatPercent={vatPercent}
+          onOpenExpenseForm={() => openForm("EXPENSE")}
+        />
+      ) : (
+        <>
       {/* Bloque principal: Resultado de ventas (con costos reales) vs Flujo de caja */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* 1. Resultado económico de las ventas del mes */}
@@ -520,21 +593,21 @@ export function MoneyControls({
                     <div className="h-2.5 w-full rounded-full bg-raised overflow-hidden flex">
                       {salesProfitShare > 0 && (
                         <div
-                          className="h-full bg-ok transition-all duration-300"
+                          className="h-full bg-ok transition-[width] duration-200 ease-out"
                           style={{ width: `${salesProfitShare}%` }}
                           title={`Ganancia ${salesProfitShare}%`}
                         />
                       )}
                       {salesCostShare > 0 && (
                         <div
-                          className="h-full bg-primary transition-all duration-300"
+                          className="h-full bg-primary transition-[width] duration-200 ease-out"
                           style={{ width: `${salesCostShare}%` }}
                           title={`Costo de fabricación ${salesCostShare}%`}
                         />
                       )}
                       {salesVatShare > 0 && (
                         <div
-                          className="h-full bg-line-strong transition-all duration-300"
+                          className="h-full bg-line-strong transition-[width] duration-200 ease-out"
                           style={{ width: `${salesVatShare}%` }}
                           title={`IVA retenido ${salesVatShare}%`}
                         />
@@ -816,6 +889,8 @@ export function MoneyControls({
               <div className={segmentedTrackClass} role="tablist" aria-label="Filtrar movimientos">
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={txFilter === "ALL"}
                   onClick={() => setTxFilter("ALL")}
                   className={`min-h-8 ${segmentedItemClass(txFilter === "ALL")}`}
                 >
@@ -823,6 +898,8 @@ export function MoneyControls({
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={txFilter === "INCOME"}
                   onClick={() => setTxFilter("INCOME")}
                   className={`min-h-8 ${segmentedItemClass(txFilter === "INCOME")}`}
                 >
@@ -830,6 +907,8 @@ export function MoneyControls({
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={txFilter === "EXPENSE"}
                   onClick={() => setTxFilter("EXPENSE")}
                   className={`min-h-8 ${segmentedItemClass(txFilter === "EXPENSE")}`}
                 >
@@ -981,6 +1060,8 @@ export function MoneyControls({
           </div>
         )}
       </Card>
+        </>
+      )}
     </div>
   );
 }

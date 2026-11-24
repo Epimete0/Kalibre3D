@@ -2,7 +2,12 @@
  * Costo unitario estimado de una línea de venta, para guardarlo al vender (rentabilidad por pieza).
  * Módulo puro: recibe las especificaciones de la pieza y las tarifas del taller de ese momento.
  */
-import { computeMaterialCostPerGram, computePieceCost, type SpoolCostSample } from "./costing";
+import {
+  computeMaterialCostPerGram,
+  computePieceCost,
+  type CostBreakdown,
+  type SpoolCostSample,
+} from "./costing";
 
 export type PieceSpec = {
   material: string | null;
@@ -24,10 +29,10 @@ export type CostRates = {
 };
 
 /**
- * Devuelve el costo unitario (entero, unidad mínima) o null si no hay datos suficientes:
+ * Devuelve el desglose completo de costo unitario o null si no hay datos suficientes:
  * sin material o sin gramos no se puede estimar el filamento, que es el costo principal.
  */
-export function estimateUnitCost(spec: PieceSpec, rates: CostRates): number | null {
+export function estimateUnitCostBreakdown(spec: PieceSpec, rates: CostRates): CostBreakdown | null {
   const grams = spec.grams ?? 0;
   if (!spec.material || grams <= 0) return null;
   const colorsCount = Math.max(1, spec.colorsCount ?? 1);
@@ -44,5 +49,12 @@ export function estimateUnitCost(spec: PieceSpec, rates: CostRates): number | nu
     failurePercent: rates.failurePercent ?? 0,
     packagingCost: rates.packagingCost,
     otherCosts: Math.max(0, spec.suppliesCost ?? 0),
-  }).totalCost;
+  });
+}
+
+/**
+ * Devuelve el costo unitario (entero, unidad mínima) o null si no hay datos suficientes.
+ */
+export function estimateUnitCost(spec: PieceSpec, rates: CostRates): number | null {
+  return estimateUnitCostBreakdown(spec, rates)?.totalCost ?? null;
 }

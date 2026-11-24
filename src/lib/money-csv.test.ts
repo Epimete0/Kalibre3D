@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountsCsvFilename,
+  buildMonthlyAccountsCsv,
   buildMonthlyMoneyCsv,
   escapeCsvCell,
   formatCsvAmount,
@@ -100,5 +102,40 @@ describe("money-csv", () => {
     expect(lines[1]).toContain("2026-11-14;Ingreso;Cobro de venta;Mercado Libre;Pedido #7;Mercado Libre;8990;8990;CLP;Vigente;Emblema Hilux;");
     expect(lines[2]).toContain("2026-11-10;Gasto;Filamento;;;Transferencia;15000;-15000;CLP;Vigente;'=1+1;");
     expect(lines[3]).toContain("2026-11-09;Gasto;Envíos;;;Efectivo;3500;0;CLP;Anulado;Envío duplicado;Cargado dos veces");
+  });
+
+  it("genera el CSV mensual de cuentas con fila de totales y neutralización anti-fórmulas", () => {
+    expect(accountsCsvFilename("2026-11")).toBe("kalibre-cuentas-2026-11.csv");
+
+    const csv = buildMonthlyAccountsCsv(
+      [
+        {
+          id: "o1",
+          number: 14,
+          createdOn: "2026-11-24",
+          channel: "MERCADOLIBRE",
+          customerName: "=EVIL()",
+          itemsSummary: "2× Soporte gamer",
+          units: 2,
+          grossRevenue: 11900,
+          vatAmount: 1900,
+          netRevenue: 10000,
+          productionCost: 2500,
+          profit: 7500,
+          marginPercent: 75,
+          unitsWithoutCost: 0,
+          unitsEstimatedToday: 0,
+        },
+      ],
+      "CLP",
+      19
+    );
+
+    expect(csv.startsWith("\uFEFF")).toBe(true);
+    const lines = csv.slice(1).trim().split("\r\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toContain("Fecha;Pedido;Canal;Cliente;Piezas;Unidades;Venta neta ML/desc;IVA (19%);Neto taller;Costo fabricación;Utilidad estimada;Margen (%);Moneda;Observación de costo");
+    expect(lines[1]).toContain("2026-11-24;Pedido #14;Mercado Libre;'=EVIL();2× Soporte gamer;2;11900;1900;10000;2500;7500;75%;CLP;Costo registrado al vender");
+    expect(lines[2]).toContain("TOTAL;1 pedido(s);;;;2;11900;1900;10000;2500;7500;75%;CLP;");
   });
 });

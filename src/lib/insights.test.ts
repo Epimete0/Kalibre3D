@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateProductPerformance,
   aggregateProfitability,
+  buildMonthlyCostBreakdown,
+  buildMonthlyOrderAccounts,
   computeOrderEconomics,
   computeSalesEconomicsSummary,
   OTHER_SALES_KEY,
@@ -219,5 +221,111 @@ describe("economía de ventas, pedido y rendimiento de producto", () => {
     expect(perf.profit).toBe(9700);
     expect(perf.marginPercent).toBe(76);
     expect(perf.recentOrders.map((r) => r.orderNumber)).toEqual([2, 1]);
+  });
+
+  it("desglosa costos de fabricación por componente cuadrando exacto con costos históricos y faltantes", () => {
+    const result = buildMonthlyCostBreakdown([
+      // Línea con tarifas actuales exactas (qty 2)
+      {
+        qty: 2,
+        unitCost: 1500,
+        breakdown: {
+          totalGrams: 50,
+          materialCost: 900,
+          electricityCost: 200,
+          wearCost: 100,
+          failureCost: 50,
+          packagingCost: 150,
+          otherCosts: 100,
+          totalCost: 1500,
+        },
+      },
+      // Línea con costo histórico diferente al desglose actual (1200 guardado vs 1000 actual)
+      {
+        qty: 1,
+        unitCost: 1200,
+        breakdown: {
+          totalGrams: 40,
+          materialCost: 700,
+          electricityCost: 100,
+          wearCost: 100,
+          failureCost: 0,
+          packagingCost: 100,
+          otherCosts: 0,
+          totalCost: 1000,
+        },
+      },
+      // Línea con costo guardado pero sin ficha actual
+      {
+        qty: 1,
+        unitCost: 500,
+        breakdown: null,
+      },
+      // Línea manual sin ningún costo
+      {
+        qty: 3,
+        unitCost: null,
+        breakdown: null,
+      },
+    ]);
+
+    expect(result.totalCost).toBe(3000 + 1200 + 500);
+    expect(
+      result.materialCost +
+        result.electricityCost +
+        result.wearAndFailureCost +
+        result.packagingAndSuppliesCost +
+        result.otherStoredCost
+    ).toBe(result.totalCost);
+    expect(result.otherStoredCost).toBe(500);
+    expect(result.unitsWithoutCost).toBe(3);
+  });
+
+  it("construye el detalle de cuentas por pedido con ML, IVA y orden cronológico descendente", () => {
+    const rows = buildMonthlyOrderAccounts({
+      vatPercent: 19,
+      orders: [
+        {
+          id: "o1",
+          number: 10,
+          createdOn: "2026-11-05",
+          channel: "WHATSAPP",
+          customerName: "Camila",
+          total: 11900,
+          mlCommission: 0,
+          mlShippingCost: 0,
+          items: [
+            { id: "i1", description: "Soporte", qty: 1, unitCost: 2000, currentUnitCost: null },
+          ],
+        },
+        {
+          id: "o2",
+          number: 11,
+          createdOn: "2026-11-20",
+          channel: "MERCADOLIBRE",
+          customerName: null,
+          total: 14900,
+          mlCommission: 2000,
+          mlShippingCost: 1000,
+          items: [
+            { id: "i2", description: "Llavero", qty: 2, unitCost: 1000, currentUnitCost: null },
+          ],
+        },
+      ],
+    });
+
+    expect(rows.map((r) => r.number)).toEqual([11, 10]);
+    // o2: expectedReceivable = 14900 - 3000 = 11900, IVA 19% = 1900, net = 10000, cost = 2000, profit = 8000
+    expect(rows[0]).toMatchObject({
+      number: 11,
+      createdOn: "2026-11-20",
+      itemsSummary: "2× Llavero",
+      grossRevenue: 11900,
+      vatAmount: 1900,
+      netRevenue: 10000,
+      productionCost: 2000,
+      profit: 8000,
+      marginPercent: 80,
+    });
   });
 });

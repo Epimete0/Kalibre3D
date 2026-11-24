@@ -2,8 +2,10 @@
  * Compras del mes y rentabilidad por pieza. Módulo puro: recibe filas ya filtradas por taller y calcula.
  * Montos enteros en la unidad mínima de la moneda del taller.
  */
-import { vatIncluded } from "./costing";
+import { vatIncluded, type CostBreakdown } from "./costing";
 import type { ExpenseCategory } from "./money-presentation";
+import type { OrderChannel } from "./order-status";
+import { expectedReceivable } from "./order-totals";
 
 // ---------------------------------------------------------------------------
 // Compras
@@ -409,4 +411,185 @@ export function aggregateProductPerformance(input: {
     unitsEstimatedToday,
     recentOrders,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Vista de Cuentas: desglose de costos de fabricación y detalle por pedido
+// ---------------------------------------------------------------------------
+
+export type MonthlyCostLineInput = {
+  qty: number;
+  unitCost: number | null;
+  breakdown: CostBreakdown | null;
+};
+
+export type MonthlyCostBreakdown = {
+  materialCost: number;
+  electricityCost: number;
+  wearAndFailureCost: number;
+  packagingAndSuppliesCost: number;
+  otherStoredCost: number;
+  totalCost: number;
+  unitsWithoutCost: number;
+};
+
+/**
+ * Desglosa el costo de fabricación de las piezas vendidas en el mes por componente.
+ * Si una línea conserva un costo histórico distinto a las tarifas de hoy, escala proporcionalmente
+ * sus componentes para que la suma coincida al peso con el costo real del pedido.
+ */
+export function buildMonthlyCostBreakdown(
+  lines: readonly MonthlyCostLineInput[]
+): MonthlyCostBreakdown {
+  let materialCost = 0;
+  let electricityCost = 0;
+  let wearAndFailureCost = 0;
+  let packagingAndSuppliesCost = 0;
+  let otherStoredCost = 0;
+  let totalCost = 0;
+  let unitsWithoutCost = 0;
+
+  for (const line of lines) {
+    const resolvedUnit = line.unitCost ?? line.breakdown?.totalCost ?? null;
+    if (resolvedUnit === null) {
+      unitsWithoutCost += line.qty;
+      continue;
+    }
+
+    const lineTotal = resolvedUnit * line.qty;
+    totalCost += lineTotal;
+
+    const b = line.breakdown;
+    if (!b || b.totalCost <= 0) {
+      otherStoredCost += lineTotal;
+      continue;
+    }
+
+    const rawParts = [
+      b.materialCost * line.qty,
+      b.electricityCost * line.qty,
+      (b.wearCost + b.failureCost) * line.qty,
+      (b.packagingCost + b.otherCosts) * line.qty,
+    ];
+    const rawSum = rawParts[0] + rawParts[1] + rawParts[2] + rawParts[3];
+
+    if (rawSum === lineTotal) {
+      materialCost += rawParts[0];
+      electricityCost += rawParts[1];
+      wearAndFailureCost += rawParts[2];
+      packagingAndSuppliesCost += rawParts[3];
+    } else if (rawSum > 0) {
+      const scaled = rawParts.map((part) => Math.round((part * lineTotal) / rawSum));
+      const diff = lineTotal - (scaled[0] + scaled[1] + scaled[2] + scaled[3]);
+      if (diff !== 0) {
+        let largestIdx = 0;
+        for (let i = 1; i < scaled.length; i += 1) {
+          if (scaled[i] > scaled[largestIdx]) largestIdx = i;
+        }
+        scaled[largestIdx] += diff;
+      }
+      materialCost += scaled[0];
+      electricityCost += scaled[1];
+      wearAndFailureCost += scaled[2];
+      packagingAndSuppliesCost += scaled[3];
+    } else {
+      otherStoredCost += lineTotal;
+    }
+  }
+
+  return {
+    materialCost,
+    electricityCost,
+    wearAndFailureCost,
+    packagingAndSuppliesCost,
+    otherStoredCost,
+    totalCost,
+    unitsWithoutCost,
+  };
+}
+
+export type MonthlyAccountOrderInput = {
+  id: string;
+  number: number;
+  createdOn: string;
+  channel: OrderChannel;
+  customerName: string | null;
+  total: number;
+  mlCommission: number;
+  mlShippingCost: number;
+  items: readonly {
+    id: string;
+    description: string;
+    qty: number;
+    unitCost: number | null;
+    currentUnitCost: number | null;
+  }[];
+};
+
+export type MonthlyOrderAccountRow = {
+  id: string;
+  number: number;
+  createdOn: string;
+  channel: OrderChannel;
+  customerName: string | null;
+  itemsSummary: string;
+  units: number;
+  grossRevenue: number;
+  vatAmount: number;
+  netRevenue: number;
+  productionCost: number;
+  profit: number;
+  marginPercent: number | null;
+  unitsWithoutCost: number;
+  unitsEstimatedToday: number;
+};
+
+/** Construye el detalle económico por pedido del mes (venta, IVA, costo, utilidad y margen). */
+export function buildMonthlyOrderAccounts(input: {
+  orders: readonly MonthlyAccountOrderInput[];
+  vatPercent: number;
+}): MonthlyOrderAccountRow[] {
+  return input.orders
+    .map((order) => {
+      const grossRevenue = expectedReceivable({
+        channel: order.channel,
+        total: order.total,
+        mlCommission: order.mlCommission,
+        mlShippingCost: order.mlShippingCost,
+      });
+
+      const economics = computeOrderEconomics({
+        expectedReceivable: grossRevenue,
+        vatPercent: input.vatPercent,
+        items: order.items.map((item) => ({
+          id: item.id,
+          qty: item.qty,
+          unitCost: item.unitCost,
+          currentUnitCost: item.currentUnitCost,
+        })),
+      });
+
+      const itemsSummary = order.items
+        .map((item) => (item.qty > 1 ? `${item.qty}× ${item.description}` : item.description))
+        .join(", ");
+
+      return {
+        id: order.id,
+        number: order.number,
+        createdOn: order.createdOn,
+        channel: order.channel,
+        customerName: order.customerName,
+        itemsSummary,
+        units: economics.units,
+        grossRevenue: economics.expectedReceivable,
+        vatAmount: economics.vatAmount,
+        netRevenue: economics.netRevenue,
+        productionCost: economics.productionCost,
+        profit: economics.profit,
+        marginPercent: economics.marginPercent,
+        unitsWithoutCost: economics.unitsWithoutCost,
+        unitsEstimatedToday: economics.unitsEstimatedToday,
+      };
+    })
+    .sort((a, b) => b.createdOn.localeCompare(a.createdOn) || b.number - a.number);
 }

@@ -6,9 +6,13 @@ import { requireCatalogContext } from "@/lib/auth";
 import {
   aggregateProductPerformance,
   aggregateProfitability,
+  buildMonthlyCostBreakdown,
+  buildMonthlyOrderAccounts,
   computeOrderEconomics,
   computeSalesEconomicsSummary,
   summarizePurchases,
+  type MonthlyCostBreakdown,
+  type MonthlyOrderAccountRow,
   type OrderEconomics,
   type ProductPerformanceSummary,
   type ProductProfitability,
@@ -19,7 +23,7 @@ import { currentMonth, isValidMonth, monthDateRange, shiftMonth, todayInTimeZone
 import type { OrderChannel } from "@/lib/order-status";
 import { expectedReceivable } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
-import { estimateUnitCost, type CostRates } from "@/lib/sale-cost";
+import { estimateUnitCost, estimateUnitCostBreakdown, type CostRates } from "@/lib/sale-cost";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -207,7 +211,18 @@ export async function getProductProfitability(options?: { month?: string; all?: 
 export type MonthlySalesEconomicsView = {
   nav: MonthNavigation;
   summary: SalesEconomicsSummary;
+  costBreakdown: MonthlyCostBreakdown;
+  orderAccounts: MonthlyOrderAccountRow[];
 };
+
+function resolveItemCostBreakdown(item: ItemCostFields, rates: CostRates) {
+  return item.product
+    ? estimateUnitCostBreakdown(item.product, rates)
+    : estimateUnitCostBreakdown(
+        { material: item.material, grams: item.grams, colorsCount: item.colorsCount },
+        rates
+      );
+}
 
 /** Resumen mensual de ventas, costo de fabricación de lo vendido y ganancia real para Dinero/Dashboard. */
 export async function getMonthlySalesEconomics(options?: { month?: string }): Promise<MonthlySalesEconomicsView> {
@@ -220,12 +235,22 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
       where: { centerId, status: { in: SOLD_STATUSES } },
       select: {
         id: true,
+        number: true,
+        channel: true,
+        total: true,
         createdAt: true,
         discount: true,
         mlCommission: true,
         mlShippingCost: true,
-        items: {
+        customer: {
           select: {
+            name: true,
+          },
+        },
+        items: {
+          orderBy: { position: "asc" },
+          select: {
+            id: true,
             productId: true,
             description: true,
             qty: true,
@@ -252,7 +277,13 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
     loadCostRatesAndVat(centerId),
   ]);
 
-  const inPeriod = orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
+  const inPeriod = orders
+    .map((order) => ({
+      ...order,
+      createdOn: todayInTimeZone(order.createdAt, tz),
+    }))
+    .filter((order) => order.createdOn.startsWith(nav.month));
+
   const lines = inPeriod.flatMap((order) =>
     order.items.map((item) => ({
       orderId: order.id,
@@ -266,6 +297,37 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
   );
   const rows = aggregateProfitability(lines, inPeriod);
 
+  const costBreakdown = buildMonthlyCostBreakdown(
+    inPeriod.flatMap((order) =>
+      order.items.map((item) => ({
+        qty: item.qty,
+        unitCost: item.unitCost,
+        breakdown: resolveItemCostBreakdown(item, rates),
+      }))
+    )
+  );
+
+  const orderAccounts = buildMonthlyOrderAccounts({
+    orders: inPeriod.map((order) => ({
+      id: order.id,
+      number: order.number,
+      createdOn: order.createdOn,
+      channel: order.channel as OrderChannel,
+      customerName: order.customer?.name ?? null,
+      total: order.total,
+      mlCommission: order.mlCommission,
+      mlShippingCost: order.mlShippingCost,
+      items: order.items.map((item) => ({
+        id: item.id,
+        description: item.description,
+        qty: item.qty,
+        unitCost: item.unitCost,
+        currentUnitCost: resolveFallbackUnitCost(item, rates),
+      })),
+    })),
+    vatPercent,
+  });
+
   return {
     nav,
     summary: computeSalesEconomicsSummary({
@@ -273,6 +335,8 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
       ordersCount: inPeriod.length,
       vatPercent,
     }),
+    costBreakdown,
+    orderAccounts,
   };
 }
 
