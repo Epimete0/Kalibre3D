@@ -554,10 +554,10 @@ export function MoneyControls({
             {salesSummary.ordersCount === 0 ? (
               <div className="rounded-xl border border-line/70 bg-raised/40 p-4 space-y-2.5">
                 <p className="text-sm font-medium text-ink">
-                  Todavía no hay pedidos confirmados en {formatMonthLabel(view.month)}.
+                  Todavía no hay cobros ni devoluciones en {formatMonthLabel(view.month)}.
                 </p>
                 <p className="text-xs text-muted">
-                  Cuando registres ventas, aquí verás cuánto te dejó cada pedido después de descontar el filamento, la luz y el embalaje.
+                  Al registrar un cobro, aquí verás cuánto te dejó después de descontar el filamento, la luz y el embalaje.
                 </p>
                 <Link
                   href="/orders/new"
@@ -639,9 +639,9 @@ export function MoneyControls({
                 <dl className="divide-y divide-line/60 rounded-xl border border-line/70 bg-canvas/50 px-3.5 text-sm">
                   <div className="flex items-baseline justify-between gap-3 py-2">
                     <dt className="text-muted">
-                      Ventas del mes
+                      Cobrado del mes
                       <span className="hidden sm:inline text-[11px] text-muted/80">
-                        {" "}· neto tras descuentos y ML
+                        {" "}· cobros menos devoluciones
                       </span>
                     </dt>
                     <dd className="font-semibold text-ink tabular-nums shrink-0">
@@ -658,7 +658,7 @@ export function MoneyControls({
                         </span>
                       </dt>
                       <dd className="font-medium text-muted tabular-nums shrink-0">
-                        −{formatMoney(salesSummary.vatAmount, currency)}
+                        {formatMoney(-salesSummary.vatAmount, currency)}
                       </dd>
                     </div>
                   )}

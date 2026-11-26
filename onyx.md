@@ -6,6 +6,16 @@
 
 ---
 
+## Anulaciones, cobros efectivos y claridad visual — 2026-11-26
+
+- Los pedidos anulados se ocultan de las vistas habituales, revierten sus cobros y compensan los movimientos vinculados de stock y bobinas de forma transaccional. Las devoluciones conservan el costo de fabricación y descuentan el reembolso cuando se registra. Los pedidos anulados con anterioridad requieren revisión individual.
+- Cuentas, Inicio y rentabilidad por pieza reconocen los cobros y devoluciones en el mes de cada movimiento. El costo completo se reconoce una vez con el primer abono. El saldo pendiente incluye pedidos entregados sin cobrar.
+- En ventas nuevas de Mercado Libre, el cobro comienza desmarcado, incluso con el canal recordado; la persona puede marcarlo al recibir el dinero. La elección se conserva al cambiar el tipo de venta.
+- El formulario de venta mejora la separación visual de piezas y campos en ambos temas y adapta cantidad en móvil; la cuenta queda disponible en el menú de cabecera. No se cambia el esquema ni se incluye la migración pendiente de mano de obra y multipieza.
+- Las pruebas reales cubren anulación, compensación de inventario, devoluciones y abonos en meses distintos; la interfaz se comprobó con datos ficticios.
+
+---
+
 ## Pedidos organizados por fecha y vista «Cuentas» en Dinero — 2026-11-24
 
 - **Pedido del usuario:** organizar el listado de pedidos (`/orders`) por fecha para facilitar su visualización y simplificar la lectura de *Dinero* (`/money`) agregando una opción **Cuentas** que permita alternar entre ver utilidades, IVA y costos de forma clara o ver la vista actual (flujo de caja y movimientos).

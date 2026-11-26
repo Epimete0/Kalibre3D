@@ -6,6 +6,12 @@ import { vatIncluded, type CostBreakdown } from "./costing";
 import type { ExpenseCategory } from "./money-presentation";
 import type { OrderChannel } from "./order-status";
 import { expectedReceivable } from "./order-totals";
+import { allocateCollected } from "./collected-sales";
+
+/** IVA incluido también debe revertirse cuando un reembolso deja el período en negativo. */
+function signedVatIncluded(amount: number, vatPercent: number) {
+  return amount < 0 ? -vatIncluded(-amount, vatPercent) : vatIncluded(amount, vatPercent);
+}
 
 // ---------------------------------------------------------------------------
 // Compras
@@ -78,6 +84,8 @@ export type SaleOrder = {
   discount: number;
   mlCommission: number;
   mlShippingCost: number;
+  collectedRevenue?: number;
+  recognizeCost?: boolean;
 };
 
 export type ProductProfitability = {
@@ -102,12 +110,22 @@ export const OTHER_SALES_KEY = "otras-ventas";
 export function aggregateProfitability(lines: readonly SaleLine[], orders: readonly SaleOrder[]): ProductProfitability[] {
   const orderById = new Map(orders.map((order) => [order.id, order]));
   const subtotalByOrder = new Map<string, number>();
-  for (const line of lines) {
+  const lineIndexesByOrder = new Map<string, number[]>();
+  for (const [index, line] of lines.entries()) {
     subtotalByOrder.set(line.orderId, (subtotalByOrder.get(line.orderId) ?? 0) + line.qty * line.unitPrice);
+    lineIndexesByOrder.set(line.orderId, [...(lineIndexesByOrder.get(line.orderId) ?? []), index]);
+  }
+
+  const allocatedByLine = new Map<number, number>();
+  for (const [orderId, indexes] of lineIndexesByOrder) {
+    const revenue = orderById.get(orderId)?.collectedRevenue;
+    if (revenue === undefined) continue;
+    const allocated = allocateCollected(revenue, indexes.map((index) => lines[index].qty * lines[index].unitPrice));
+    indexes.forEach((index, position) => allocatedByLine.set(index, allocated[position]));
   }
 
   const groups = new Map<string, ProductProfitability>();
-  for (const line of lines) {
+  for (const [lineIndex, line] of lines.entries()) {
     const key = line.productId ?? OTHER_SALES_KEY;
     const group =
       groups.get(key) ??
@@ -131,10 +149,12 @@ export function aggregateProfitability(lines: readonly SaleLine[], orders: reado
     const share = orderSubtotal > 0 ? Math.round((deductions * lineSubtotal) / orderSubtotal) : 0;
 
     group.units += line.qty;
-    group.revenue += lineSubtotal - share;
+    group.revenue += allocatedByLine.get(lineIndex) ?? (lineSubtotal - share);
 
     const unitCost = line.unitCost ?? line.currentUnitCost;
-    if (unitCost === null) {
+    if (order?.recognizeCost === false) {
+      // El costo completo se reconoció en un período anterior.
+    } else if (unitCost === null) {
       group.unitsWithoutCost += line.qty;
     } else {
       group.cost += unitCost * line.qty;
@@ -194,7 +214,7 @@ export function computeSalesEconomicsSummary(input: {
     unitsEstimatedToday += row.unitsEstimatedToday;
   }
 
-  const vatAmount = vatIncluded(grossRevenue, input.vatPercent);
+  const vatAmount = signedVatIncluded(grossRevenue, input.vatPercent);
   const netRevenue = grossRevenue - vatAmount;
   const netProfit = netRevenue - productionCost;
   const marginPercent = netRevenue > 0 ? Math.round((netProfit / netRevenue) * 100) : null;
@@ -267,7 +287,7 @@ export function computeOrderEconomics(input: {
     }
   }
 
-  const vatAmount = vatIncluded(input.expectedReceivable, input.vatPercent);
+  const vatAmount = signedVatIncluded(input.expectedReceivable, input.vatPercent);
   const netRevenue = input.expectedReceivable - vatAmount;
   const profit = netRevenue - productionCost;
   const marginPercent = netRevenue > 0 ? Math.round((profit / netRevenue) * 100) : null;
@@ -294,6 +314,8 @@ export type ProductPerformanceOrderInput = {
   discount: number;
   mlCommission: number;
   mlShippingCost: number;
+  collectedRevenue?: number;
+  recognizeCost?: boolean;
   items: readonly {
     productId: string | null;
     qty: number;
@@ -353,8 +375,13 @@ export function aggregateProductPerformance(input: {
       order.discount + (order.channel === "MERCADOLIBRE" ? order.mlCommission + order.mlShippingCost : 0);
     const share = orderSubtotal > 0 ? Math.round((deductions * lineSubtotal) / orderSubtotal) : 0;
 
-    const orderGross = lineSubtotal - share;
-    const orderVat = vatIncluded(orderGross, input.vatPercent);
+    const allocated = order.collectedRevenue !== undefined
+      ? allocateCollected(order.collectedRevenue, order.items.map((item) => item.qty * item.unitPrice))
+      : null;
+    const orderGross = allocated
+      ? order.items.reduce((sum, item, index) => sum + (item.productId === input.productId ? allocated[index] : 0), 0)
+      : lineSubtotal - share;
+    const orderVat = signedVatIncluded(orderGross, input.vatPercent);
     const orderNet = orderGross - orderVat;
 
     let orderQty = 0;
@@ -364,7 +391,9 @@ export function aggregateProductPerformance(input: {
     for (const item of matching) {
       orderQty += item.qty;
       const resolvedUnit = item.unitCost ?? item.currentUnitCost;
-      if (resolvedUnit === null) {
+      if (order.recognizeCost === false) {
+        // No volver a cargar el costo en abonos o reembolsos posteriores.
+      } else if (resolvedUnit === null) {
         unitsWithoutCost += item.qty;
         hasMissingCost = true;
       } else {
@@ -393,7 +422,7 @@ export function aggregateProductPerformance(input: {
 
   recentOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  const vatAmount = vatIncluded(grossRevenue, input.vatPercent);
+  const vatAmount = signedVatIncluded(grossRevenue, input.vatPercent);
   const netRevenue = grossRevenue - vatAmount;
   const profit = netRevenue - productionCost;
   const marginPercent = netRevenue > 0 ? Math.round((profit / netRevenue) * 100) : null;
@@ -517,6 +546,8 @@ export type MonthlyAccountOrderInput = {
   total: number;
   mlCommission: number;
   mlShippingCost: number;
+  collectedRevenue?: number;
+  recognizeCost?: boolean;
   items: readonly {
     id: string;
     description: string;
@@ -551,7 +582,7 @@ export function buildMonthlyOrderAccounts(input: {
 }): MonthlyOrderAccountRow[] {
   return input.orders
     .map((order) => {
-      const grossRevenue = expectedReceivable({
+      const grossRevenue = order.collectedRevenue ?? expectedReceivable({
         channel: order.channel,
         total: order.total,
         mlCommission: order.mlCommission,
@@ -564,8 +595,8 @@ export function buildMonthlyOrderAccounts(input: {
         items: order.items.map((item) => ({
           id: item.id,
           qty: item.qty,
-          unitCost: item.unitCost,
-          currentUnitCost: item.currentUnitCost,
+          unitCost: order.recognizeCost === false ? 0 : item.unitCost,
+          currentUnitCost: order.recognizeCost === false ? 0 : item.currentUnitCost,
         })),
       });
 

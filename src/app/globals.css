@@ -18,14 +18,18 @@
 
   /* Tema claro (Opción B): Arena cálido (60%) · Carbón & Crema (30%) · Azul eléctrico (10%) */
   --color-canvas: #f5f2eb;
-  --color-surface: #fdfcf9;
-  --color-raised: #eae5da;
+  --color-surface: #fffefa;
+  --color-raised: #e9e4d9;
+  /* Agrupa campos relacionados sin confundirlos con el fondo ni con los campos. */
+  --color-form-group: #f1ede4;
+  --color-form-group-border: #d8d0c1;
+  --color-control-selected: #fffefa;
 
   --color-ink: #1c1d21;
   --color-muted: #57554f;
   --color-faint: #78756e;
 
-  --color-line: #e2ddd2;
+  --color-line: #dcd5c9;
   --color-line-strong: #cfc8b8;
 
   /* Primario (10%): Azul eléctrico exclusivo para acciones principales (CTA) */
@@ -69,6 +73,9 @@
     --color-canvas: #121316;
     --color-surface: #1c1d21;
     --color-raised: #26282e;
+    --color-form-group: #292c34;
+    --color-form-group-border: #4a4d57;
+    --color-control-selected: #3b414d;
     --color-ink: #f5f2eb;
     --color-muted: #a8a49b;
     --color-faint: #78756e;

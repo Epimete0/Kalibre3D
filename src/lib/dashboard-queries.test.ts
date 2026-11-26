@@ -165,7 +165,7 @@ describe("dashboard-queries (Fase 3)", () => {
 
     expect(view.currency).toBe("CLP");
     expect(view.moneyView?.month).toBe("2026-11");
-    expect(view.pendingReceivableTotal).toBe(26500);
+    expect(view.pendingReceivableTotal).toBe(14500);
     expect(view.overdueOrders).toHaveLength(1);
     expect(view.upcomingOrders).toHaveLength(2);
     expect(view.statusCounts).toEqual({
@@ -178,6 +178,19 @@ describe("dashboard-queries (Fase 3)", () => {
     expect(view.lowSpools[0]?.color).toBe("Gris Plata");
     expect(view.lowStockProducts).toHaveLength(1);
     expect(view.lowStockProducts[0]?.name).toBe("Emblema Ranger Raptor");
+  });
+
+  it("incluye pedidos entregados por cobrar y excluye cotizaciones sin confirmar", async () => {
+    requireAuthContext.mockResolvedValue({ userId: "u-owner", centerId: "center-1", role: "OWNER", timeZone: "America/Santiago" });
+    listOrders.mockImplementation(async (filters: { status?: string }) => filters.status === "ALL"
+      ? [
+          { id: "d", status: "DELIVERED", balance: 6483 },
+          { id: "q", status: "QUOTED", balance: 12000 },
+          { id: "r", status: "RETURNED", balance: 5000 },
+        ]
+      : []);
+    const view = await getDashboardOverview();
+    expect(view.pendingReceivableTotal).toBe(6483);
   });
 
   it("PROFESSIONAL recibe alertas operativas y conteos por estado, pero no resumen de dinero ni saldos por cobrar", async () => {

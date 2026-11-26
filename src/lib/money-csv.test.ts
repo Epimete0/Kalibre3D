@@ -134,7 +134,7 @@ describe("money-csv", () => {
     expect(csv.startsWith("\uFEFF")).toBe(true);
     const lines = csv.slice(1).trim().split("\r\n");
     expect(lines).toHaveLength(3);
-    expect(lines[0]).toContain("Fecha;Pedido;Canal;Cliente;Piezas;Unidades;Venta neta ML/desc;IVA (19%);Neto taller;Costo fabricación;Utilidad estimada;Margen (%);Moneda;Observación de costo");
+    expect(lines[0]).toContain("Fecha;Pedido;Canal;Cliente;Piezas;Unidades;Cobrado menos devoluciones;IVA (19%);Neto taller;Costo fabricación;Utilidad estimada;Margen (%);Moneda;Observación de costo");
     expect(lines[1]).toContain("2026-11-24;Pedido #14;Mercado Libre;'=EVIL();2× Soporte gamer;2;11900;1900;10000;2500;7500;75%;CLP;Costo registrado al vender");
     expect(lines[2]).toContain("TOTAL;1 pedido(s);;;;2;11900;1900;10000;2500;7500;75%;CLP;");
   });

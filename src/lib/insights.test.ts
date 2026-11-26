@@ -110,6 +110,10 @@ describe("rentabilidad por pieza", () => {
 });
 
 describe("economía de ventas, pedido y rendimiento de producto", () => {
+  it("refleja el IVA con signo inverso cuando el período solo contiene un reembolso", () => {
+    const result = computeOrderEconomics({ expectedReceivable: -11900, vatPercent: 19, items: [] });
+    expect(result).toMatchObject({ vatAmount: -1900, netRevenue: -10000, profit: -10000 });
+  });
   it("resume ventas del mes descontando IVA incluido y costo de fabricación", () => {
     const rows = aggregateProfitability(
       [
@@ -221,6 +225,16 @@ describe("economía de ventas, pedido y rendimiento de producto", () => {
     expect(perf.profit).toBe(9700);
     expect(perf.marginPercent).toBe(76);
     expect(perf.recentOrders.map((r) => r.orderNumber)).toEqual([2, 1]);
+  });
+
+  it("en rendimiento por pieza usa el abono real y no repite el costo en un reembolso posterior", () => {
+    const item = { productId: "p-target", qty: 1, unitPrice: 6000, unitCost: 1000, currentUnitCost: null };
+    const other = { productId: "p-other", qty: 1, unitPrice: 4000, unitCost: 500, currentUnitCost: null };
+    const base = { id: "o1", number: 1, channel: "WHATSAPP", createdAt: new Date("2026-11-01T12:00:00Z"), discount: 0, mlCommission: 0, mlShippingCost: 0, items: [item, other] };
+    const collected = aggregateProductPerformance({ productId: "p-target", vatPercent: 0, orders: [{ ...base, collectedRevenue: 2000, recognizeCost: true }] });
+    const refund = aggregateProductPerformance({ productId: "p-target", vatPercent: 0, orders: [{ ...base, collectedRevenue: -5000, recognizeCost: false }] });
+    expect(collected).toMatchObject({ grossRevenue: 1200, productionCost: 1000, profit: 200 });
+    expect(refund).toMatchObject({ grossRevenue: -3000, productionCost: 0, profit: -3000 });
   });
 
   it("desglosa costos de fabricación por componente cuadrando exacto con costos históricos y faltantes", () => {

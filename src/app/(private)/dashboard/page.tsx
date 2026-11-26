@@ -325,7 +325,7 @@ export default async function DashboardPage({
           <div className="rounded-xl border border-line bg-surface px-3.5 py-2 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
             {salesEconomics && salesEconomics.summary.ordersCount > 0 ? (
               <span>
-                <strong className="text-ink font-semibold">Ventas del mes:</strong>{" "}
+                <strong className="text-ink font-semibold">Cobrado del mes:</strong>{" "}
                 {formatMoney(salesEconomics.summary.grossRevenue, currency)} · Costo fabricación:{" "}
                 <strong className="text-ink font-semibold">
                   {formatMoney(salesEconomics.summary.productionCost, currency)}

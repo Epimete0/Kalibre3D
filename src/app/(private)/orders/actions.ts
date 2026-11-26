@@ -57,6 +57,9 @@ export async function changeOrderStatusAction(input: {
     revalidatePath(`/orders/${input.orderId}`);
     revalidatePath("/clients");
     revalidatePath("/dashboard");
+    revalidatePath("/money");
+    revalidatePath("/spools");
+    revalidatePath("/products");
     return { message: "Estado de pedido actualizado correctamente." };
   } catch (error) {
     return actionFailure(error, "No fue posible actualizar el estado del pedido. Intenta nuevamente.");

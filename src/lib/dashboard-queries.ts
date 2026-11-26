@@ -59,9 +59,10 @@ export async function getDashboardOverview(options?: {
     role === "OWNER" || role === "ADMIN" || role === "PROFESSIONAL";
   const isViewer = role === "VIEWER";
 
-  const [activeOrders, settings, moneyView, spoolsView, products, startFacts] =
+  const [activeOrders, receivableOrders, settings, moneyView, spoolsView, products, startFacts] =
     await Promise.all([
       listOrders({ status: "ACTIVE" }),
+      isManager ? listOrders({ status: "ALL" }) : Promise.resolve([]),
       canOperate ? getCenterSettings() : Promise.resolve(null),
       isManager
         ? getMonthlyMoneyView({ month: options?.month })
@@ -87,7 +88,10 @@ export async function getDashboardOverview(options?: {
     READY: 0,
   };
 
-  let pendingReceivable = 0;
+  const pendingReceivable = receivableOrders.reduce((total, order) => {
+    if (!["CONFIRMED", "PRINTING", "READY", "DELIVERED"].includes(order.status)) return total;
+    return total + Math.max(0, order.balance ?? 0);
+  }, 0);
 
   for (const order of activeOrders) {
     if (order.status === "QUOTED") statusCounts.QUOTED += 1;
@@ -95,9 +99,6 @@ export async function getDashboardOverview(options?: {
     else if (order.status === "PRINTING") statusCounts.PRINTING += 1;
     else if (order.status === "READY") statusCounts.READY += 1;
 
-    if (isManager && order.balance !== null && order.balance > 0) {
-      pendingReceivable += order.balance;
-    }
   }
 
   const enableSpools = settings?.enableSpools ?? true;

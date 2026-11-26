@@ -176,6 +176,7 @@ export default async function OrderDetailPage(props: {
 
         {canManage && (
           <OrderDetailStatusControls
+            canCancelOrder={canManageMoney}
             orderId={order.id}
             currentStatus={order.status}
             version={order.version}

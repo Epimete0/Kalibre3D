@@ -114,6 +114,7 @@ describe("money-queries", () => {
       expect.objectContaining({
         where: {
           centerId: "center-1",
+          NOT: { voidedAt: { not: null }, order: { is: { status: "CANCELED" } } },
           occurredOn: {
             gte: new Date("2026-10-01T00:00:00.000Z"),
             lte: new Date("2026-10-31T00:00:00.000Z"),

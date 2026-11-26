@@ -35,7 +35,7 @@ export async function listOrdersSummary(options?: {
   const { centerId, role } = await requireAuthContext();
 
   const orders = await prisma.order.findMany({
-    where: { centerId },
+    where: { centerId, status: { not: "CANCELED" } },
     include: {
       customer: { select: { id: true, name: true } },
       _count: { select: { items: true } },
@@ -107,9 +107,9 @@ export async function listOrders(filters?: OrderListFilters): Promise<OrderListI
 
   const whereClause: {
     centerId: string;
-    status?: string | { in: string[] };
+    status?: string | { in?: string[]; not?: string };
     channel?: string;
-  } = { centerId };
+  } = { centerId, status: { not: "CANCELED" } };
 
   if (statusFilter === "ACTIVE") {
     whereClause.status = {
@@ -117,7 +117,7 @@ export async function listOrders(filters?: OrderListFilters): Promise<OrderListI
     };
   } else if (
     statusFilter &&
-    statusFilter !== "ALL" &&
+    statusFilter !== "ALL" && statusFilter !== "CANCELED" &&
     (ORDER_STATUSES as readonly string[]).includes(statusFilter)
   ) {
     whereClause.status = statusFilter;
@@ -338,7 +338,7 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail | nul
   }
 
   const order = await prisma.order.findFirst({
-    where: { centerId, id: orderId },
+    where: { centerId, id: orderId, status: { not: "CANCELED" } },
     include: {
       customer: {
         select: {

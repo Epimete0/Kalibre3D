@@ -52,7 +52,7 @@ export const createOrderSchema = z.object({
     { error: "El canal no es válido." }
   ),
   status: z
-    .enum(["QUOTED", "CONFIRMED", "PRINTING", "READY", "DELIVERED", "CANCELED", "RETURNED"])
+    .enum(["QUOTED", "CONFIRMED", "PRINTING", "READY", "DELIVERED"])
     .optional(),
   customerId: z.string().uuid().nullable().optional().default(null),
   newCustomerName: z.string().trim().max(100, "El nombre del cliente no puede superar los 100 caracteres.").optional(),
@@ -269,13 +269,16 @@ export type ChangeOrderStatusInput = z.input<typeof changeOrderStatusSchema>;
 export async function changeOrderStatus(
   input: ChangeOrderStatusInput
 ): Promise<{ id: string; status: OrderStatus; version: number }> {
-  const { centerId, userId } = await requireOperationalContext();
+  const { centerId, userId, role } = await requireOperationalContext();
   const parsed = changeOrderStatusSchema.safeParse(input);
   if (!parsed.success) {
     throw new DomainError(parsed.error.issues[0]?.message ?? "Datos de cambio de estado inválidos.");
   }
 
   const { orderId, expectedVersion, to } = parsed.data;
+  if (to === "CANCELED" && role !== "OWNER" && role !== "ADMIN") {
+    throw new DomainError("Solo el dueño o administrador puede anular un pedido.");
+  }
   if (to === "RETURNED") {
     throw new DomainError("Para registrar una devolución utiliza la opción de devolución con reembolso.");
   }
@@ -314,11 +317,38 @@ export async function changeOrderStatus(
       );
     }
 
+    if (to === "CANCELED") {
+      // El pedido se bloquea antes de las bobinas y piezas, igual que al registrar movimientos.
+      const spoolMoves = await tx.spoolMovement.findMany({ where: { centerId, orderId }, select: { spoolId: true, deltaGrams: true } });
+      const productMoves = await tx.productMovement.findMany({ where: { centerId, orderId }, select: { productId: true, delta: true } });
+      const spoolTotals = new Map<string, number>();
+      const productTotals = new Map<string, number>();
+      for (const move of spoolMoves) spoolTotals.set(move.spoolId, (spoolTotals.get(move.spoolId) ?? 0) - move.deltaGrams);
+      for (const move of productMoves) productTotals.set(move.productId, (productTotals.get(move.productId) ?? 0) - move.delta);
+      for (const [spoolId, deltaGrams] of [...spoolTotals].sort(([a], [b]) => a.localeCompare(b))) {
+        if (!deltaGrams) continue;
+        const [spool] = await tx.$queryRaw<Array<{ remainingGrams: number; totalGrams: number }>>`SELECT "remainingGrams", "totalGrams" FROM "Spool" WHERE "centerId" = ${centerId}::uuid AND id = ${spoolId}::uuid FOR UPDATE`;
+        const resultingGrams = spool.remainingGrams + deltaGrams;
+        if (resultingGrams < 0 || resultingGrams > spool.totalGrams) throw new DomainError("No es posible revertir el filamento porque la bobina fue ajustada. Revisa sus movimientos antes de anular el pedido.");
+        await tx.spool.updateMany({ where: { centerId, id: spoolId }, data: { remainingGrams: resultingGrams } });
+        await tx.spoolMovement.create({ data: { centerId, orderId, spoolId, operationId: randomUUID(), kind: "ADJUST", deltaGrams, resultingGrams, actorUserId: userId, notes: "Reversión por anulación de pedido." } });
+      }
+      for (const [productId, delta] of [...productTotals].sort(([a], [b]) => a.localeCompare(b))) {
+        if (!delta) continue;
+        const [product] = await tx.$queryRaw<Array<{ currentStock: number }>>`SELECT "currentStock" FROM "Product" WHERE "centerId" = ${centerId}::uuid AND id = ${productId}::uuid FOR UPDATE`;
+        const resultingStock = product.currentStock + delta;
+        if (resultingStock < 0) throw new DomainError("No es posible revertir el stock porque la pieza fue ajustada. Revisa sus movimientos antes de anular el pedido.");
+        await tx.product.updateMany({ where: { centerId, id: productId }, data: { currentStock: resultingStock } });
+        await tx.productMovement.create({ data: { centerId, orderId, productId, operationId: randomUUID(), kind: "ADJUST", delta, resultingStock, actorUserId: userId, notes: "Reversión por anulación de pedido." } });
+      }
+      await tx.moneyTransaction.updateMany({ where: { centerId, orderId, voidedAt: null }, data: { voidedAt: new Date(), voidedByUserId: userId, voidReason: "Anulación de pedido registrado por error." } });
+    }
+
     const nextVersion = order.version + 1;
     const nextDeliveredAt =
       to === "DELIVERED"
         ? new Date()
-        : currentStatus === "DELIVERED"
+        : currentStatus === "DELIVERED" && to !== "CANCELED"
           ? order.deliveredAt
           : null;
 

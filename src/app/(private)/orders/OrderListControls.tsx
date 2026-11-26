@@ -76,7 +76,6 @@ const STATUS_TABS: Array<{ id: OrderListFilterStatus; label: string }> = [
   { id: "PRINTING", label: "Imprimiendo" },
   { id: "READY", label: "Listos" },
   { id: "DELIVERED", label: "Entregados" },
-  { id: "CANCELED", label: "Cancelados" },
 ];
 
 export function OrderListControls({

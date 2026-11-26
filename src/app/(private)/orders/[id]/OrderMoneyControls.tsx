@@ -344,7 +344,7 @@ export function OrderMoneyControls({
         >
           <div className="space-y-0.5">
             <span className="text-xs sm:text-sm font-bold text-danger block">
-              Registrar devolución y reembolso (D6)
+              Registrar devolución y reembolso
             </span>
             <p className="text-xs text-muted">
               El pedido pasará a estado <strong>Devuelto</strong> y se registrará un gasto por devolución en una sola operación.

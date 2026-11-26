@@ -150,7 +150,7 @@ export function MoneyAccountsView({
         <Card className="p-4 flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Ventas del mes
+              Cobrado del mes
             </span>
           </div>
           <div>
@@ -205,7 +205,7 @@ export function MoneyAccountsView({
             </span>
             {vatPercent > 0 ? (
               <span className="mt-0.5 block text-xs text-muted tabular-nums">
-                A apartar · Neto taller: {formatMoney(salesSummary.netRevenue, currency)}
+                {salesSummary.vatAmount < 0 ? "IVA de devoluciones" : "A apartar"} · Neto taller: {formatMoney(salesSummary.netRevenue, currency)}
               </span>
             ) : (
               <Link
@@ -251,7 +251,7 @@ export function MoneyAccountsView({
           <div>
             <h2 className="text-sm font-bold text-ink">Cómo se reparten tus ventas</h2>
             <p className="text-xs text-muted">
-              Neto de descuentos y comisiones de Mercado Libre.
+              Cobros del mes menos reembolsos. El costo completo se muestra con el primer abono.
             </p>
           </div>
           <Link
@@ -266,10 +266,10 @@ export function MoneyAccountsView({
           <div className="rounded-xl border border-line/70 bg-raised/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <p className="text-sm font-semibold text-ink">
-                Todavía no hay ventas confirmadas en {monthLabel}.
+                Todavía no hay cobros ni devoluciones en {monthLabel}.
               </p>
               <p className="text-xs text-muted">
-                Cuando registres ventas, aquí verás automáticamente cuánto es costo, cuánto es IVA y cuánto es utilidad.
+                Al registrar un cobro, aquí verás el ingreso, el costo de fabricación, el IVA y la utilidad estimada.
               </p>
             </div>
             <Link
@@ -338,7 +338,7 @@ export function MoneyAccountsView({
                   − IVA ({vatPercent}%)
                 </span>
                 <span className="mt-0.5 block text-sm font-bold text-ink tabular-nums">
-                  −{formatMoney(salesSummary.vatAmount, currency)}
+                  {formatMoney(-salesSummary.vatAmount, currency)}
                 </span>
               </div>
               <div className="rounded-lg bg-surface px-3 py-2 border border-line/60">
@@ -503,7 +503,7 @@ export function MoneyAccountsView({
               Detalle por pedido ({filteredOrderAccounts.length})
             </h2>
             <p className="text-xs text-muted">
-              Revisa cuánto dejó cada pedido confirmado o entregado de {monthLabel}.
+              Revisa los cobros y devoluciones de {monthLabel}. La fecha corresponde al último movimiento del mes.
             </p>
           </div>
 
@@ -528,7 +528,7 @@ export function MoneyAccountsView({
             }
             description={
               orderAccounts.length === 0
-                ? "Los pedidos confirmados, en impresión, listos o entregados aparecerán aquí con su costo, IVA y utilidad."
+                ? "Los pedidos aparecerán aquí al registrar un cobro o devolución, con su costo, IVA y utilidad."
                 : "Prueba con otro número de pedido, nombre de cliente o pieza."
             }
           />
@@ -579,7 +579,7 @@ export function MoneyAccountsView({
                       <div>
                         <span className="block text-[10px] text-muted">IVA</span>
                         <span className="font-medium text-muted">
-                          −{formatMoney(row.vatAmount, currency)}
+                          {formatMoney(-row.vatAmount, currency)}
                         </span>
                       </div>
                     )}
@@ -647,7 +647,7 @@ export function MoneyAccountsView({
                       </td>
                       {vatPercent > 0 && (
                         <td className="px-3 py-3 whitespace-nowrap text-right text-xs text-muted tabular-nums">
-                          −{formatMoney(row.vatAmount, currency)}
+                          {formatMoney(-row.vatAmount, currency)}
                         </td>
                       )}
                       <td className="px-3 py-3 whitespace-nowrap text-right tabular-nums">
@@ -688,7 +688,7 @@ export function MoneyAccountsView({
                     </td>
                     {vatPercent > 0 && (
                       <td className="px-3 py-3 text-right text-muted tabular-nums">
-                        −{formatMoney(filteredTotals.vatAmount, currency)}
+                        {formatMoney(-filteredTotals.vatAmount, currency)}
                       </td>
                     )}
                     <td className="px-3 py-3 text-right tabular-nums">

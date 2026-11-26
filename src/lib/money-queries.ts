@@ -56,6 +56,7 @@ export async function getMonthlyMoneyView(options?: {
   const rows = await prisma.moneyTransaction.findMany({
     where: {
       centerId,
+      NOT: { voidedAt: { not: null }, order: { is: { status: "CANCELED" } } },
       occurredOn: {
         gte: new Date(`${from}T00:00:00.000Z`),
         lte: new Date(`${to}T00:00:00.000Z`),

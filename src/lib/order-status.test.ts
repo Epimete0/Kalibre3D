@@ -10,7 +10,7 @@ describe("estados de venta", () => {
   });
 
   it("solo una venta entregada se devuelve; cancelada y devuelta son finales", () => {
-    expect(nextStatuses("DELIVERED")).toEqual(["RETURNED"]);
+    expect(nextStatuses("DELIVERED")).toEqual(["RETURNED", "CANCELED"]);
     expect(canTransition("READY", "RETURNED")).toBe(false);
     expect(isFinalStatus("CANCELED")).toBe(true);
     expect(isFinalStatus("RETURNED")).toBe(true);

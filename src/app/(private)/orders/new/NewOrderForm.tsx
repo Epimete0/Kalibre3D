@@ -15,6 +15,7 @@ import {
 import { MATERIAL_LABEL, MATERIALS, type Material } from "@/lib/catalog-presentation";
 import type { CustomerListItem } from "@/lib/customer-queries";
 import { effectiveMlCommission, rememberLastChannel } from "@/lib/last-channel";
+import { initialPaymentForChannel, paymentAfterChannelChange, paymentAfterKindChange } from "@/lib/initial-payment";
 import { type MlPriceInputMode, unitPriceForOrderChannel } from "@/lib/ml-pricing";
 import { formatMoney } from "@/lib/money-format";
 import type { OrderChannel } from "@/lib/order-status";
@@ -59,7 +60,7 @@ const METHODS = [
 ] as const;
 
 const KINDS = [
-  { id: "QUICK_SALE", label: "Venta rápida", hint: "Entregada y cobrada hoy" },
+  { id: "QUICK_SALE", label: "Venta rápida", hint: "Entregada ahora" },
   { id: "ORDER", label: "Por encargo", hint: "Se fabrica o entrega después" },
 ] as const;
 
@@ -121,7 +122,7 @@ export function NewOrderForm({
   const [paymentMethod, setPaymentMethod] = useState<string>(
     initialChannel === "MERCADOLIBRE" ? "MERCADOLIBRE" : "TRANSFER"
   );
-  const [hasPayment, setHasPayment] = useState(true);
+  const [hasPayment, setHasPayment] = useState(() => initialPaymentForChannel(initialChannel));
   const [customPaidAmount, setCustomPaidAmount] = useState<number | null>(null);
 
   // Piezas
@@ -142,6 +143,7 @@ export function NewOrderForm({
   const mlCommission = effectiveMlCommission(total, settings.mlCommissionPercent, mlCommissionManual);
 
   const handleChannelChange = (newChannel: string) => {
+    setHasPayment((current) => paymentAfterChannelChange(channel, newChannel, current));
     setChannel(newChannel);
     rememberLastChannel(newChannel as OrderChannel);
     const switchingToML = newChannel === "MERCADOLIBRE";
@@ -323,19 +325,19 @@ export function NewOrderForm({
                   aria-checked={selected}
                   onClick={() => {
                     setKind(option.id);
+                    setHasPayment((current) => paymentAfterKindChange(channel, option.id, current));
                     if (option.id === "QUICK_SALE") {
-                      setHasPayment(true);
                       setCustomPaidAmount(null);
                     }
                   }}
-                  className={`flex min-h-11 flex-col sm:flex-row sm:gap-2 items-center justify-center rounded-xl px-3 py-1.5 text-center transition-all duration-150 touch-manipulation ${
+                  className={`flex min-h-11 flex-col sm:flex-row sm:gap-2 items-center justify-center rounded-xl px-3 py-1.5 text-center transition-colors duration-150 touch-manipulation ${
                     selected
-                      ? "bg-surface text-ink font-bold shadow-[0_1px_2px_rgba(28,29,33,0.06)] border border-line dark:bg-raised"
+                      ? "bg-control-selected text-ink font-bold shadow-[0_1px_2px_rgba(28,29,33,0.06)] border border-line-strong"
                       : "text-muted hover:text-ink hover:bg-canvas/50"
                   }`}
                 >
                   <span className="text-sm font-semibold">{option.label}</span>
-                  <span className={`text-[11px] ${selected ? "text-primary font-medium" : "text-muted"}`}>
+                  <span className={`text-[11px] font-medium ${selected ? "text-ink" : "text-muted"}`}>
                     {option.hint}
                   </span>
                 </button>
@@ -370,16 +372,12 @@ export function NewOrderForm({
                 return (
                   <div
                     key={item.localId}
-                    className={`rounded-2xl border p-3.5 transition-colors space-y-3 ${
-                      items.length > 1
-                        ? "border-line bg-canvas/50"
-                        : "border-line/70 bg-canvas/35"
-                    }`}
+                    className="relative space-y-3 rounded-xl border border-form-group-border bg-form-group p-4 focus-within:z-10"
                   >
                     {/* Cabecera clara de cada pieza con subtotal y acciones rápidas */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-line bg-raised px-2 text-xs font-bold text-ink">
+                        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-lg border border-form-group-border bg-surface px-2 text-xs font-bold text-ink">
                           #{idx + 1}
                         </span>
 
@@ -412,7 +410,7 @@ export function NewOrderForm({
                       </div>
 
                       <div className="flex items-center gap-2 ml-auto">
-                        <span className="text-sm font-bold text-ink tabular-nums">
+                        <span className="text-sm font-bold text-ink tabular-nums" aria-label={`Subtotal de pieza ${idx + 1}`}>
                           {formatMoney(lineSubtotal, settings.currency)}
                         </span>
                         <button
@@ -420,7 +418,7 @@ export function NewOrderForm({
                           onClick={() => duplicateItem(item)}
                           title="Duplicar esta pieza"
                           aria-label={`Duplicar pieza ${idx + 1}`}
-                          className="inline-flex min-h-8 items-center rounded-lg border border-line bg-surface px-2.5 text-[11px] font-semibold text-muted hover:text-ink hover:bg-raised transition-colors touch-manipulation"
+                          className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-surface px-3 text-xs font-semibold text-ink hover:bg-raised transition-colors touch-manipulation"
                         >
                           Duplicar
                         </button>
@@ -429,7 +427,7 @@ export function NewOrderForm({
                             type="button"
                             onClick={() => removeItem(item.localId)}
                             aria-label={`Quitar pieza ${idx + 1}`}
-                            className="inline-flex min-h-8 items-center rounded-lg border border-line bg-surface px-2.5 text-[11px] font-semibold text-danger hover:bg-danger-soft/40 hover:border-danger/40 transition-colors touch-manipulation"
+                            className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-surface px-3 text-xs font-semibold text-danger hover:bg-danger-soft hover:border-danger/40 transition-colors touch-manipulation"
                           >
                             Quitar
                           </button>
@@ -441,7 +439,7 @@ export function NewOrderForm({
                     <div>
                       <label
                         htmlFor={`item-${item.localId}-description`}
-                        className="text-[11px] font-medium text-muted block mb-1"
+                        className="mb-1.5 block text-xs font-semibold text-ink"
                       >
                         Pieza *
                       </label>
@@ -475,10 +473,10 @@ export function NewOrderForm({
 
                     {/* Fila 2: Precio unitario y cantidad */}
                     <div className="grid grid-cols-12 gap-2.5 items-end">
-                      <div className="col-span-6">
+                      <div className="col-span-12 sm:col-span-6">
                         <label
                           htmlFor={`item-${item.localId}-price`}
-                          className="text-[11px] font-medium text-muted block mb-1"
+                          className="mb-1.5 block text-xs font-semibold text-ink"
                         >
                           {isML && mlPriceMode === "NET"
                             ? `Neto unitario (${settings.currency})`
@@ -496,10 +494,10 @@ export function NewOrderForm({
                         />
                       </div>
 
-                      <div className="col-span-6">
+                      <div className="col-span-12 sm:col-span-6">
                         <label
                           htmlFor={`item-${item.localId}-qty`}
-                          className="text-[11px] font-medium text-muted block mb-1"
+                          className="mb-1.5 block text-xs font-semibold text-ink"
                         >
                           Cantidad
                         </label>
@@ -987,6 +985,12 @@ export function NewOrderForm({
                   <span>{kind === "QUICK_SALE" ? "Cobrada ahora" : "Registrar abono"}</span>
                 </label>
               </div>
+
+              {isML && (
+                <p className="text-xs leading-relaxed text-muted">
+                  Marca el cobro solo cuando Mercado Libre haya liberado el dinero.
+                </p>
+              )}
 
               {hasPayment && (
                 <div className="space-y-2.5">

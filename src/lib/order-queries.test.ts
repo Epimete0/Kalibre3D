@@ -49,7 +49,7 @@ describe("order-queries", () => {
     const result = await listOrdersSummary();
     expect(requireAuthContext).toHaveBeenCalled();
     expect(prisma.order.findMany).toHaveBeenCalledWith({
-      where: { centerId: "center-1" },
+      where: { centerId: "center-1", status: { not: "CANCELED" } },
       include: expect.any(Object),
       orderBy: [{ createdAt: "desc" }],
       take: 50,

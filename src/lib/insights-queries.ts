@@ -3,13 +3,13 @@
  * y siempre filtradas por el taller activo.
  */
 import { requireCatalogContext } from "@/lib/auth";
+import { collectedOrderPeriod } from "@/lib/collected-sales";
 import {
   aggregateProductPerformance,
   aggregateProfitability,
   buildMonthlyCostBreakdown,
   buildMonthlyOrderAccounts,
   computeOrderEconomics,
-  computeSalesEconomicsSummary,
   summarizePurchases,
   type MonthlyCostBreakdown,
   type MonthlyOrderAccountRow,
@@ -19,7 +19,7 @@ import {
   type PurchasesSummary,
   type SalesEconomicsSummary,
 } from "@/lib/insights";
-import { currentMonth, isValidMonth, monthDateRange, shiftMonth, todayInTimeZone } from "@/lib/money-summary";
+import { currentMonth, isValidMonth, monthDateRange, shiftMonth } from "@/lib/money-summary";
 import type { OrderChannel } from "@/lib/order-status";
 import { expectedReceivable } from "@/lib/order-totals";
 import { prisma } from "@/lib/prisma";
@@ -78,8 +78,20 @@ export type ProfitabilityView = {
   ordersCount: number;
 };
 
-/** Pedidos que cuentan como venta: confirmados en adelante, sin cancelados ni devueltos. */
-const SOLD_STATUSES = ["CONFIRMED", "PRINTING", "READY", "DELIVERED"];
+type CollectedTransaction = { type: string; amount: number; occurredOn: Date; voidedAt: Date | null };
+function collectedPeriod(transactions: readonly CollectedTransaction[], month: string | "all") {
+  return collectedOrderPeriod(transactions.map((transaction) => ({
+    type: transaction.type === "INCOME" ? "INCOME" as const : "REFUND" as const,
+    amount: transaction.amount,
+    occurredOn: transaction.occurredOn.toISOString().slice(0, 10),
+    voided: transaction.voidedAt !== null,
+  })), month);
+}
+
+const collectedTransactions = (centerId: string) => ({
+  where: { centerId, OR: [{ type: "INCOME", category: "ORDER_PAYMENT" }, { type: "EXPENSE", category: "REFUNDS" }] },
+  select: { type: true, amount: true, occurredOn: true, voidedAt: true },
+});
 
 type ItemCostFields = {
   unitCost: number | null;
@@ -94,6 +106,16 @@ type ItemCostFields = {
     purgeGrams: number | null;
     suppliesCost?: number | null;
   } | null;
+};
+
+const PRODUCT_COST_SELECT = {
+  name: true,
+  material: true,
+  grams: true,
+  printMinutes: true,
+  colorsCount: true,
+  purgeGrams: true,
+  suppliesCost: true,
 };
 
 async function loadCostRatesAndVat(centerId: string): Promise<{ rates: CostRates; vatPercent: number }> {
@@ -145,9 +167,10 @@ export async function getProductProfitability(options?: { month?: string; all?: 
 
   const [orders, { rates }] = await Promise.all([
     prisma.order.findMany({
-      where: { centerId, status: { in: SOLD_STATUSES } },
+      where: { centerId, status: { not: "CANCELED" } },
       select: {
         id: true,
+        transactions: collectedTransactions(centerId),
         createdAt: true,
         discount: true,
         mlCommission: true,
@@ -163,15 +186,7 @@ export async function getProductProfitability(options?: { month?: string; all?: 
             grams: true,
             colorsCount: true,
             product: {
-              select: {
-                name: true,
-                material: true,
-                grams: true,
-                printMinutes: true,
-                colorsCount: true,
-                purgeGrams: true,
-                suppliesCost: true,
-              },
+              select: PRODUCT_COST_SELECT,
             },
           },
         },
@@ -180,8 +195,10 @@ export async function getProductProfitability(options?: { month?: string; all?: 
     loadCostRatesAndVat(centerId),
   ]);
 
-  // El mes de cada venta es el día local del taller en que se registró.
-  const inPeriod = period === "all" ? orders : orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
+  const inPeriod = orders.flatMap((order) => {
+    const collected = collectedPeriod(order.transactions, period === "all" ? "all" : nav.month);
+    return collected ? [{ ...order, collected }] : [];
+  });
 
   const lines = inPeriod.flatMap((order) =>
     order.items.map((item) => ({
@@ -194,7 +211,7 @@ export async function getProductProfitability(options?: { month?: string; all?: 
       currentUnitCost: resolveFallbackUnitCost(item, rates),
     }))
   );
-  const rows = aggregateProfitability(lines, inPeriod);
+  const rows = aggregateProfitability(lines, inPeriod.map((order) => ({ ...order, collectedRevenue: order.collected.revenue, recognizeCost: order.collected.recognizeCost })));
   const totals = rows.reduce(
     (acc, row) => ({
       revenue: acc.revenue + row.revenue,
@@ -232,9 +249,10 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
 
   const [orders, { rates, vatPercent }] = await Promise.all([
     prisma.order.findMany({
-      where: { centerId, status: { in: SOLD_STATUSES } },
+      where: { centerId, status: { not: "CANCELED" } },
       select: {
         id: true,
+        transactions: collectedTransactions(centerId),
         number: true,
         channel: true,
         total: true,
@@ -260,15 +278,7 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
             grams: true,
             colorsCount: true,
             product: {
-              select: {
-                name: true,
-                material: true,
-                grams: true,
-                printMinutes: true,
-                colorsCount: true,
-                purgeGrams: true,
-                suppliesCost: true,
-              },
+              select: PRODUCT_COST_SELECT,
             },
           },
         },
@@ -277,28 +287,13 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
     loadCostRatesAndVat(centerId),
   ]);
 
-  const inPeriod = orders
-    .map((order) => ({
-      ...order,
-      createdOn: todayInTimeZone(order.createdAt, tz),
-    }))
-    .filter((order) => order.createdOn.startsWith(nav.month));
-
-  const lines = inPeriod.flatMap((order) =>
-    order.items.map((item) => ({
-      orderId: order.id,
-      productId: item.productId,
-      productName: item.product?.name ?? item.description,
-      qty: item.qty,
-      unitPrice: item.unitPrice,
-      unitCost: item.unitCost,
-      currentUnitCost: resolveFallbackUnitCost(item, rates),
-    }))
-  );
-  const rows = aggregateProfitability(lines, inPeriod);
+  const inPeriod = orders.flatMap((order) => {
+    const collected = collectedPeriod(order.transactions, nav.month);
+    return collected ? [{ ...order, collected, createdOn: collected.activityOn }] : [];
+  });
 
   const costBreakdown = buildMonthlyCostBreakdown(
-    inPeriod.flatMap((order) =>
+    inPeriod.filter((order) => order.collected.recognizeCost).flatMap((order) =>
       order.items.map((item) => ({
         qty: item.qty,
         unitCost: item.unitCost,
@@ -317,6 +312,8 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
       total: order.total,
       mlCommission: order.mlCommission,
       mlShippingCost: order.mlShippingCost,
+      collectedRevenue: order.collected.revenue,
+      recognizeCost: order.collected.recognizeCost,
       items: order.items.map((item) => ({
         id: item.id,
         description: item.description,
@@ -328,13 +325,24 @@ export async function getMonthlySalesEconomics(options?: { month?: string }): Pr
     vatPercent,
   });
 
+  const totals = orderAccounts.reduce((sum, order) => ({
+    grossRevenue: sum.grossRevenue + order.grossRevenue,
+    vatAmount: sum.vatAmount + order.vatAmount,
+    netRevenue: sum.netRevenue + order.netRevenue,
+    productionCost: sum.productionCost + order.productionCost,
+    netProfit: sum.netProfit + order.profit,
+    units: sum.units + order.units,
+    unitsWithoutCost: sum.unitsWithoutCost + order.unitsWithoutCost,
+    unitsEstimatedToday: sum.unitsEstimatedToday + order.unitsEstimatedToday,
+  }), { grossRevenue: 0, vatAmount: 0, netRevenue: 0, productionCost: 0, netProfit: 0, units: 0, unitsWithoutCost: 0, unitsEstimatedToday: 0 });
+
   return {
     nav,
-    summary: computeSalesEconomicsSummary({
-      rows,
+    summary: {
+      ...totals,
       ordersCount: inPeriod.length,
-      vatPercent,
-    }),
+      marginPercent: totals.netRevenue > 0 ? Math.round(totals.netProfit * 100 / totals.netRevenue) : null,
+    },
     costBreakdown,
     orderAccounts,
   };
@@ -350,6 +358,7 @@ export async function getOrderEconomics(orderId: string): Promise<OrderEconomics
       where: { centerId, id: orderId },
       select: {
         channel: true,
+        transactions: { where: { centerId, type: "EXPENSE", category: "REFUNDS", voidedAt: null }, select: { amount: true } },
         total: true,
         mlCommission: true,
         mlShippingCost: true,
@@ -362,14 +371,7 @@ export async function getOrderEconomics(orderId: string): Promise<OrderEconomics
             grams: true,
             colorsCount: true,
             product: {
-              select: {
-                material: true,
-                grams: true,
-                printMinutes: true,
-                colorsCount: true,
-                purgeGrams: true,
-                suppliesCost: true,
-              },
+              select: PRODUCT_COST_SELECT,
             },
           },
         },
@@ -385,7 +387,7 @@ export async function getOrderEconomics(orderId: string): Promise<OrderEconomics
     total: order.total,
     mlCommission: order.mlCommission,
     mlShippingCost: order.mlShippingCost,
-  });
+  }) - order.transactions.reduce((sum, refund) => sum + refund.amount, 0);
 
   return computeOrderEconomics({
     expectedReceivable: receivable,
@@ -422,11 +424,12 @@ export async function getProductPerformance(
     prisma.order.findMany({
       where: {
         centerId,
-        status: { in: SOLD_STATUSES },
+        status: { not: "CANCELED" },
         items: { some: { productId } },
       },
       select: {
         id: true,
+        transactions: collectedTransactions(centerId),
         number: true,
         channel: true,
         createdAt: true,
@@ -443,14 +446,7 @@ export async function getProductPerformance(
             grams: true,
             colorsCount: true,
             product: {
-              select: {
-                material: true,
-                grams: true,
-                printMinutes: true,
-                colorsCount: true,
-                purgeGrams: true,
-                suppliesCost: true,
-              },
+              select: PRODUCT_COST_SELECT,
             },
           },
         },
@@ -460,10 +456,10 @@ export async function getProductPerformance(
     loadCostRatesAndVat(centerId),
   ]);
 
-  const inPeriod =
-    period === "all"
-      ? orders
-      : orders.filter((order) => todayInTimeZone(order.createdAt, tz).startsWith(nav.month));
+  const inPeriod = orders.flatMap((order) => {
+    const collected = collectedPeriod(order.transactions, period === "all" ? "all" : nav.month);
+    return collected ? [{ ...order, collected }] : [];
+  });
 
   const summary = aggregateProductPerformance({
     productId,
@@ -472,10 +468,12 @@ export async function getProductPerformance(
       id: order.id,
       number: order.number,
       channel: order.channel,
-      createdAt: order.createdAt,
+      createdAt: new Date(`${order.collected.activityOn}T12:00:00.000Z`),
       discount: order.discount,
       mlCommission: order.mlCommission,
       mlShippingCost: order.mlShippingCost,
+      collectedRevenue: order.collected.revenue,
+      recognizeCost: order.collected.recognizeCost,
       items: order.items.map((item) => ({
         productId: item.productId,
         qty: item.qty,

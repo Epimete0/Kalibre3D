@@ -309,7 +309,7 @@ export default async function ProductDetailPage({
 
               <div className="space-y-2 pt-1">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Pedidos recientes ({performance.summary.recentOrders.length})
+                  Actividad reciente por pedido ({performance.summary.recentOrders.length})
                 </h3>
                 <div className="divide-y divide-line/70 rounded-xl border border-line/70 bg-canvas/40 px-3.5">
                   {performance.summary.recentOrders.slice(0, 10).map((row) => (
@@ -329,7 +329,7 @@ export default async function ProductDetailPage({
                           <span className="font-semibold text-ink">· {row.qty}×</span>
                         </div>
                         <p className="text-[11px] text-muted">
-                          {new Date(row.createdAt).toLocaleDateString("es-CL")} · Neto{" "}
+                          {new Date(row.createdAt).toLocaleDateString("es-CL", { timeZone: "UTC" })} · Neto{" "}
                           {formatMoney(row.netRevenue, settings.currency)} · Costo{" "}
                           {formatMoney(row.cost, settings.currency)}
                         </p>

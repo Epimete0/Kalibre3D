@@ -6,6 +6,11 @@ describe("formato de dinero", () => {
     expect(formatMoney(8990, "CLP")).toBe("$8.990");
   });
 
+  it("no muestra signo negativo cuando el monto es cero", () => {
+    expect(formatMoney(-0, "CLP")).toBe(formatMoney(0, "CLP"));
+    expect(formatMoney(-0, "USD")).toBe(formatMoney(0, "USD"));
+  });
+
   it("usa los decimales de cada moneda (unidad mínima)", () => {
     expect(currencyDecimals("CLP")).toBe(0);
     expect(currencyDecimals("PYG")).toBe(0);

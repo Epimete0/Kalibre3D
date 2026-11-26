@@ -122,7 +122,7 @@ export function buildMonthlyAccountsCsv(
     "Cliente",
     "Piezas",
     "Unidades",
-    "Venta neta ML/desc",
+    "Cobrado menos devoluciones",
     `IVA (${vatPercent}%)`,
     "Neto taller",
     "Costo fabricación",

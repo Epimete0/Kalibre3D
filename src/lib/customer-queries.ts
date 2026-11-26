@@ -37,10 +37,10 @@ export async function listCustomers(options?: {
     },
     include: {
       _count: {
-        select: { orders: true },
+        select: { orders: { where: { centerId, status: { not: "CANCELED" } } } },
       },
       orders: {
-        where: { centerId },
+        where: { centerId, status: { not: "CANCELED" } },
         select: {
           id: true,
           total: true,
@@ -143,7 +143,7 @@ export async function getCustomerDetail(id: string): Promise<CustomerDetail | nu
     where: { id, centerId },
     include: {
       orders: {
-        where: { centerId },
+        where: { centerId, status: { not: "CANCELED" } },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,

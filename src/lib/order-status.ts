@@ -14,7 +14,7 @@ const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   CONFIRMED: ["PRINTING", "CANCELED"],
   PRINTING: ["READY", "CANCELED"],
   READY: ["DELIVERED", "CANCELED"],
-  DELIVERED: ["RETURNED"],
+  DELIVERED: ["RETURNED", "CANCELED"],
   CANCELED: [],
   RETURNED: [],
 };

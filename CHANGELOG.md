@@ -5,6 +5,12 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Corregido
+- Las ventas y abonos cuentan cuando se cobran; las devoluciones se reflejan en el mes del reembolso y conservan el costo de fabricación.
+- Los pedidos anulados por error se ocultan y sus cobros y movimientos de inventario vinculados se revierten.
+- Las nuevas ventas de Mercado Libre comienzan con el cobro pendiente hasta que el usuario lo marque.
+- Las piezas del formulario son más fáciles de distinguir en escritorio y celular, y el menú de cuenta ya no se duplica en la barra lateral.
+
 ### Añadido
 - **Pedidos organizados por fecha (`/orders`, `src/lib/order-grouping.ts`):**
   - Agrupación diaria con encabezados relativos (`Hoy`, `Ayer`, `Mañana` y día de la semana), contador de pedidos y monto diario en tarjetas móviles y tabla de escritorio (respetando la ocultación de montos para el rol `VIEWER`).

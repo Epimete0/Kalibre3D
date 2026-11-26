@@ -109,7 +109,7 @@ export async function getProductById(id: string): Promise<ProductDetailView | nu
       },
       movements: {
         include: {
-          order: { select: { id: true, number: true } },
+          order: { select: { id: true, number: true, status: true } },
         },
         orderBy: { createdAt: "desc" },
       },
@@ -163,8 +163,8 @@ export async function getProductById(id: string): Promise<ProductDetailView | nu
       kind: m.kind,
       delta: m.delta,
       resultingStock: m.resultingStock,
-      orderId: m.order?.id ?? null,
-      orderNumber: m.order?.number ?? null,
+      orderId: m.order?.status === "CANCELED" ? null : m.order?.id ?? null,
+      orderNumber: m.order?.status === "CANCELED" ? null : m.order?.number ?? null,
       notes: m.notes,
       actorName: profileMap.get(m.actorUserId) ?? "Integrante",
       createdAt: m.createdAt,

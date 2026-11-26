@@ -353,6 +353,10 @@ export async function recordProductMovement(
 
   try {
     return await prisma.$transaction(async (tx) => {
+      if (data.orderId) {
+        const [order] = await tx.$queryRaw<Array<{ status: string }>>`SELECT status FROM "Order" WHERE "centerId" = ${centerId}::uuid AND id = ${data.orderId}::uuid FOR UPDATE`;
+        if (!order || order.status === "CANCELED" || order.status === "RETURNED") throw new DomainError("El pedido no existe o ya está cerrado.");
+      }
       const rows = await tx.$queryRaw<Array<{ id: string; currentStock: number }>>`
         SELECT id, "currentStock"
         FROM "Product"

@@ -28,7 +28,8 @@ export function currencyDecimals(currency: string): number {
 /** Formatea un monto en unidad mínima, por ejemplo 8990 CLP → "$8.990". */
 export function formatMoney(minorUnits: number, currency: string = "CLP"): string {
   const decimals = currencyDecimals(currency);
-  return new Intl.NumberFormat("es-CL", { style: "currency", currency }).format(minorUnits / 10 ** decimals);
+  const amount = minorUnits === 0 ? 0 : minorUnits / 10 ** decimals;
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency }).format(amount);
 }
 
 /**

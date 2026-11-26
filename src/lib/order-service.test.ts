@@ -80,6 +80,10 @@ describe("order-service", () => {
   });
 
   describe("createOrder", () => {
+    it("no crea un pedido ya anulado con un cobro activo", async () => {
+      await expect(createOrder({ operationId: VALID_OP_ID, kind: "ORDER", channel: "WHATSAPP", status: "CANCELED", items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }], initialPayment: { amount: 1000, method: "CASH" } })).rejects.toThrow();
+      expect(prisma.order.create).not.toHaveBeenCalled();
+    });
     it("crea una venta rápida entregada con número correlativo y evento CREATED", async () => {
       prisma.$queryRaw.mockResolvedValueOnce([{ max: 4 }]);
 
