@@ -8,6 +8,7 @@ export function OrderMoneySplit({
   economics,
   vatPercent,
   currency,
+  paidAmount,
   balance,
   isMercadoLibre,
   className = "",
@@ -15,6 +16,7 @@ export function OrderMoneySplit({
   economics: OrderEconomics;
   vatPercent: number;
   currency: string;
+  paidAmount: number | null;
   balance: number | null;
   isMercadoLibre: boolean;
   className?: string;
@@ -37,12 +39,18 @@ export function OrderMoneySplit({
   return (
     <Card className={`p-4 sm:p-6 space-y-3 ${className}`}>
       <div className="space-y-0.5">
-        <h2 className="text-base font-bold text-ink">Cómo se reparte</h2>
+        <h2 className="text-base font-bold text-ink">Estimación del pedido completo</h2>
         <p className="text-xs text-muted">
-          De los <strong className="text-ink tabular-nums">{formatMoney(split.received, currency)}</strong>{" "}
-          {isMercadoLibre ? "que te deja Mercado Libre" : "que recibes"}:
+          Sobre <strong className="text-ink tabular-nums">{formatMoney(split.received, currency)}</strong>{" "}
+          {isMercadoLibre ? "esperados de Mercado Libre, descontadas las devoluciones" : "esperados, descontadas las devoluciones"}:
         </p>
       </div>
+
+      {paidAmount !== null && (
+        <p className="text-xs text-muted">
+          <strong className="text-ink">Cobrado hasta ahora: {formatMoney(paidAmount, currency)}</strong> (sin descontar devoluciones).
+        </p>
+      )}
 
       {split.received > 0 && (
         <div className="h-2 w-full rounded-full bg-raised overflow-hidden flex" aria-hidden="true">
@@ -65,7 +73,7 @@ export function OrderMoneySplit({
         <div className="flex items-baseline justify-between gap-3 border-t border-line/70 pt-2">
           <dt className="flex items-baseline gap-2 font-bold text-ink">
             <span aria-hidden="true" className={`inline-block h-2 w-2 shrink-0 rounded-full ${isLoss ? "bg-danger" : "bg-ok"}`} />
-            <span>{isLoss ? "Pérdida" : "Tu ganancia"}</span>
+            <span>{isLoss ? "Pérdida estimada" : "Ganancia estimada"}</span>
           </dt>
           <dd className={`text-base font-bold tabular-nums shrink-0 ${isLoss ? "text-danger" : "text-ok"}`}>
             {formatMoney(split.profit, currency)}
@@ -74,13 +82,13 @@ export function OrderMoneySplit({
       </dl>
 
       <p className="text-[11px] leading-snug text-muted">
-        Separa el IVA y el costo; lo que queda es tuyo.
+        El reparto es una estimación del pedido completo, no del dinero disponible en tu cuenta.
         {economics.marginPercent !== null && !isLoss && ` Margen: ${economics.marginPercent}% sin IVA.`}
       </p>
 
       {balance !== null && balance > 0 && (
         <p className="rounded-lg border border-warn/30 bg-warn/10 px-2.5 py-1.5 text-[11px] text-ink">
-          Aún falta cobrar {formatMoney(balance, currency)}. Separa cada parte cuando te paguen.
+          Aún falta cobrar {formatMoney(balance, currency)}. Los importes anteriores no representan un reparto del abono recibido.
         </p>
       )}
 

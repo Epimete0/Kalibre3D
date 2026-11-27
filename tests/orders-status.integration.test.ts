@@ -294,6 +294,19 @@ suite("Cambio de estado de pedidos (Order) y concurrencia en PostgreSQL", () => 
     expect(result.rows[0].voidedAt).not.toBeNull();
   });
 
+  it("un ayudante puede crear sin cobro pero no puede crear con pago inicial", async () => {
+    const authModule = await import("@/lib/auth");
+    vi.spyOn(authModule, "requireOperationalContext").mockResolvedValue({ userId: userA, centerId: centerA, role: "PROFESSIONAL", timeZone: "America/Santiago" });
+    const input = { kind: "QUICK_SALE" as const, channel: "WHATSAPP" as const, items: [{ description: "Pieza", qty: 1, unitPrice: 5000 }] };
+    const forbiddenOperation = randomUUID();
+    await expect(createOrder({ ...input, operationId: forbiddenOperation, initialPayment: { amount: 5000, method: "CASH" } })).rejects.toThrow("Solo el dueño o administrador puede registrar cobros.");
+    const rejected = await db.query('SELECT count(*)::int AS count FROM "Order" WHERE "centerId" = $1 AND "operationId" = $2', [centerA, forbiddenOperation]);
+    expect(rejected.rows[0].count).toBe(0);
+    const order = await createOrder({ ...input, operationId: randomUUID() });
+    const payments = await db.query('SELECT count(*)::int AS count FROM "MoneyTransaction" WHERE "centerId" = $1 AND "orderId" = $2', [centerA, order.id]);
+    expect(payments.rows[0].count).toBe(0);
+  });
+
   it("un ayudante no puede anular un pedido y revertir sus cobros", async () => {
     const authModule = await import("@/lib/auth");
     const ctx = { userId: userA, centerId: centerA, role: "OWNER" as const, timeZone: "America/Santiago" };

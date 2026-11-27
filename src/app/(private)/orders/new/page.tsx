@@ -15,7 +15,7 @@ export const metadata = {
 export default async function NewOrderPage(props: {
   searchParams?: Promise<{ op?: string }>;
 }) {
-  await requireOperationalContext();
+  const { role } = await requireOperationalContext();
   const searchParams = props.searchParams ? await props.searchParams : {};
   const operation = await resolveNewOrderOperation(searchParams.op);
 
@@ -51,6 +51,7 @@ export default async function NewOrderPage(props: {
           enableProductStock: settings.enableProductStock,
         }}
         initialChannel={initialChannel}
+        canRegisterPayment={role === "OWNER" || role === "ADMIN"}
       />
     </div>
   );

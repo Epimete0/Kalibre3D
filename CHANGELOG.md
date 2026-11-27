@@ -5,6 +5,9 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Corregido
+- El detalle del pedido distingue el monto cobrado de la estimación del pedido completo.
+- Solo el dueño o administrador puede registrar un cobro inicial; el ayudante puede guardar el pedido sin cobro.
 ### Cambiado
 - El pedido y el Inicio muestran cómo se reparte lo cobrado: IVA, costos de fabricación y tu ganancia, que siempre suman lo recibido. El "neto" ya no aparece como si fuera ganancia.
 - El saldo de caja del mes se muestra solo en Dinero → Caja, aclarando que no es la ganancia.

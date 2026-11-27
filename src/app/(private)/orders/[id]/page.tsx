@@ -112,6 +112,7 @@ export default async function OrderDetailPage(props: {
       economics={economics}
       vatPercent={settings.vatPercent}
       currency={currency}
+      paidAmount={order.paidAmount}
       balance={order.balance}
       isMercadoLibre={order.channel === "MERCADOLIBRE"}
     />

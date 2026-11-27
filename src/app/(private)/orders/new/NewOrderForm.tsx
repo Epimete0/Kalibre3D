@@ -82,6 +82,7 @@ export function NewOrderForm({
   customers,
   settings,
   initialChannel,
+  canRegisterPayment,
 }: {
   operationId: string;
   products: ProductListItem[];
@@ -89,6 +90,7 @@ export function NewOrderForm({
   settings: WorkshopSettingsData;
   /** Último canal usado en este navegador (cookie de interfaz), para no elegirlo en cada venta. */
   initialChannel: OrderChannel;
+  canRegisterPayment: boolean;
 }) {
   const [state, runAction, pending] = useActionState(createOrderAction, {});
   const nextIdRef = useRef(2);
@@ -282,7 +284,7 @@ export function NewOrderForm({
         colorsCount: it.colorsCount,
       })),
       initialPayment:
-        hasPayment && paymentAmount > 0
+        canRegisterPayment && hasPayment && paymentAmount > 0
           ? {
               amount: paymentAmount,
               method: paymentMethod,
@@ -970,7 +972,7 @@ export function NewOrderForm({
             </dl>
 
             {/* Cobro / Abono inicial */}
-            <div className="border-t border-line/70 pt-3 space-y-3">
+            {canRegisterPayment ? <div className="border-t border-line/70 pt-3 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted">
                   {kind === "QUICK_SALE" ? "Cobro" : "Abono inicial"}
@@ -1060,7 +1062,11 @@ export function NewOrderForm({
                   </div>
                 </div>
               )}
-            </div>
+            </div> : (
+              <p className="border-t border-line/70 pt-3 text-xs leading-relaxed text-muted">
+                El dueño o administrador puede registrar el cobro después de guardar el pedido.
+              </p>
+            )}
 
             {/* Acciones principales en escritorio */}
             <div className="hidden lg:flex flex-col gap-2 pt-1">

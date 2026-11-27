@@ -80,6 +80,20 @@ describe("order-service", () => {
   });
 
   describe("createOrder", () => {
+    it("rechaza el cobro inicial de un ayudante antes de crear el pedido", async () => {
+      requireOperationalContext.mockResolvedValueOnce({ userId: "user-1", centerId: "center-1", role: "PROFESSIONAL", timeZone: "America/Santiago" });
+      await expect(createOrder({ operationId: VALID_OP_ID, kind: "QUICK_SALE", channel: "WHATSAPP", items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }], initialPayment: { amount: 1000, method: "CASH" } })).rejects.toThrow("Solo el dueño o administrador puede registrar cobros.");
+      expect(prisma.order.create).not.toHaveBeenCalled();
+      expect(prisma.moneyTransaction.create).not.toHaveBeenCalled();
+    });
+
+    it("permite a un ayudante crear un pedido sin cobro", async () => {
+      requireOperationalContext.mockResolvedValueOnce({ userId: "user-1", centerId: "center-1", role: "PROFESSIONAL", timeZone: "America/Santiago" });
+      await createOrder({ operationId: VALID_OP_ID, kind: "ORDER", channel: "WHATSAPP", items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }] });
+      expect(prisma.order.create).toHaveBeenCalledOnce();
+      expect(prisma.moneyTransaction.create).not.toHaveBeenCalled();
+    });
+
     it("no crea un pedido ya anulado con un cobro activo", async () => {
       await expect(createOrder({ operationId: VALID_OP_ID, kind: "ORDER", channel: "WHATSAPP", status: "CANCELED", items: [{ description: "Pieza", qty: 1, unitPrice: 1000 }], initialPayment: { amount: 1000, method: "CASH" } })).rejects.toThrow();
       expect(prisma.order.create).not.toHaveBeenCalled();

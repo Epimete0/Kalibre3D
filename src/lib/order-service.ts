@@ -118,6 +118,9 @@ export async function createOrder(input: unknown) {
     handleZodError(error);
   }
 
+  if (data.initialPayment && data.initialPayment.amount > 0 && context.role !== "OWNER" && context.role !== "ADMIN") {
+    throw new DomainError("Solo el dueño o administrador puede registrar cobros.");
+  }
   // Idempotencia: si ya existe por operationId en el taller, retornar directamente
   const existing = await prisma.order.findUnique({
     where: { centerId_operationId: { centerId, operationId: data.operationId } },

@@ -6,6 +6,13 @@
 
 ---
 
+## Claridad del reparto y permiso de cobro inicial — 2026-11-27
+
+- El detalle muestra los cobros registrados y distingue la estimación del pedido completo, aclarando devoluciones, saldo pendiente y que el reparto no es el saldo disponible.
+- Solo Dueño/Administrador puede registrar un cobro inicial al crear un pedido. Ayudante puede crear pedidos sin cobro; el servidor valida el rol y el formulario indica quién puede registrar el pago.
+- No se modifican datos históricos ni el esquema de producción. La copia de publicación conserva las ocho migraciones anteriores, sin el trabajo pendiente de mano de obra y multipieza.
+
+---
 ## Reparto del dinero (IVA · costo · ganancia) y anulación discreta — 2026-11-26
 
 - **Problema observado en producción:** el dueño separaba su plata leyendo el pedido y el Inicio. Tomó el *Neto taller* (venta sin IVA) como su ganancia y además apartó el costo de fabricación, contando el costo dos veces; el *Saldo a favor* del Inicio (entradas − compras del mes − IVA) reforzó la lectura porque no descuenta el material comprado en meses anteriores. Resultado: en noviembre repartió $71.394 en reservas sobre $64.979 cobrados.
