@@ -5,6 +5,11 @@ El formato sigue las convenciones de [Keep a Changelog](https://keepachangelog.c
 
 ## [Sin publicar]
 
+### Cambiado
+- El pedido y el Inicio muestran cómo se reparte lo cobrado: IVA, costos de fabricación y tu ganancia, que siempre suman lo recibido. El "neto" ya no aparece como si fuera ganancia.
+- El saldo de caja del mes se muestra solo en Dinero → Caja, aclarando que no es la ganancia.
+- "Anular pedido por error" pasa a un ícono discreto en la esquina del pedido, con una ventana de confirmación que explica qué se revierte.
+
 ### Corregido
 - Las ventas y abonos cuentan cuando se cobran; las devoluciones se reflejan en el mes del reembolso y conservan el costo de fabricación.
 - Los pedidos anulados por error se ocultan y sus cobros y movimientos de inventario vinculados se revierten.

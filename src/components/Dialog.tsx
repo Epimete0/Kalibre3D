@@ -10,7 +10,7 @@ export const useCloseDialog = () => useContext(CloseDialogContext);
  * Una ventana emergente (el `<dialog>` nativo: se cierra con Esc, atrapa el foco y bloquea el fondo). El contenido se monta al abrir
  * y se desmonta al cerrar, así cada vez empieza limpio, sin restos de lo anterior.
  */
-export function Dialog({ triggerLabel, triggerClassName, title, description, children }: { triggerLabel: string; triggerClassName: string; title: string; description?: string; children: React.ReactNode }) {
+export function Dialog({ triggerLabel, triggerClassName, triggerContent, title, description, children }: { triggerLabel: string; triggerClassName: string; /** Contenido visual del botón (p. ej. un ícono); `triggerLabel` queda como nombre accesible. */ triggerContent?: React.ReactNode; title: string; description?: string; children: React.ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId(); // cada ventana tiene el suyo: con un id fijo todas quedaban nombradas con el título de la primera de la página
   const [open, setOpen] = useState(false);
@@ -19,7 +19,11 @@ export function Dialog({ triggerLabel, triggerClassName, title, description, chi
 
   return (
     <>
-      <button type="button" onClick={show} className={triggerClassName}>{triggerLabel}</button>
+      {triggerContent ? (
+        <button type="button" onClick={show} className={triggerClassName} aria-label={triggerLabel} title={triggerLabel}>{triggerContent}</button>
+      ) : (
+        <button type="button" onClick={show} className={triggerClassName}>{triggerLabel}</button>
+      )}
       <dialog
         ref={ref}
         aria-labelledby={titleId}

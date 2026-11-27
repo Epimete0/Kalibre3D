@@ -11,30 +11,25 @@ export function OrderDetailStatusControls({
   orderId,
   currentStatus,
   version,
-  canCancelOrder,
 }: {
   orderId: string;
   currentStatus: OrderStatus;
   version: number;
-  canCancelOrder: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // En Tarea 1.6 el avance de estado excluye RETURNED (que requiere gasto de reembolso en 1.7)
-  const availableTransitions = nextStatuses(currentStatus).filter(
-    (s) => s !== "RETURNED"
+  // El avance excluye RETURNED (requiere registrar la devolución) y CANCELED (anular vive en OrderVoidButton).
+  const forwardStatuses = nextStatuses(currentStatus).filter(
+    (s) => s !== "RETURNED" && s !== "CANCELED"
   );
 
-  if (availableTransitions.length === 0) {
+  const currentIndex = stageIndex(currentStatus);
+  if (forwardStatuses.length === 0 && currentIndex < 0) {
     return null;
   }
-
-  const forwardStatuses = availableTransitions.filter((s) => s !== "CANCELED");
-  const canCancel = canCancelOrder && availableTransitions.includes("CANCELED");
 
   function handleTransition(to: OrderStatus) {
     setError(null);
@@ -47,17 +42,13 @@ export function OrderDetailStatusControls({
       });
       if (res.error) {
         setError(res.error);
-        setConfirmCancel(false);
       } else {
         setSuccessMessage(res.message ?? `Estado actualizado a ${STATUS_LABEL[to]}.`);
-        setConfirmCancel(false);
-        if (to === "CANCELED") router.push("/orders");
-        else router.refresh();
+        router.refresh();
       }
     });
   }
 
-  const currentIndex = stageIndex(currentStatus);
   const nextStage = forwardStatuses.find(isOrderStage);
 
   return (
@@ -105,7 +96,7 @@ export function OrderDetailStatusControls({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      {forwardStatuses.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {forwardStatuses.map((status) => (
             <button
@@ -119,44 +110,7 @@ export function OrderDetailStatusControls({
             </button>
           ))}
         </div>
-
-        {canCancel && (
-          <div className="flex items-center gap-2">
-            {!confirmCancel ? (
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => setConfirmCancel(true)}
-                className="w-full sm:w-auto inline-flex min-h-11 items-center justify-center rounded-xl border border-danger/30 bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-danger hover:bg-danger-soft disabled:opacity-50 transition-colors touch-manipulation"
-              >
-                Anular pedido por error
-              </button>
-            ) : (
-              <div className="flex w-full sm:w-auto items-center gap-2 rounded-xl border border-danger/40 bg-danger-soft/50 p-1.5">
-                <span className="px-2 text-xs font-semibold text-danger">
-                  Solo para un registro equivocado: se anularán los cobros y se restaurarán el filamento y stock vinculados. Esto no devuelve dinero al cliente. Para una venta real devuelta, registra una devolución. ¿Confirmar?
-                </span>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => handleTransition("CANCELED")}
-                  className="inline-flex min-h-9 items-center justify-center rounded-lg bg-danger px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 touch-manipulation"
-                >
-                  {isPending ? "Cancelando…" : "Sí, cancelar"}
-                </button>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => setConfirmCancel(false)}
-                  className="inline-flex min-h-9 items-center justify-center rounded-lg border border-line bg-surface px-2.5 text-xs font-medium text-ink hover:bg-canvas touch-manipulation"
-                >
-                  No
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

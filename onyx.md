@@ -6,6 +6,17 @@
 
 ---
 
+## Reparto del dinero (IVA · costo · ganancia) y anulación discreta — 2026-11-26
+
+- **Problema observado en producción:** el dueño separaba su plata leyendo el pedido y el Inicio. Tomó el *Neto taller* (venta sin IVA) como su ganancia y además apartó el costo de fabricación, contando el costo dos veces; el *Saldo a favor* del Inicio (entradas − compras del mes − IVA) reforzó la lectura porque no descuenta el material comprado en meses anteriores. Resultado: en noviembre repartió $71.394 en reservas sobre $64.979 cobrados.
+- **Decisión:** las pantallas de uso diario muestran solo las tres partes que se separan y que suman lo recibido: *Para el IVA*, *Para costos de fabricación* y *Tu ganancia* (`src/lib/money-split.ts`, con pruebas). El *neto sin IVA* deja de presentarse como monto, porque es costo + ganancia juntos.
+- **Detalle de pedido:** nueva tarjeta *Cómo se reparte* (`OrderMoneySplit.tsx`), en celular justo después de las piezas y en escritorio arriba de la columna lateral. Avisa si falta cobrar y que cada parte se separa al recibir el pago. *Resumen financiero* queda con totales, cobrado y saldo.
+- **Inicio:** la sección pasa a *Cobros de [mes]* con *Cobrado*, *Separar para IVA*, *Separar para costos* y *Tu ganancia* (misma fuente que Cuentas: `getMonthlySalesEconomics`), más la franja *Por cobrar*. El flujo de caja (entradas, compras y saldo) queda solo en Dinero → Caja, con una nota que aclara que no es la ganancia.
+- **Anular por error:** sale de la fila de acciones y pasa a un ícono discreto en la esquina del encabezado (`OrderVoidButton.tsx`), que abre una ventana (`Dialog` con `triggerContent`) explicando qué se revierte. La regla de dominio y la Server Action no cambian.
+- Sin cambios de esquema ni de datos.
+
+---
+
 ## Anulaciones, cobros efectivos y claridad visual — 2026-11-26
 
 - Los pedidos anulados se ocultan de las vistas habituales, revierten sus cobros y compensan los movimientos vinculados de stock y bobinas de forma transaccional. Las devoluciones conservan el costo de fabricación y descuentan el reembolso cuando se registra. Los pedidos anulados con anterioridad requieren revisión individual.

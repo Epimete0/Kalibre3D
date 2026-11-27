@@ -773,7 +773,7 @@ export function MoneyControls({
           </div>
 
           <p className="rounded-xl border border-line/60 bg-raised/50 px-3 py-2 text-[11px] leading-snug text-muted">
-            Compras de bobinas y gastos salen de <strong className="text-ink">Caja</strong> al pagarlos; el uso por pieza se descuenta en <strong className="text-ink">Ventas</strong>.
+            Esto es el movimiento de tu cuenta, no tu ganancia: no descuenta el material que ya tenías. Lo que es tuyo es la <strong className="text-ink">Ganancia estimada</strong>.
           </p>
         </Card>
       </div>

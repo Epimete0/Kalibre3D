@@ -8,11 +8,11 @@ import {
 } from "@/components/ui";
 import { canManageCatalog, getSessionMembershipState } from "@/lib/auth";
 import { MATERIAL_LABEL, type Material } from "@/lib/catalog-presentation";
-import { vatIncluded } from "@/lib/costing";
 import { getDashboardOverview } from "@/lib/dashboard-queries";
 import { getMonthlySalesEconomics } from "@/lib/insights-queries";
 import { GettingStartedCard } from "./GettingStartedCard";
 import { formatMoney } from "@/lib/money-format";
+import { splitReceived } from "@/lib/money-split";
 import { CATEGORY_LABEL, type MoneyCategory } from "@/lib/money-presentation";
 import {
   CHANNEL_LABEL,
@@ -293,7 +293,7 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-ink">
-                Caja de {formatMonth(moneyView.month)}
+                Cobros de {formatMonth(moneyView.month)}
               </h2>
               <Link
                 href={`/money?month=${moneyView.month}&view=cash`}
@@ -322,108 +322,79 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-surface px-3.5 py-2 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
-            {salesEconomics && salesEconomics.summary.ordersCount > 0 ? (
-              <span>
-                <strong className="text-ink font-semibold">Cobrado del mes:</strong>{" "}
-                {formatMoney(salesEconomics.summary.grossRevenue, currency)} · Costo fabricación:{" "}
-                <strong className="text-ink font-semibold">
-                  {formatMoney(salesEconomics.summary.productionCost, currency)}
-                </strong>{" "}
-                · Ganancia estimada:{" "}
-                <strong className={salesEconomics.summary.netProfit >= 0 ? "text-ok font-semibold" : "text-danger font-semibold"}>
-                  {salesEconomics.summary.netProfit >= 0 ? "+" : ""}
-                  {formatMoney(salesEconomics.summary.netProfit, currency)}
-                </strong>
-              </span>
-            ) : (
-              <span>
-                Flujo de caja del taller: dinero disponible tras cobros, compras, gastos e impuestos.
-              </span>
-            )}
-            <Link
-              href={`/money?month=${moneyView.month}&view=accounts`}
-              className="text-ink font-semibold underline decoration-line-strong underline-offset-4 hover:decoration-ink shrink-0"
-            >
-              Ver cuentas (utilidades, IVA y costos) →
-            </Link>
-          </div>
-
           {(() => {
-            const grossIncome = moneyView.summary.income;
-            const vatAmount = vatIncluded(grossIncome, vatPercent);
-            const netIncome = grossIncome - vatAmount;
-            const netProfit = vatPercent > 0 ? netIncome - moneyView.summary.expense : moneyView.summary.profit;
+            const sales = salesEconomics?.summary;
+            const split = splitReceived({
+              received: sales?.grossRevenue ?? 0,
+              vatAmount: sales?.vatAmount ?? 0,
+              productionCost: sales?.productionCost ?? 0,
+            });
+            const isLoss = split.profit < 0;
+            const ordersCount = sales?.ordersCount ?? 0;
+            const receivable = pendingReceivableTotal ?? 0;
 
             return (
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 lg:gap-3">
-                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
-                    Entró a caja
-                  </span>
-                  <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ok truncate">
-                    {formatMoney(grossIncome, currency)}
-                  </span>
-                  {vatPercent > 0 && (
+              <>
+                <div className={`grid grid-cols-2 gap-2.5 lg:gap-3 ${vatPercent > 0 ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
+                  <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                    <span className="text-xs font-semibold text-muted block truncate">Cobrado</span>
+                    <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ink truncate">
+                      {formatMoney(split.received, currency)}
+                    </span>
                     <span className="mt-0.5 block text-[11px] text-muted truncate">
-                      Neto sin IVA: {formatMoney(netIncome, currency)}
+                      {ordersCount} {ordersCount === 1 ? "pedido" : "pedidos"}
                     </span>
-                  )}
-                </Card>
+                  </Card>
 
-                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
-                    Compras y gastos
-                  </span>
-                  <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ink truncate">
-                    {formatMoney(moneyView.summary.expense, currency)}
-                  </span>
                   {vatPercent > 0 && (
-                    <span className="mt-0.5 block text-[11px] text-muted truncate">
-                      IVA retenido: {formatMoney(vatAmount, currency)} ({vatPercent}%)
-                    </span>
+                    <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                      <span className="text-xs font-semibold text-muted block truncate">Separar para IVA</span>
+                      <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ink truncate">
+                        {formatMoney(split.vat, currency)}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-muted truncate">{vatPercent}% incluido en lo cobrado</span>
+                    </Card>
                   )}
-                </Card>
 
-                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0 border-line-strong">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
-                      Quedó en caja
+                  <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
+                    <span className="text-xs font-semibold text-muted block truncate">Separar para costos</span>
+                    <span className="mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight text-ink truncate">
+                      {formatMoney(split.cost, currency)}
                     </span>
-                    <Badge tone={netProfit >= 0 ? "ok" : "danger"}>
-                      {netProfit >= 0 ? "Saldo a favor" : "Déficit"}
-                    </Badge>
-                  </div>
-                  <span
-                    className={`mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight truncate ${
-                      netProfit >= 0 ? "text-ok" : "text-danger"
-                    }`}
-                  >
-                    {formatMoney(netProfit, currency)}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-muted truncate">
-                    {vatPercent > 0
-                      ? "Descontando compras, gastos e IVA"
-                      : "Dinero disponible tras compras y gastos"}
-                  </span>
-                </Card>
+                    <span className="mt-0.5 block text-[11px] text-muted truncate">Para reponer material</span>
+                  </Card>
 
-                <Card className="px-3.5 py-2.5 sm:py-3 min-w-0">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted block truncate">
-                    Por cobrar
+                  <Card className={`px-3.5 py-2.5 sm:py-3 min-w-0 ${vatPercent > 0 ? "" : "col-span-2 xl:col-span-1"} ${isLoss ? "border-danger/40" : "border-ok/40 bg-ok-soft/40"}`}>
+                    <span className="text-xs font-semibold text-muted block truncate">{isLoss ? "Pérdida" : "Tu ganancia"}</span>
+                    <span className={`mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight truncate ${isLoss ? "text-danger" : "text-ok"}`}>
+                      {formatMoney(split.profit, currency)}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-muted truncate">Lo que queda para ti</span>
+                  </Card>
+                </div>
+
+                <div className="rounded-xl border border-line bg-surface px-3.5 py-2 shadow-[0_1px_2px_rgba(28,29,33,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
+                  <span>
+                    <strong className="text-ink font-semibold">Por cobrar:</strong>{" "}
+                    <strong className={receivable > 0 ? "text-warn font-semibold" : "text-ink font-semibold"}>
+                      {formatMoney(receivable, currency)}
+                    </strong>{" "}
+                    en pedidos activos. Cuenta en el mes en que te paguen.
                   </span>
-                  <span
-                    className={`mt-0.5 block text-lg sm:text-xl font-bold tabular-nums leading-tight truncate ${
-                      (pendingReceivableTotal ?? 0) > 0 ? "text-warn" : "text-ink"
-                    }`}
+                  <Link
+                    href={`/money?month=${moneyView.month}&view=accounts`}
+                    className="text-ink font-semibold underline decoration-line-strong underline-offset-4 hover:decoration-ink shrink-0"
                   >
-                    {formatMoney(pendingReceivableTotal ?? 0, currency)}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-muted truncate">
-                    En pedidos activos
-                  </span>
-                </Card>
-              </div>
+                    Ver cuentas del mes →
+                  </Link>
+                </div>
+
+                {sales && sales.unitsWithoutCost > 0 && (
+                  <p className="rounded-xl border border-warn/30 bg-warn/10 px-3.5 py-2 text-[11px] text-ink">
+                    {sales.unitsWithoutCost} {sales.unitsWithoutCost === 1 ? "pieza no tenía" : "piezas no tenían"} gramos ni material; su costo quedó en $0 y tu ganancia real podría ser menor.
+                  </p>
+                )}
+              </>
             );
           })()}
 
